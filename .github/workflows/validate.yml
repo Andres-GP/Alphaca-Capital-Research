@@ -1,0 +1,21 @@
+name: Validate Strategy
+
+on:
+  pull_request:
+    paths:
+      - "research/strategies/**/*.ipynb"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: pip install -r requirements.txt
+      - name: Run validation script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/validate_strategy.py ${{ github.event.pull_request.head.sha }}
