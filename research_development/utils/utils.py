@@ -1204,3 +1204,439 @@ def resample_timeframes(df, frequencies=None):
         }).dropna()
         result[name] = resampled
     return result
+
+
+# ============================================================================
+# BACKTESTING AND OPTIMIZATION UTILITIES (for strategy development)
+# ============================================================================
+
+def compute_rsi(data, period=2):
+    """Compute RSI for a given period."""
+    delta = data.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+def compute_atr(df, period=14):
+    """Compute Average True Range for a DataFrame with OHLC."""
+    high = df['high']
+    low = df['low']
+    close = df['close']
+    tr1 = high - low
+    tr2 = abs(high - close.shift(1))
+    tr3 = abs(low - close.shift(1))
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    atr = tr.rolling(period).mean()
+    return atr
+
+def prepare_data(df, entry_threshold, rsi_threshold, atr_stop, atr_target,
+                 time_stop_hour=15, time_stop_minute=50):
+    """
+    Prepare data with indicators and entry signals for the ES 15min Mean Reversion strategy.
+    """
+    df = df.copy()
+    df['close_pct_change'] = df['close'].pct_change() * 100
+    df['volume_ma20'] = df['volume'].rolling(20).mean()
+    df['volume_ratio'] = df['volume'] / df['volume_ma20']
+    df['rsi2'] = compute_rsi(df['close'], period=2)
+    df['atr'] = compute_atr(df, period=14)
+    
+    df['hour'] = df.index.hour
+    df['minute'] = df.index.minute
+    df['dayofweek'] = df.index.dayofweek  # Monday=0, Sunday=6
+    
+    # Entry signals (long and short)
+    df['long_entry'] = (df['close_pct_change'] < -entry_threshold) & (df['rsi2'] < rsi_threshold) & (df['volume_ratio'] > 1.2) & (df['hour'] >= 9) & (df['hour'] <= 15) & (df['dayofweek'].isin([1,2,3,4]))
+    df['short_entry'] = (df['close_pct_change'] > entry_threshold) & (df['rsi2'] > (100 - rsi_threshold)) & (df['volume_ratio'] > 1.2) & (df['hour'] >= 9) & (df['hour'] <= 15) & (df['dayofweek'].isin([1,2,3,4]))
+    
+    return df
+
+def run_backtest(df, stop_multiplier, target_multiplier, time_hour=15, time_min=50):
+    """
+    Run backtest with ATR-based stops and time stop.
+    Returns DataFrame with trades and P&L.
+    """
+    trades = []
+    position = None
+    entry_price = None
+    entry_time = None
+    entry_type = None
+    atr_value = None
+    
+    for idx, row in df.iterrows():
+        if position is not None:
+            # Time stop
+            if idx.hour > time_hour or (idx.hour == time_hour and idx.minute >= time_min):
+                exit_price = row['close']
+                exit_time = idx
+                reason = 'time_stop'
+                trade = {
+                    'entry_time': entry_time,
+                    'exit_time': exit_time,
+                    'entry_price': entry_price,
+                    'exit_price': exit_price,
+                    'type': entry_type,
+                    'reason': reason
+                }
+                trades.append(trade)
+                position = None
+                continue
+            
+            if atr_value is None:
+                break
+            
+            stop_dist = atr_value * stop_multiplier
+            target_dist = atr_value * target_multiplier
+            
+            if entry_type == 'long':
+                if row['low'] <= entry_price - stop_dist:
+                    exit_price = entry_price - stop_dist
+                    reason = 'stop_loss'
+                elif row['high'] >= entry_price + target_dist:
+                    exit_price = entry_price + target_dist
+                    reason = 'take_profit'
+                else:
+                    continue
+            else:  # short
+                if row['high'] >= entry_price + stop_dist:
+                    exit_price = entry_price + stop_dist
+                    reason = 'stop_loss'
+                elif row['low'] <= entry_price - target_dist:
+                    exit_price = entry_price - target_dist
+                    reason = 'take_profit'
+                else:
+                    continue
+            
+            exit_time = idx
+            trade = {
+                'entry_time': entry_time,
+                'exit_time': exit_time,
+                'entry_price': entry_price,
+                'exit_price': exit_price,
+                'type': entry_type,
+                'reason': reason
+            }
+            trades.append(trade)
+            position = None
+            continue
+        
+        # Check for new entries
+        if row['long_entry']:
+            position = 'long'
+            entry_price = row['close']
+            entry_time = idx
+            entry_type = 'long'
+            atr_value = row['atr']
+        elif row['short_entry']:
+            position = 'short'
+            entry_price = row['close']
+            entry_time = idx
+            entry_type = 'short'
+            atr_value = row['atr']
+    
+    trades_df = pd.DataFrame(trades)
+    if len(trades_df) == 0:
+        return trades_df
+    
+    trades_df['pnl'] = np.where(trades_df['type'] == 'long',
+                               (trades_df['exit_price'] - trades_df['entry_price']) / trades_df['entry_price'] * 100,
+                               (trades_df['entry_price'] - trades_df['exit_price']) / trades_df['entry_price'] * 100)
+    trades_df['win'] = trades_df['pnl'] > 0
+    
+    return trades_df
+
+def compute_metrics(trades_df):
+    """
+    Compute key performance metrics from a trades DataFrame.
+    Returns dict with: num_trades, win_rate, avg_win, avg_loss, profit_factor,
+    expectancy, total_pnl, sharpe, max_drawdown.
+    """
+    if len(trades_df) == 0:
+        return {
+            'num_trades': 0,
+            'win_rate': 0,
+            'avg_win': 0,
+            'avg_loss': 0,
+            'profit_factor': 0,
+            'expectancy': 0,
+            'total_pnl': 0,
+            'sharpe': 0,
+            'max_drawdown': 0
+        }
+    
+    wins = trades_df[trades_df['win']]
+    losses = trades_df[~trades_df['win']]
+    
+    win_rate = len(wins) / len(trades_df) * 100
+    avg_win = wins['pnl'].mean() if len(wins) > 0 else 0
+    avg_loss = losses['pnl'].mean() if len(losses) > 0 else 0
+    profit_factor = abs(wins['pnl'].sum() / losses['pnl'].sum()) if len(losses) > 0 and losses['pnl'].sum() != 0 else np.inf
+    expectancy = trades_df['pnl'].mean()
+    total_pnl = trades_df['pnl'].sum()
+    
+    # Sharpe ratio (annualized)
+    returns = trades_df['pnl'] / 100  # decimal returns
+    sharpe = returns.mean() / returns.std() * np.sqrt(252) if returns.std() > 0 else 0
+    
+    # Maximum drawdown
+    cumulative = trades_df['pnl'].cumsum()
+    running_max = cumulative.expanding().max()
+    drawdown = (cumulative - running_max) / 100  # decimal
+    max_drawdown = drawdown.min() * 100  # percentage
+    
+    return {
+        'num_trades': len(trades_df),
+        'win_rate': win_rate,
+        'avg_win': avg_win,
+        'avg_loss': avg_loss,
+        'profit_factor': profit_factor,
+        'expectancy': expectancy,
+        'total_pnl': total_pnl,
+        'sharpe': sharpe,
+        'max_drawdown': max_drawdown
+    }
+
+def optimize_sequential(df, entry_thresholds=[0.5, 0.7, 1.0],
+                        rsi_thresholds=[15, 20, 25],
+                        stop_multipliers=[1.5, 2.0, 2.5],
+                        target_multipliers=[2.5, 3.0, 3.5],
+                        time_hour=15, time_min=50):
+    """
+    Perform sequential optimization on in-sample data.
+    Returns dict with optimal parameters.
+    """
+    best_params = {}
+    print("\n" + "="*70)
+    print("SEQUENTIAL OPTIMIZATION")
+    print("="*70)
+    
+    # Step 1: Entry threshold
+    print("\nStep 1: Optimizing Entry Threshold")
+    threshold_results = []
+    for threshold in entry_thresholds:
+        df_prep = prepare_data(df, threshold, 20, 2.0, 3.0)
+        trades = run_backtest(df_prep, 2.0, 3.0, time_hour, time_min)
+        metrics = compute_metrics(trades)
+        threshold_results.append({'threshold': threshold, **metrics})
+    threshold_df = pd.DataFrame(threshold_results)
+    print(threshold_df[['threshold', 'num_trades', 'win_rate', 'profit_factor', 'expectancy', 'sharpe', 'max_drawdown']].to_string(index=False))
+    best_params['entry_threshold'] = threshold_df.loc[threshold_df['profit_factor'].idxmax(), 'threshold']
+    print(f"\nBest threshold: {best_params['entry_threshold']}")
+    
+    # Step 2: RSI
+    print("\nStep 2: Optimizing RSI Threshold")
+    rsi_results = []
+    for rsi in rsi_thresholds:
+        df_prep = prepare_data(df, best_params['entry_threshold'], rsi, 2.0, 3.0)
+        trades = run_backtest(df_prep, 2.0, 3.0, time_hour, time_min)
+        metrics = compute_metrics(trades)
+        rsi_results.append({'rsi': rsi, **metrics})
+    rsi_df = pd.DataFrame(rsi_results)
+    print(rsi_df[['rsi', 'num_trades', 'win_rate', 'profit_factor', 'expectancy', 'sharpe', 'max_drawdown']].to_string(index=False))
+    best_params['rsi_threshold'] = rsi_df.loc[rsi_df['profit_factor'].idxmax(), 'rsi']
+    print(f"\nBest RSI: {best_params['rsi_threshold']}")
+    
+    # Step 3: ATR stop
+    print("\nStep 3: Optimizing ATR Stop Multiplier")
+    stop_results = []
+    for stop in stop_multipliers:
+        df_prep = prepare_data(df, best_params['entry_threshold'], best_params['rsi_threshold'], stop, 3.0)
+        trades = run_backtest(df_prep, stop, 3.0, time_hour, time_min)
+        metrics = compute_metrics(trades)
+        stop_results.append({'stop': stop, **metrics})
+    stop_df = pd.DataFrame(stop_results)
+    print(stop_df[['stop', 'num_trades', 'win_rate', 'profit_factor', 'expectancy', 'sharpe', 'max_drawdown']].to_string(index=False))
+    best_params['atr_stop'] = stop_df.loc[stop_df['profit_factor'].idxmax(), 'stop']
+    print(f"\nBest ATR stop: {best_params['atr_stop']}")
+    
+    # Step 4: ATR target
+    print("\nStep 4: Optimizing ATR Target Multiplier")
+    target_results = []
+    for target in target_multipliers:
+        df_prep = prepare_data(df, best_params['entry_threshold'], best_params['rsi_threshold'], best_params['atr_stop'], target)
+        trades = run_backtest(df_prep, best_params['atr_stop'], target, time_hour, time_min)
+        metrics = compute_metrics(trades)
+        target_results.append({'target': target, **metrics})
+    target_df = pd.DataFrame(target_results)
+    print(target_df[['target', 'num_trades', 'win_rate', 'profit_factor', 'expectancy', 'sharpe', 'max_drawdown']].to_string(index=False))
+    best_params['atr_target'] = target_df.loc[target_df['profit_factor'].idxmax(), 'target']
+    print(f"\nBest ATR target: {best_params['atr_target']}")
+    
+    print("\n" + "="*70)
+    print("OPTIMAL PARAMETERS")
+    print("="*70)
+    for k, v in best_params.items():
+        print(f"{k}: {v}")
+    
+    return best_params
+
+def walk_forward_analysis(df, param_grid, train_years=5, test_years=1,
+                          start_year=2009, end_year=2020):
+    """
+    Perform walk-forward analysis with sequential optimization per cycle.
+    Returns DataFrame with results for each OOS period.
+    """
+    results = []
+    years = sorted(df.index.year.unique())
+    years = [y for y in years if start_year <= y <= end_year]
+    
+    for start in range(start_year, end_year - train_years):
+        train_start = start
+        train_end = start + train_years
+        test_start = train_end
+        test_end = test_start + test_years
+        
+        # Filter data
+        train_data = df[(df.index.year >= train_start) & (df.index.year < train_end)]
+        test_data = df[(df.index.year >= test_start) & (df.index.year < test_end)]
+        
+        if len(train_data) < 100 or len(test_data) < 10:
+            continue
+        
+        # Optimize on train_data
+        best_params = optimize_sequential(train_data,
+                                          entry_thresholds=[0.5, 0.7, 1.0],
+                                          rsi_thresholds=[15, 20, 25],
+                                          stop_multipliers=[1.5, 2.0, 2.5],
+                                          target_multipliers=[2.5, 3.0, 3.5])
+        
+        # Test on test_data
+        df_prep = prepare_data(test_data,
+                              best_params['entry_threshold'],
+                              best_params['rsi_threshold'],
+                              best_params['atr_stop'],
+                              best_params['atr_target'])
+        trades = run_backtest(df_prep, best_params['atr_stop'], best_params['atr_target'])
+        metrics = compute_metrics(trades)
+        
+        results.append({
+            'train_start': train_start,
+            'train_end': train_end,
+            'test_start': test_start,
+            'test_end': test_end,
+            'pf': metrics['profit_factor'],
+            'win_rate': metrics['win_rate'],
+            'num_trades': metrics['num_trades'],
+            'total_pnl': metrics['total_pnl'],
+            'sharpe': metrics['sharpe'],
+            'max_dd': metrics['max_drawdown'],
+            'params': best_params
+        })
+    
+    return pd.DataFrame(results)
+
+def monte_carlo_bootstrap(trades_df, n_simulations=10000):
+    """
+    Run Monte Carlo bootstrap simulation on a trades DataFrame.
+    Returns dict with percentiles and probability of positive P&L.
+    """
+    if len(trades_df) == 0:
+        return None
+    
+    pnl_array = trades_df['pnl'].values
+    n_trades = len(pnl_array)
+    
+    mc_final_pnl = []
+    mc_max_dd = []
+    mc_profit_factor = []
+    
+    for _ in range(n_simulations):
+        sampled = np.random.choice(pnl_array, size=n_trades, replace=True)
+        cumulative = np.cumsum(sampled)
+        mc_final_pnl.append(cumulative[-1])
+        
+        running_max = np.maximum.accumulate(cumulative)
+        dd = (cumulative - running_max)
+        mc_max_dd.append(dd.min())
+        
+        wins = sampled[sampled > 0]
+        losses = sampled[sampled < 0]
+        pf = abs(wins.sum() / losses.sum()) if len(losses) > 0 and losses.sum() != 0 else np.inf
+        mc_profit_factor.append(pf)
+    
+    mc_final_pnl = np.array(mc_final_pnl)
+    mc_max_dd = np.array(mc_max_dd)
+    mc_profit_factor = np.array(mc_profit_factor)
+    
+    return {
+        'p5': np.percentile(mc_final_pnl, 5),
+        'p50': np.percentile(mc_final_pnl, 50),
+        'p95': np.percentile(mc_final_pnl, 95),
+        'p99': np.percentile(mc_final_pnl, 99),
+        'prob_positive': np.mean(mc_final_pnl > 0) * 100,
+        'dd_p95': np.percentile(mc_max_dd, 95),
+        'dd_p99': np.percentile(mc_max_dd, 99),
+        'pf_p50': np.percentile(mc_profit_factor, 50),
+        'pf_p95': np.percentile(mc_profit_factor, 5),  # worst 5%
+    }
+
+def parameter_sensitivity_analysis(df, optimal_params, variations, time_hour=15, time_min=50):
+    """
+    Perform parameter sensitivity analysis by varying each parameter ±20%.
+    Returns a DataFrame with results for each variation.
+    """
+    results = []
+    for param, values in variations.items():
+        for val in values:
+            params = optimal_params.copy()
+            params[param] = val
+            
+            df_prep = prepare_data(
+                df,
+                params['entry_threshold'],
+                params['rsi_threshold'],
+                params['atr_stop'],
+                params['atr_target']
+            )
+            trades = run_backtest(df_prep, params['atr_stop'], params['atr_target'])
+            metrics = compute_metrics(trades)
+            
+            results.append({
+                'param': param,
+                'value': val,
+                'num_trades': metrics['num_trades'],
+                'profit_factor': metrics['profit_factor'],
+                'expectancy': metrics['expectancy'],
+                'total_pnl': metrics['total_pnl'],
+                'max_drawdown': metrics['max_drawdown']
+            })
+    
+    return pd.DataFrame(results)
+
+def plot_equity_curve(trades_df, title='Equity Curve'):
+    """Plot equity curve from trades DataFrame."""
+    if len(trades_df) == 0:
+        print("No trades to plot.")
+        return
+    
+    trades_df = trades_df.copy()
+    trades_df['cum_pnl'] = trades_df['pnl'].cumsum()
+    
+    fig, ax = plt.subplots(figsize=(12, 5))
+    ax.plot(trades_df['exit_time'], trades_df['cum_pnl'], color='#2E86C1', linewidth=1.5)
+    ax.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
+    ax.set_title(title, fontweight='bold')
+    ax.set_ylabel('Cumulative P&L (%)')
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+def plot_trade_distribution(trades_df, title='Trade Distribution'):
+    """Plot trade P&L distribution."""
+    if len(trades_df) == 0:
+        print("No trades to plot.")
+        return
+    
+    colors = ['#2ECC71' if x > 0 else '#E74C3C' for x in trades_df['pnl']]
+    
+    fig, ax = plt.subplots(figsize=(12, 4))
+    ax.bar(range(len(trades_df)), trades_df['pnl'], color=colors, alpha=0.7)
+    ax.axhline(y=0, color='black', linewidth=0.5)
+    ax.set_title(title, fontweight='bold')
+    ax.set_xlabel('Trade Number')
+    ax.set_ylabel('P&L (%)')
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
