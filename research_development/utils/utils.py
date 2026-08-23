@@ -1347,11 +1347,23 @@ def run_backtest(df, stop_multiplier, target_multiplier, time_hour=15, time_min=
     
     return trades_df
 
-def compute_metrics(trades_df):
+def compute_metrics(trades_df, cost_per_trade=0.0, contracts=1):
     """
     Compute key performance metrics from a trades DataFrame.
-    Returns dict with: num_trades, win_rate, avg_win, avg_loss, profit_factor,
-    expectancy, total_pnl, sharpe, max_drawdown.
+    
+    Parameters:
+    -----------
+    trades_df : DataFrame
+        DataFrame with columns: pnl, win, entry_price, exit_price, type
+    cost_per_trade : float, optional (default=0.0)
+        Total cost per trade in dollars (commission + slippage) per contract
+    contracts : int, optional (default=1)
+        Number of contracts per trade
+    
+    Returns:
+    --------
+    dict: num_trades, win_rate, avg_win, avg_loss, profit_factor,
+          expectancy, total_pnl, sharpe, max_drawdown
     """
     if len(trades_df) == 0:
         return {
@@ -1365,6 +1377,15 @@ def compute_metrics(trades_df):
             'sharpe': 0,
             'max_drawdown': 0
         }
+    
+    trades_df = trades_df.copy()
+    
+    # Apply costs - convert dollars to percentage using entry_price
+    if cost_per_trade > 0 and 'entry_price' in trades_df.columns:
+        total_cost = cost_per_trade * contracts
+        cost_pct = (total_cost / trades_df['entry_price']) * 100
+        trades_df['pnl'] = trades_df['pnl'] - cost_pct
+        trades_df['win'] = trades_df['pnl'] > 0
     
     wins = trades_df[trades_df['win']]
     losses = trades_df[~trades_df['win']]
@@ -1398,11 +1419,8 @@ def compute_metrics(trades_df):
         'max_drawdown': max_drawdown
     }
 
-def optimize_sequential(df, entry_thresholds=[0.5, 0.7, 1.0],
-                        rsi_thresholds=[15, 20, 25],
-                        stop_multipliers=[1.5, 2.0, 2.5],
-                        target_multipliers=[2.5, 3.0, 3.5],
-                        time_hour=15, time_min=50):
+def optimize_sequential(df, entry_thresholds, rsi_thresholds, stop_multipliers, target_multipliers,
+                        time_hour=15, time_min=50, cost_per_trade=0.0):
     """
     Perform sequential optimization on in-sample data.
     Returns dict with optimal parameters.
@@ -1418,7 +1436,7 @@ def optimize_sequential(df, entry_thresholds=[0.5, 0.7, 1.0],
     for threshold in entry_thresholds:
         df_prep = prepare_data(df, threshold, 20, 2.0, 3.0)
         trades = run_backtest(df_prep, 2.0, 3.0, time_hour, time_min)
-        metrics = compute_metrics(trades)
+        metrics = compute_metrics(trades, cost_per_trade)
         threshold_results.append({'threshold': threshold, **metrics})
     threshold_df = pd.DataFrame(threshold_results)
     print(threshold_df[['threshold', 'num_trades', 'win_rate', 'profit_factor', 'expectancy', 'sharpe', 'max_drawdown']].to_string(index=False))
@@ -1431,7 +1449,7 @@ def optimize_sequential(df, entry_thresholds=[0.5, 0.7, 1.0],
     for rsi in rsi_thresholds:
         df_prep = prepare_data(df, best_params['entry_threshold'], rsi, 2.0, 3.0)
         trades = run_backtest(df_prep, 2.0, 3.0, time_hour, time_min)
-        metrics = compute_metrics(trades)
+        metrics = compute_metrics(trades, cost_per_trade)
         rsi_results.append({'rsi': rsi, **metrics})
     rsi_df = pd.DataFrame(rsi_results)
     print(rsi_df[['rsi', 'num_trades', 'win_rate', 'profit_factor', 'expectancy', 'sharpe', 'max_drawdown']].to_string(index=False))
@@ -1444,7 +1462,7 @@ def optimize_sequential(df, entry_thresholds=[0.5, 0.7, 1.0],
     for stop in stop_multipliers:
         df_prep = prepare_data(df, best_params['entry_threshold'], best_params['rsi_threshold'], stop, 3.0)
         trades = run_backtest(df_prep, stop, 3.0, time_hour, time_min)
-        metrics = compute_metrics(trades)
+        metrics = compute_metrics(trades, cost_per_trade)
         stop_results.append({'stop': stop, **metrics})
     stop_df = pd.DataFrame(stop_results)
     print(stop_df[['stop', 'num_trades', 'win_rate', 'profit_factor', 'expectancy', 'sharpe', 'max_drawdown']].to_string(index=False))
@@ -1457,7 +1475,7 @@ def optimize_sequential(df, entry_thresholds=[0.5, 0.7, 1.0],
     for target in target_multipliers:
         df_prep = prepare_data(df, best_params['entry_threshold'], best_params['rsi_threshold'], best_params['atr_stop'], target)
         trades = run_backtest(df_prep, best_params['atr_stop'], target, time_hour, time_min)
-        metrics = compute_metrics(trades)
+        metrics = compute_metrics(trades, cost_per_trade)
         target_results.append({'target': target, **metrics})
     target_df = pd.DataFrame(target_results)
     print(target_df[['target', 'num_trades', 'win_rate', 'profit_factor', 'expectancy', 'sharpe', 'max_drawdown']].to_string(index=False))
@@ -1473,7 +1491,7 @@ def optimize_sequential(df, entry_thresholds=[0.5, 0.7, 1.0],
     return best_params
 
 def walk_forward_analysis(df, param_grid, train_years=5, test_years=1,
-                          start_year=2009, end_year=2020):
+                          start_year=2009, end_year=2020, cost_per_trade=0.0):
     """
     Perform walk-forward analysis with sequential optimization per cycle.
     Returns DataFrame with results for each OOS period.
@@ -1496,20 +1514,25 @@ def walk_forward_analysis(df, param_grid, train_years=5, test_years=1,
             continue
         
         # Optimize on train_data
-        best_params = optimize_sequential(train_data,
-                                          entry_thresholds=[0.5, 0.7, 1.0],
-                                          rsi_thresholds=[15, 20, 25],
-                                          stop_multipliers=[1.5, 2.0, 2.5],
-                                          target_multipliers=[2.5, 3.0, 3.5])
+        best_params = optimize_sequential(
+            train_data,
+            entry_thresholds=[0.5, 0.7, 1.0],
+            rsi_thresholds=[15, 20, 25],
+            stop_multipliers=[1.5, 2.0, 2.5],
+            target_multipliers=[2.5, 3.0, 3.5],
+            cost_per_trade=cost_per_trade
+        )
         
         # Test on test_data
-        df_prep = prepare_data(test_data,
-                              best_params['entry_threshold'],
-                              best_params['rsi_threshold'],
-                              best_params['atr_stop'],
-                              best_params['atr_target'])
+        df_prep = prepare_data(
+            test_data,
+            best_params['entry_threshold'],
+            best_params['rsi_threshold'],
+            best_params['atr_stop'],
+            best_params['atr_target']
+        )
         trades = run_backtest(df_prep, best_params['atr_stop'], best_params['atr_target'])
-        metrics = compute_metrics(trades)
+        metrics = compute_metrics(trades, cost_per_trade=cost_per_trade)
         
         results.append({
             'train_start': train_start,
@@ -1572,7 +1595,7 @@ def monte_carlo_bootstrap(trades_df, n_simulations=10000):
         'pf_p95': np.percentile(mc_profit_factor, 5),  # worst 5%
     }
 
-def parameter_sensitivity_analysis(df, optimal_params, variations, time_hour=15, time_min=50):
+def parameter_sensitivity_analysis(df, optimal_params, variations, time_hour=15, time_min=50, cost_per_trade=0.0):
     """
     Perform parameter sensitivity analysis by varying each parameter ±20%.
     Returns a DataFrame with results for each variation.
@@ -1591,7 +1614,7 @@ def parameter_sensitivity_analysis(df, optimal_params, variations, time_hour=15,
                 params['atr_target']
             )
             trades = run_backtest(df_prep, params['atr_stop'], params['atr_target'])
-            metrics = compute_metrics(trades)
+            metrics = compute_metrics(trades, cost_per_trade=cost_per_trade)
             
             results.append({
                 'param': param,
