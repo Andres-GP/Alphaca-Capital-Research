@@ -1,13 +1,3 @@
-"""
-Reusable EDA utilities for financial time series (OHLCV data).
-Provides functions for:
-- Loading data from MongoDB
-- Resampling to multiple timeframes
-- Computing statistics (Hurst, ACF, etc.)
-- Generating detailed plots with dark theme
-- Full timeframe analysis with system recommendation
-"""
-
 import os
 import numpy as np
 import pandas as pd
@@ -1347,19 +1337,22 @@ def run_backtest(df, stop_multiplier, target_multiplier, time_hour=15, time_min=
     
     return trades_df
 
-def compute_metrics(trades_df, cost_per_trade=0.0, contracts=1):
+
+def compute_metrics(trades_df, contract_multiplier, cost_per_trade=0.0, contracts=1):
     """
     Compute key performance metrics from a trades DataFrame.
-    
+
     Parameters:
     -----------
     trades_df : DataFrame
         DataFrame with columns: pnl, win, entry_price, exit_price, type
+    contract_multiplier : float
+        Dollar value per point of the underlying (e.g. 50 for ES)
     cost_per_trade : float, optional (default=0.0)
         Total cost per trade in dollars (commission + slippage) per contract
     contracts : int, optional (default=1)
         Number of contracts per trade
-    
+
     Returns:
     --------
     dict: num_trades, win_rate, avg_win, avg_loss, profit_factor,
@@ -1367,56 +1360,42 @@ def compute_metrics(trades_df, cost_per_trade=0.0, contracts=1):
     """
     if len(trades_df) == 0:
         return {
-            'num_trades': 0,
-            'win_rate': 0,
-            'avg_win': 0,
-            'avg_loss': 0,
-            'profit_factor': 0,
-            'expectancy': 0,
-            'total_pnl': 0,
-            'sharpe': 0,
-            'max_drawdown': 0
+            'num_trades': 0, 'win_rate': 0, 'avg_win': 0, 'avg_loss': 0,
+            'profit_factor': 0, 'expectancy': 0, 'total_pnl': 0,
+            'sharpe': 0, 'max_drawdown': 0
         }
-    
+
     trades_df = trades_df.copy()
-    
-    # Apply costs - convert dollars to percentage using entry_price
+
     if cost_per_trade > 0 and 'entry_price' in trades_df.columns:
         total_cost = cost_per_trade * contracts
-        cost_pct = (total_cost / trades_df['entry_price']) * 100
+        notional = trades_df['entry_price'] * contract_multiplier
+        cost_pct = (total_cost / notional) * 100
         trades_df['pnl'] = trades_df['pnl'] - cost_pct
         trades_df['win'] = trades_df['pnl'] > 0
-    
+
     wins = trades_df[trades_df['win']]
     losses = trades_df[~trades_df['win']]
-    
+
     win_rate = len(wins) / len(trades_df) * 100
     avg_win = wins['pnl'].mean() if len(wins) > 0 else 0
     avg_loss = losses['pnl'].mean() if len(losses) > 0 else 0
     profit_factor = abs(wins['pnl'].sum() / losses['pnl'].sum()) if len(losses) > 0 and losses['pnl'].sum() != 0 else np.inf
     expectancy = trades_df['pnl'].mean()
     total_pnl = trades_df['pnl'].sum()
-    
-    # Sharpe ratio (annualized)
-    returns = trades_df['pnl'] / 100  # decimal returns
+
+    returns = trades_df['pnl'] / 100
     sharpe = returns.mean() / returns.std() * np.sqrt(252) if returns.std() > 0 else 0
-    
-    # Maximum drawdown
+
     cumulative = trades_df['pnl'].cumsum()
     running_max = cumulative.expanding().max()
-    drawdown = (cumulative - running_max) / 100  # decimal
-    max_drawdown = drawdown.min() * 100  # percentage
-    
+    drawdown = (cumulative - running_max) / 100
+    max_drawdown = drawdown.min() * 100
+
     return {
-        'num_trades': len(trades_df),
-        'win_rate': win_rate,
-        'avg_win': avg_win,
-        'avg_loss': avg_loss,
-        'profit_factor': profit_factor,
-        'expectancy': expectancy,
-        'total_pnl': total_pnl,
-        'sharpe': sharpe,
-        'max_drawdown': max_drawdown
+        'num_trades': len(trades_df), 'win_rate': win_rate, 'avg_win': avg_win,
+        'avg_loss': avg_loss, 'profit_factor': profit_factor, 'expectancy': expectancy,
+        'total_pnl': total_pnl, 'sharpe': sharpe, 'max_drawdown': max_drawdown
     }
 
 def optimize_sequential(df, entry_thresholds, rsi_thresholds, stop_multipliers, target_multipliers,
@@ -1663,3 +1642,411 @@ def plot_trade_distribution(trades_df, title='Trade Distribution'):
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
+
+
+
+
+def compute_yearly_pnl_dollars(trades_df, contract_multiplier, contracts=1, cost_per_trade=0.0):
+    """
+    Compute year-by-year P&L in dollars from a trades DataFrame, net of costs.
+
+    Parameters:
+    -----------
+    trades_df : DataFrame
+        Must contain 'exit_time', 'entry_price', 'pnl' (in %, pre-cost).
+    contract_multiplier : float
+        Dollar value per point of the underlying (e.g. 50 for ES).
+    contracts : int, optional (default=1)
+        Number of contracts per trade.
+    cost_per_trade : float, optional (default=0.0)
+        Commission + slippage in dollars, per contract, per trade.
+
+    Returns:
+    --------
+    DataFrame indexed by year with pnl_dollars, num_trades, avg_pnl_per_trade.
+    Also prints a formatted summary.
+    """
+    if len(trades_df) == 0:
+        print("No trades available to compute P&L.")
+        return pd.DataFrame()
+
+    df_pnl = trades_df.copy()
+    df_pnl['year'] = df_pnl['exit_time'].dt.year
+
+    total_cost_per_trade = cost_per_trade * contracts
+    notional = df_pnl['entry_price'] * contract_multiplier
+    df_pnl['pnl_dollars'] = (df_pnl['pnl'] / 100) * notional - total_cost_per_trade
+
+    yearly_pnl = df_pnl.groupby('year').agg(
+        pnl_dollars=('pnl_dollars', 'sum'),
+        num_trades=('pnl_dollars', 'count')
+    )
+    yearly_pnl['avg_pnl_per_trade'] = yearly_pnl['pnl_dollars'] / yearly_pnl['num_trades']
+
+    print("=" * 70)
+    print(f"YEARLY P&L IN DOLLARS ({contracts} CONTRACT(S), MULTIPLIER=${contract_multiplier})")
+    print(f"Costs included: ${cost_per_trade:.2f} per trade (commission + slippage)")
+    print("=" * 70)
+    print(yearly_pnl.round(2).to_string())
+
+    total_pnl = yearly_pnl['pnl_dollars'].sum()
+    total_trades = yearly_pnl['num_trades'].sum()
+    avg_pnl_per_trade = total_pnl / total_trades if total_trades > 0 else 0
+
+    print("\n" + "=" * 70)
+    print("TOTAL SUMMARY")
+    print("=" * 70)
+    print(f"Total P&L: ${total_pnl:,.2f}")
+    print(f"Total trades: {total_trades}")
+    print(f"Average P&L per trade: ${avg_pnl_per_trade:,.2f}")
+    print(f"Average trades per year: {total_trades / len(yearly_pnl):.1f}")
+
+    positive_years = (yearly_pnl['pnl_dollars'] > 0).sum()
+    negative_years = (yearly_pnl['pnl_dollars'] < 0).sum()
+    print(f"\nPositive years: {positive_years}")
+    print(f"Negative years: {negative_years}")
+
+    return yearly_pnl
+
+def optimize_calendar_sequential(df, cost_per_trade, contract_multiplier, contracts=1,
+                                   day_combinations=None, month_combinations=None,
+                                   stop_values=None, target_values=None,
+                                   entry_cutoff_hour=15, entry_cutoff_min=30,
+                                   market_close_hour=16, market_close_min=30,
+                                   market_reopen_hour=18, market_reopen_min=0,
+                                   verbose=False):
+    """
+    Sequential optimization (days -> months -> stop -> target) of the
+    intraday calendar strategy on a given intraday DataFrame slice.
+    Returns a dict of best parameters. Meant to be called once per
+    training window in a walk-forward analysis, not as a standalone
+    single-split optimizer.
+    """
+    if day_combinations is None:
+        day_combinations = [
+            [1, 2, 3, 4], [1, 2, 3], [2, 3, 4], [1, 2, 4],
+            [1, 3, 4], [2, 3], [1, 2], [3, 4]
+        ]
+    if month_combinations is None:
+        month_combinations = [
+            [4, 7, 10, 11], [7, 10, 11], [4, 10, 11], [4, 7, 11],
+            [7, 11], [10, 11], [4, 7, 10]
+        ]
+    if stop_values is None:
+        stop_values = [0.5, 0.7, 1.0, 1.2, 1.5]
+    if target_values is None:
+        target_values = [1.0, 1.2, 1.5, 1.8, 2.0, 2.5]
+
+    def _pf(days, months, stop, target):
+        trades = run_calendar_backtest_intraday(
+            df, entry_days=days, entry_months=months,
+            target_pct=target, stop_pct=stop,
+            entry_cutoff_hour=entry_cutoff_hour, entry_cutoff_min=entry_cutoff_min,
+            market_close_hour=market_close_hour, market_close_min=market_close_min,
+            market_reopen_hour=market_reopen_hour, market_reopen_min=market_reopen_min
+        )
+        if len(trades) == 0:
+            return 0.0, 0
+        m = compute_metrics(trades, contract_multiplier=contract_multiplier,
+                             cost_per_trade=cost_per_trade, contracts=contracts)
+        return m['profit_factor'], m['num_trades']
+
+    best_days, best_pf, best_n = None, -np.inf, 0
+    for days in day_combinations:
+        pf, n = _pf(days, [4, 7, 10, 11], 1.0, 1.5)
+        if pf > best_pf:
+            best_days, best_pf, best_n = days, pf, n
+    if verbose:
+        print(f"  Best days: {best_days} (PF={best_pf:.2f}, n={best_n})")
+
+    best_months, best_pf = None, -np.inf
+    for months in month_combinations:
+        pf, n = _pf(best_days, months, 1.0, 1.5)
+        if pf > best_pf:
+            best_months, best_pf = months, pf
+    if verbose:
+        print(f"  Best months: {best_months} (PF={best_pf:.2f})")
+
+    best_stop, best_pf = None, -np.inf
+    for stop in stop_values:
+        pf, n = _pf(best_days, best_months, stop, 1.5)
+        if pf > best_pf:
+            best_stop, best_pf = stop, pf
+    if verbose:
+        print(f"  Best stop: {best_stop}% (PF={best_pf:.2f})")
+
+    best_target, best_pf = None, -np.inf
+    for target in target_values:
+        pf, n = _pf(best_days, best_months, best_stop, target)
+        if pf > best_pf:
+            best_target, best_pf = target, pf
+    if verbose:
+        print(f"  Best target: {best_target}% (PF={best_pf:.2f})")
+
+    return {
+        'days': best_days, 'months': best_months,
+        'stop_pct': best_stop, 'target_pct': best_target
+    }
+
+
+def plot_equity_curve_dollars(trades_df, contract_multiplier, contracts=1, cost_per_trade=0.0,
+                                title='Equity Curve (USD)'):
+    """
+    Plot the cumulative P&L in dollars for a trades DataFrame, net of costs.
+    Uses the same cost formula as compute_metrics for consistency.
+
+    Returns a DataFrame with exit_time, pnl_dollars, cum_pnl_dollars.
+    """
+    if len(trades_df) == 0:
+        print("No trades to plot.")
+        return
+
+    df_plot = trades_df.copy()
+    total_cost_per_trade = cost_per_trade * contracts
+    notional = df_plot['entry_price'] * contract_multiplier
+    df_plot['pnl_dollars'] = (df_plot['pnl'] / 100) * notional - total_cost_per_trade
+    df_plot['cum_pnl_dollars'] = df_plot['pnl_dollars'].cumsum()
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(df_plot['exit_time'], df_plot['cum_pnl_dollars'], color='#2E86C1',
+            linewidth=1.5, label='Equity Curve (net of costs)')
+    ax.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
+    ax.set_title(title, fontweight='bold')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Cumulative P&L ($)')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+    final_pnl = df_plot['cum_pnl_dollars'].iloc[-1]
+    total_cost = total_cost_per_trade * len(df_plot)
+    print(f"\nFinal net P&L: ${final_pnl:,.2f}")
+    print(f"Total costs paid: ${total_cost:,.2f}")
+    print(f"Gross P&L (before costs): ${final_pnl + total_cost:,.2f}")
+
+    return df_plot[['exit_time', 'pnl_dollars', 'cum_pnl_dollars']]
+
+def walk_forward_calendar_analysis(df_15min, train_years=5, test_years=1,
+                                     start_year=2009, end_year=2026,
+                                     cost_per_trade=0.0, contract_multiplier=50, contracts=1,
+                                     entry_cutoff_hour=15, entry_cutoff_min=30,
+                                     market_close_hour=16, market_close_min=30,
+                                     market_reopen_hour=18, market_reopen_min=0):
+    """
+    Rolling walk-forward analysis for the intraday calendar strategy.
+
+    For each window: optimize sequentially (days -> months -> stop -> target)
+    on train_years of data, then test once on the following test_years,
+    never re-tuning against the test result. Slides forward by test_years
+    and repeats until the data runs out.
+
+    Parameters:
+    -----------
+    df_15min : DataFrame
+        Full intraday OHLC DataFrame with a New York time index.
+    train_years : int, optional (default=5)
+        Number of years used to optimize parameters in each window.
+    test_years : int, optional (default=1)
+        Number of years used to validate the optimized parameters,
+        immediately following the training window.
+    start_year, end_year : int
+        Bounds of the full period to walk forward across.
+    cost_per_trade : float, optional (default=0.0)
+        Commission + slippage in dollars, per contract, per trade.
+    contract_multiplier : float, optional (default=50)
+        Dollar value per point of the underlying (50 for ES).
+    contracts : int, optional (default=1)
+        Number of contracts per trade.
+    entry_cutoff_hour, entry_cutoff_min : int
+        Last allowed entry time (ET).
+    market_close_hour, market_close_min : int
+        Forced flat time (ET).
+    market_reopen_hour, market_reopen_min : int
+        Time trading resumes after the maintenance window (ET).
+
+    Returns:
+    --------
+    DataFrame with one row per test window: train/test date ranges,
+    the parameters chosen for that window, and the resulting test-window
+    metrics (num_trades, profit_factor, win_rate, sharpe, max_drawdown,
+    total_pnl).
+    """
+    results = []
+    window_start = start_year
+
+    while window_start + train_years + test_years <= end_year + 1:
+        train_start_year = window_start
+        train_end_year = window_start + train_years
+        test_start_year = train_end_year
+        test_end_year = test_start_year + test_years
+
+        train_data = df_15min[
+            (df_15min.index.year >= train_start_year) & (df_15min.index.year < train_end_year)
+        ]
+        test_data = df_15min[
+            (df_15min.index.year >= test_start_year) & (df_15min.index.year < test_end_year)
+        ]
+
+        if len(train_data) < 1000 or len(test_data) < 100:
+            window_start += test_years
+            continue
+
+        print(f"\nWindow: train {train_start_year}-{train_end_year-1}, test {test_start_year}-{test_end_year-1}")
+        params = optimize_calendar_sequential(
+            train_data, cost_per_trade=cost_per_trade, contract_multiplier=contract_multiplier,
+            contracts=contracts, entry_cutoff_hour=entry_cutoff_hour, entry_cutoff_min=entry_cutoff_min,
+            market_close_hour=market_close_hour, market_close_min=market_close_min,
+            market_reopen_hour=market_reopen_hour, market_reopen_min=market_reopen_min,
+            verbose=True
+        )
+
+        test_trades = run_calendar_backtest_intraday(
+            test_data, entry_days=params['days'], entry_months=params['months'],
+            target_pct=params['target_pct'], stop_pct=params['stop_pct'],
+            entry_cutoff_hour=entry_cutoff_hour, entry_cutoff_min=entry_cutoff_min,
+            market_close_hour=market_close_hour, market_close_min=market_close_min,
+            market_reopen_hour=market_reopen_hour, market_reopen_min=market_reopen_min
+        )
+
+        if len(test_trades) > 0:
+            m = compute_metrics(test_trades, contract_multiplier=contract_multiplier,
+                                 cost_per_trade=cost_per_trade, contracts=contracts)
+        else:
+            m = {'num_trades': 0, 'profit_factor': 0, 'win_rate': 0,
+                 'expectancy': 0, 'total_pnl': 0, 'sharpe': 0, 'max_drawdown': 0}
+
+        results.append({
+            'train_start': train_start_year, 'train_end': train_end_year - 1,
+            'test_start': test_start_year, 'test_end': test_end_year - 1,
+            'days': params['days'], 'months': params['months'],
+            'stop_pct': params['stop_pct'], 'target_pct': params['target_pct'],
+            'test_num_trades': m['num_trades'], 'test_pf': m['profit_factor'],
+            'test_win_rate': m['win_rate'], 'test_sharpe': m['sharpe'],
+            'test_max_dd': m['max_drawdown'], 'test_total_pnl': m['total_pnl']
+        })
+
+        window_start += test_years
+
+    return pd.DataFrame(results)
+
+
+def run_calendar_backtest_intraday(df, entry_days, entry_months,
+                                     target_pct=1.5, stop_pct=1.0,
+                                     entry_cutoff_hour=15, entry_cutoff_min=30,
+                                     market_close_hour=16, market_close_min=30,
+                                     market_reopen_hour=18, market_reopen_min=0,
+                                     vol_filter_ratio=None,
+                                     vol_lookback_short=5, vol_lookback_long=20):
+    """
+    Intraday calendar-based backtest with trend filter, prop-firm-compliant
+    trading hours, and an optional short-term volatility filter.
+
+    vol_filter_ratio : float or None
+        If set, blocks new entries on days where the short/long realized
+        volatility ratio (as of the prior day's close) exceeds this value.
+    """
+    df = df.copy()
+    df['sma50'] = df['close'].rolling(50).mean()
+    df['sma200'] = df['close'].rolling(200).mean()
+    df['sma50_above_sma200'] = df['sma50'] > df['sma200']
+
+    df['dayofweek'] = df.index.dayofweek
+    df['month'] = df.index.month
+    df['hour'] = df.index.hour
+    df['minute'] = df.index.minute
+    df['date'] = df.index.date
+
+    entry_time_ok = (df['hour'] < entry_cutoff_hour) | (
+        (df['hour'] == entry_cutoff_hour) & (df['minute'] <= entry_cutoff_min)
+    )
+
+    in_maintenance_window = (
+        (df['hour'] > market_close_hour) |
+        ((df['hour'] == market_close_hour) & (df['minute'] >= market_close_min))
+    ) & (df['hour'] < market_reopen_hour)
+
+    entry_condition = (
+        df['dayofweek'].isin(entry_days) &
+        df['month'].isin(entry_months) &
+        df['sma50_above_sma200'] &
+        entry_time_ok &
+        ~in_maintenance_window
+    )
+
+    if vol_filter_ratio is not None:
+        vol_ratio = compute_daily_vol_ratio(df, vol_lookback_short, vol_lookback_long)
+        df['vol_ratio'] = df['date'].map(vol_ratio)
+        vol_ok = df['vol_ratio'].notna() & (df['vol_ratio'] <= vol_filter_ratio)
+        entry_condition = entry_condition & vol_ok
+
+    df['entry_signal'] = entry_condition
+
+    trades = []
+    position = None
+    entry_price = None
+    entry_time = None
+    current_date = None
+
+    for idx, row in df.iterrows():
+        if current_date is not None and row['date'] != current_date and position is not None:
+            trades.append({
+                'entry_time': entry_time, 'exit_time': idx,
+                'entry_price': entry_price, 'exit_price': row['open'],
+                'type': position, 'reason': 'forced_eod_gap'
+            })
+            position = None
+        current_date = row['date']
+
+        if position is not None:
+            past_close = (row['hour'] > market_close_hour) or (
+                row['hour'] == market_close_hour and row['minute'] >= market_close_min
+            )
+            hit_target = row['high'] >= entry_price * (1 + target_pct / 100)
+            hit_stop = row['low'] <= entry_price * (1 - stop_pct / 100)
+
+            if hit_stop:
+                exit_price = entry_price * (1 - stop_pct / 100)
+                reason = 'stop_loss'
+            elif hit_target:
+                exit_price = entry_price * (1 + target_pct / 100)
+                reason = 'take_profit'
+            elif past_close:
+                exit_price = row['close']
+                reason = 'time_stop'
+            else:
+                continue
+
+            trades.append({
+                'entry_time': entry_time, 'exit_time': idx,
+                'entry_price': entry_price, 'exit_price': exit_price,
+                'type': position, 'reason': reason
+            })
+            position = None
+            continue
+
+        if row['entry_signal'] and position is None:
+            position = 'long'
+            entry_price = row['close']
+            entry_time = idx
+
+    trades_df = pd.DataFrame(trades)
+    if len(trades_df) > 0:
+        trades_df['pnl'] = (trades_df['exit_price'] - trades_df['entry_price']) / trades_df['entry_price'] * 100
+        trades_df['win'] = trades_df['pnl'] > 0
+    return trades_df
+
+
+def compute_daily_vol_ratio(df_intraday, vol_lookback_short=5, vol_lookback_long=20):
+    """
+    Compute a daily short-term/long-term realized volatility ratio from
+    intraday data, shifted by one day to avoid lookahead bias. Returns
+    a Series indexed by date (not datetime).
+    """
+    daily_close = df_intraday.resample('D')['close'].last().dropna()
+    daily_ret = daily_close.pct_change()
+    vol_short = daily_ret.rolling(vol_lookback_short).std()
+    vol_long = daily_ret.rolling(vol_lookback_long).std()
+    vol_ratio = (vol_short / vol_long).shift(1)  # use prior day's completed ratio
+    vol_ratio.index = vol_ratio.index.date
+    return vol_ratio
