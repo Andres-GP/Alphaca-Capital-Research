@@ -2050,3 +2050,23 @@ def compute_daily_vol_ratio(df_intraday, vol_lookback_short=5, vol_lookback_long
     vol_ratio = (vol_short / vol_long).shift(1)  # use prior day's completed ratio
     vol_ratio.index = vol_ratio.index.date
     return vol_ratio
+
+
+def to_session_date(ts):
+    """
+    Convierte un timestamp (NY-local, tz-naive) en su session_date.
+    La sesión abre a las 18:00 NY y pertenece al día calendario siguiente.
+    Ej: un bar a las 19:00 del lunes -> session_date = martes
+        un bar a las 14:00 del martes -> session_date = martes
+    """
+    if ts.time() >= pd.Timestamp("18:00").time():
+        return (ts + pd.Timedelta(days=1)).date()
+    return ts.date()
+
+def to_session_date_vectorized(index: pd.DatetimeIndex) -> pd.Series:
+    cutoff = pd.Timestamp("18:00").time()
+    times = pd.Series(index.time, index=index)
+    is_after_cutoff = times >= cutoff
+    dates = pd.Series(index.date, index=index)
+    dates[is_after_cutoff] = pd.Series(index[is_after_cutoff] + pd.Timedelta(days=1)).dt.date.values
+    return dates
