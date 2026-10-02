@@ -1,1 +1,38 @@
 ## Daily Annotations
+
+### 2026-10-01 - QQQ_RSI2_TIS (Daily Mean Reversion)
+- **Strategy**: TIS RSI(2) Mean Reversion on Invesco QQQ Trust (QQQ) Daily bars.
+  - Filter: `Close > SMA(200)`
+  - Entry: `RSI(2) < 15` (Wilder) at close of day t -> Buy at Open of day t+1
+  - Exit: Two consecutive green candles (`Close > Open`) at close of day t -> Sell at Open of day t+1
+  - Costs: 5 bps slippage per side (10 bps round-trip), zero commission.
+  - Sizing: (a) 100% Capital, (b) 1% Risk with ATR(14)x2 virtual stop (exposure capped at 100%).
+- **Data**: Yahoo Finance (`yfinance`), 1999-01-01 to 2026-10-01 (6,735 prepared daily bars).
+  - In-Sample (IS, 70%): 4,714 bars (1999-12-21 to 2018-09-14).
+  - Out-of-Sample (OOS, 30%): 2,021 bars (2018-09-17 to 2026-10-01).
+- **Key Numbers**:
+  - Full Period (287 trades, 1999-2026):
+    - Capital Sizing: 70.7% Win Rate, Profit Factor = 2.189, Sharpe = 0.64, Max Drawdown = -17.73%, Total Return = +474.1%.
+    - ATR Risk Sizing: 70.7% Win Rate, Profit Factor = 2.090, Sharpe = 0.67, Max Drawdown = -6.68%, Total Return = +80.6%.
+  - In-Sample Performance (194 trades):
+    - Capital Sizing: Profit Factor = 1.990, Win Rate = 66.5%, Expectancy = +0.56%.
+    - ATR Risk Sizing: Profit Factor = 1.990, Win Rate = 66.5%, Expectancy = +0.19%.
+  - Out-of-Sample Performance (93 trades):
+    - Capital Sizing: Profit Factor = 2.681, Win Rate = 79.6%, Expectancy = +0.79%.
+    - ATR Risk Sizing: Profit Factor = 2.309, Win Rate = 79.6%, Expectancy = +0.23%.
+  - Walk-Forward Analysis (23 rolling 3y IS / 1y OOS windows, 2003-2025):
+    - Efficiency = 1.108 (>= 0.50 threshold).
+    - Positive OOS Years = 69.6% (16 / 23 >= 60% threshold).
+    - Worst Single-Year OOS Drawdown = -8.13% (> -20% threshold).
+  - Block Monte Carlo (10,000 runs, block=5):
+    - Probability of Ruin = 0.00%, Prob Return > 0 = 100.0%.
+    - Worst 5% Drawdown: -8.5% (ATR) / -22.6% (Capital).
+  - Monkey Test (2,000 synthetic portfolios):
+    - Real Strategy PF = 2.189 vs Monkey Median PF = 1.213.
+    - Outperforms 99.95% of random filter-eligible entry portfolios.
+  - Parameter Plateau (IS Grid 6x5):
+    - Broad 3x3 plateau around (15, 200); Worst neighbor drop = 21.4% (<= 30% anti-cliff limit).
+    - 4D Robustness (180 combos across 3 exits x 2 cost levels): 86.1% combos have PF >= 1.3, 100% have PF > 1.0.
+  - Edge Decay Audit:
+    - Recent PF (3.061) > Historical PF (1.986); Recent/Hist Expectancy Ratio = 1.60; Warning = False.
+- **Verdict**: **PASSED** (Full validation gate passed on both ATR sizing and Capital sizing).
