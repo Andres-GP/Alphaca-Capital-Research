@@ -1,19 +1,24 @@
 //+------------------------------------------------------------------+
 //|                                              PerformanceReporter.mqh |
-//|                   Base class for reporting to backend from MT5     |
-//|                   FIXES: Quantity, Date format, Heartbeat         |
+//|                   Reporting + monitoring layer for MT5 strategies |
+//|                   v3.20 — Clean version                            |
 //+------------------------------------------------------------------+
-#property copyright "AlphaCapital"
-#property version   "1.10"
-
-#include <Trade/Trade.mqh>
+#property copyright "Alphaca Capital"
+#property version   "3.20"
 
 //+------------------------------------------------------------------+
-//| Class that handles communication with the backend                 |
+//| Centralized defaults — override per strategy if needed            |
+//+------------------------------------------------------------------+
+#define DEFAULT_BACKEND_URL "https://laxative-buckskin-gyration.ngrok-free.dev"
+#define DEFAULT_AUTH_TOKEN  "6d84e658780b073a7a66643135247494094bb63d0474b558c55fe002ce296920"
+
+//+------------------------------------------------------------------+
+//| Class that handles monitoring AND communication with the backend  |
 //+------------------------------------------------------------------+
 class PerformanceReporter
 {
 private:
+   //--- Backend configuration
    string            m_backendUrl;
    string            m_authToken;
    string            m_strategyId;
@@ -21,53 +26,74 @@ private:
    string            m_instrument;
    string            m_timeframe;
    string            m_platform;
-   int               m_sizing;           // Contract size (lot * 100)
+   int               m_sizing;
    string            m_dataType;
-   bool              m_startReported;    // Flag to ensure strategy is registered before heartbeat
+   bool              m_verbose;
+
+   //--- Reporter state
+   bool              m_startReported;
    int               m_barsWithoutTrade;
    bool              m_inactivityAlertSent;
    int               m_maxBarsWithoutTrade;
    bool              m_enableInactivityAlert;
-   int               m_rolloverAlertDays;
 
-   //--- Internal method to send POST requests
-   string            SendPostRequest(string endpoint, string jsonPayload);
-   
-   //--- Helper to format datetime in ISO 8601
+   //--- Monitoring state
+   int               m_totalTrades;
+   int               m_wins;
+   int               m_losses;
+   double            m_grossProfit;
+   double            m_grossLoss;
+   double            m_dayStartEquity;
+   double            m_peakEquity;
+   double            m_maxDrawdownHit;
+   int               m_lastDayKey;
+
+   //--- Internal methods
+   void              SendPostRequest(string endpoint, string jsonPayload);
    string            FormatISODate(datetime dt);
+   int               BuildDayKey(datetime dt);
 
 public:
                      PerformanceReporter(string backendUrl, string authToken, string strategyName, string instrument, string timeframe, int sizing, string dataType);
                     ~PerformanceReporter();
 
-   //--- Main methods
+   //--- Backend communication
    void              ReportStrategyStarted();
    void              ReportTradeClosed(ulong ticket, string symbol, double entryPrice, double exitPrice, double volume, double profit, datetime entryTime, datetime exitTime, double commission, ENUM_POSITION_TYPE positionType);
    void              ReportHealthAlert(string problemType, string details, string severity = "high");
    void              ReportCapital(double capital, string currency = "USD");
    void              SendHeartbeat();
-   void              CheckRollover();
-
-   //--- Monitoring methods
    void              OnBarUpdate(int barsTotal);
    void              OnOrderRejected(string orderName, int errorCode, string comment);
-   void              OnOrderFrozen(string orderName, datetime orderTime);
-   void              OnPartialFill(string orderName, int requested, int filled);
-   void              OnConnectionLost();
+
+   //--- Equity and drawdown monitoring (call on every tick)
+   void              UpdateEquity();
+
+   //--- Push/email alerts
+   void              SendAlert(string message);
+
+   //--- Getters
+   int               GetTotalTrades()    const { return m_totalTrades; }
+   int               GetWins()           const { return m_wins; }
+   int               GetLosses()         const { return m_losses; }
+   double            GetMaxDrawdownHit() const { return m_maxDrawdownHit; }
+   double            GetWinRate()        const;
+   double            GetProfitFactor()   const;
+   double            GetDailyDD()        const;
+   double            GetTotalDD()        const;
+   string            GetStrategyId()     const { return m_strategyId; }
 
    //--- Configuration
    void              SetMaxBarsWithoutTrade(int bars) { m_maxBarsWithoutTrade = bars; }
    void              EnableInactivityAlert(bool enable) { m_enableInactivityAlert = enable; }
-   void              SetRolloverAlertDays(int days) { m_rolloverAlertDays = days; }
+   void              SetVerbose(bool verbose) { m_verbose = verbose; }
 };
 
 //+------------------------------------------------------------------+
 //| Constructor                                                       |
 //+------------------------------------------------------------------+
 PerformanceReporter::PerformanceReporter(string backendUrl, string authToken, string strategyName, string instrument, string timeframe, int sizing, string dataType)
-   : m_backendUrl(backendUrl),
-     m_authToken(authToken),
-     m_strategyName(strategyName),
+   : m_strategyName(strategyName),
      m_instrument(instrument),
      m_timeframe(timeframe),
      m_sizing(sizing),
@@ -77,11 +103,27 @@ PerformanceReporter::PerformanceReporter(string backendUrl, string authToken, st
      m_inactivityAlertSent(false),
      m_maxBarsWithoutTrade(50),
      m_enableInactivityAlert(true),
-     m_rolloverAlertDays(60)
+     m_verbose(false),
+     m_totalTrades(0),
+     m_wins(0),
+     m_losses(0),
+     m_grossProfit(0.0),
+     m_grossLoss(0.0),
+     m_dayStartEquity(0.0),
+     m_peakEquity(0.0),
+     m_maxDrawdownHit(0.0),
+     m_lastDayKey(0)
 {
-   m_platform = "MT5";
-   // Generate a unique ID combining timestamp + strategy name
-   m_strategyId = IntegerToString(TimeCurrent()) + "_" + strategyName;
+   m_backendUrl = (backendUrl == "") ? DEFAULT_BACKEND_URL : backendUrl;
+   m_authToken  = (authToken  == "") ? DEFAULT_AUTH_TOKEN  : authToken;
+
+   m_platform   = "MT5";
+   m_strategyId = strategyName + "_" + instrument + "_" + timeframe;
+
+   m_dayStartEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+   m_peakEquity     = m_dayStartEquity;
+
+   m_lastDayKey = BuildDayKey(TimeCurrent());
 }
 
 //+------------------------------------------------------------------+
@@ -92,50 +134,55 @@ PerformanceReporter::~PerformanceReporter()
 }
 
 //+------------------------------------------------------------------+
-//| Helper: Format datetime to ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)      |
+//| Helper: ISO 8601 date format                                      |
 //+------------------------------------------------------------------+
 string PerformanceReporter::FormatISODate(datetime dt)
 {
    MqlDateTime dtStruct;
    TimeToStruct(dt, dtStruct);
    return StringFormat("%04d-%02d-%02dT%02d:%02d:%02dZ",
-                       dtStruct.year,
-                       dtStruct.mon,
-                       dtStruct.day,
-                       dtStruct.hour,
-                       dtStruct.min,
-                       dtStruct.sec);
+                       dtStruct.year, dtStruct.mon, dtStruct.day,
+                       dtStruct.hour, dtStruct.min, dtStruct.sec);
 }
 
 //+------------------------------------------------------------------+
-//| Send POST request to backend                                      |
+//| Helper: build day key YYYYMMDD                                    |
 //+------------------------------------------------------------------+
-string PerformanceReporter::SendPostRequest(string endpoint, string jsonPayload)
+int PerformanceReporter::BuildDayKey(datetime dt)
+{
+   MqlDateTime s;
+   TimeToStruct(dt, s);
+   return s.year * 10000 + s.mon * 100 + s.day;
+}
+
+//+------------------------------------------------------------------+
+//| Send POST request to the backend                                  |
+//+------------------------------------------------------------------+
+void PerformanceReporter::SendPostRequest(string endpoint, string jsonPayload)
 {
    string url = m_backendUrl + endpoint;
    string headers = "Content-Type: application/json\r\nAuthorization: Bearer " + m_authToken + "\r\n";
    char postData[];
    char resultData[];
    string resultHeaders;
-   int res;
 
    int dataSize = StringToCharArray(jsonPayload, postData) - 1;
    if(dataSize < 0)
    {
-      Print("[ERROR] Invalid JSON payload");
-      return "";
+      if(m_verbose) Print("[ERROR] Invalid JSON payload for ", endpoint);
+      return;
    }
 
    ResetLastError();
-   res = WebRequest("POST", url, headers, 5000, postData, resultData, resultHeaders);
+   int res = WebRequest("POST", url, headers, 5000, postData, resultData, resultHeaders);
 
    if(res == -1)
    {
-      Print("[ERROR] WebRequest error: ", GetLastError());
-      return "";
+      if(m_verbose) Print("[ERROR] WebRequest failed on ", endpoint, " | err=", GetLastError());
+      return;
    }
 
-   return CharArrayToString(resultData);
+   if(m_verbose) Print("[OK] POST ", endpoint, " -> HTTP ", res);
 }
 
 //+------------------------------------------------------------------+
@@ -146,13 +193,12 @@ void PerformanceReporter::ReportStrategyStarted()
    if(m_startReported) return;
    m_startReported = true;
 
-   string endpoint = "/strategies/start";
    string payload = StringFormat(
       "{"
       "\"strategy_id\":\"%s\","
       "\"name\":\"%s\","
       "\"instrument\":\"%s\","
-      "\"instrument_type\":\"Future\","
+      "\"instrument_type\":\"CFD\","
       "\"timeframe\":\"%s\","
       "\"data_type\":\"%s\","
       "\"platform\":\"%s\","
@@ -160,53 +206,35 @@ void PerformanceReporter::ReportStrategyStarted()
       "\"start_date\":\"%s\","
       "\"state\":\"Running\""
       "}",
-      m_strategyId,
-      m_strategyName,
-      m_instrument,
-      m_timeframe,
-      m_dataType,
-      m_platform,
-      m_sizing,
-      FormatISODate(TimeCurrent())   // ✅ FIX 2: ISO 8601 date format
+      m_strategyId, m_strategyName, m_instrument,
+      m_timeframe, m_dataType, m_platform,
+      m_sizing, FormatISODate(TimeCurrent())
    );
-   Print("[INFO] Reporting strategy started: ", m_strategyName);
-   SendPostRequest(endpoint, payload);
+   SendPostRequest("/strategies/start", payload);
 }
 
 //+------------------------------------------------------------------+
-//| Report a closed trade (CORRECTED: quantity as double, ISO date) |
+//| Report a closed trade — also updates internal counters            |
 //+------------------------------------------------------------------+
 void PerformanceReporter::ReportTradeClosed(
-   ulong ticket,
-   string symbol,
-   double entryPrice,
-   double exitPrice,
-   double volume,                     // Actual position volume (e.g., 0.1 lots)
-   double profit,
-   datetime entryTime,
-   datetime exitTime,
-   double commission,
-   ENUM_POSITION_TYPE positionType
-)
+   ulong ticket, string symbol,
+   double entryPrice, double exitPrice, double volume,
+   double profit, datetime entryTime, datetime exitTime,
+   double commission, ENUM_POSITION_TYPE positionType)
 {
-   string endpoint = "/trades";
+   m_totalTrades++;
+   if(profit >= 0) { m_wins++; m_grossProfit += profit; }
+   else            { m_losses++; m_grossLoss += MathAbs(profit); }
 
-   // ✅ FIX 1: Use actual volume (not 0). Send as double to preserve decimals.
-   // If you prefer to send in contracts, multiply by 100 (since 0.1 lot = 10 contracts)
-   // Here we send as lot size (e.g., 0.1). Adjust if your backend expects contracts.
-   double quantity = volume;   // Send as decimal (e.g., 0.1). To send as contracts: volume * 100
-
-   // ✅ FIX 2: Use ISO 8601 date format
+   double quantity = volume;
    string entryTimeStr = FormatISODate(entryTime);
-   string exitTimeStr = FormatISODate(exitTime);
-
-   // Direction based on actual position type
+   string exitTimeStr  = FormatISODate(exitTime);
    string direction = (positionType == POSITION_TYPE_BUY) ? "Long" : "Short";
 
-   // If profit is 0, calculate it from prices (backup)
-   double calculatedPnl = (direction == "Long") ? (exitPrice - entryPrice) * quantity : (entryPrice - exitPrice) * quantity;
-   if(profit == 0.0)
-      profit = calculatedPnl;
+   double calculatedPnl = (direction == "Long")
+      ? (exitPrice - entryPrice) * quantity
+      : (entryPrice - exitPrice) * quantity;
+   if(profit == 0.0) profit = calculatedPnl;
 
    string payload = StringFormat(
       "{"
@@ -214,26 +242,19 @@ void PerformanceReporter::ReportTradeClosed(
       "\"instrument\":\"%s\","
       "\"entry_time\":\"%s\","
       "\"exit_time\":\"%s\","
-      "\"quantity\":%.2f,"          // ✅ FIX 1: Send as double with 2 decimals
+      "\"quantity\":%.2f,"
       "\"entry_price\":%.5f,"
       "\"exit_price\":%.5f,"
       "\"pnl\":%.8f,"
       "\"direction\":\"%s\","
       "\"cost\":%.2f"
       "}",
-      m_strategyId,
-      symbol,
-      entryTimeStr,                  // ✅ FIX 2: ISO 8601
-      exitTimeStr,                   // ✅ FIX 2: ISO 8601
-      quantity,                      // ✅ FIX 1: Actual volume (not 0)
-      entryPrice,
-      exitPrice,
-      profit,
-      direction,
-      commission
+      m_strategyId, symbol,
+      entryTimeStr, exitTimeStr,
+      quantity, entryPrice, exitPrice,
+      profit, direction, commission
    );
-   Print("[INFO] Reporting closed trade: ", ticket, " Direction: ", direction, " Quantity: ", quantity, " PnL: ", profit);
-   SendPostRequest(endpoint, payload);
+   SendPostRequest("/trades", payload);
 }
 
 //+------------------------------------------------------------------+
@@ -241,7 +262,6 @@ void PerformanceReporter::ReportTradeClosed(
 //+------------------------------------------------------------------+
 void PerformanceReporter::ReportHealthAlert(string problemType, string details, string severity = "high")
 {
-   string endpoint = "/alerts";
    string payload = StringFormat(
       "{"
       "\"strategy_id\":\"%s\","
@@ -250,14 +270,10 @@ void PerformanceReporter::ReportHealthAlert(string problemType, string details, 
       "\"details\":\"%s\","
       "\"severity\":\"%s\""
       "}",
-      m_strategyId,
-      FormatISODate(TimeCurrent()),   // ✅ FIX 2: ISO 8601
-      problemType,
-      details,
-      severity
+      m_strategyId, FormatISODate(TimeCurrent()),
+      problemType, details, severity
    );
-   Print("[WARNING] Sending health alert: ", problemType);
-   SendPostRequest(endpoint, payload);
+   SendPostRequest("/alerts", payload);
 }
 
 //+------------------------------------------------------------------+
@@ -265,7 +281,6 @@ void PerformanceReporter::ReportHealthAlert(string problemType, string details, 
 //+------------------------------------------------------------------+
 void PerformanceReporter::ReportCapital(double capital, string currency = "USD")
 {
-   string endpoint = "/capital/report";
    string payload = StringFormat(
       "{"
       "\"strategy_id\":\"%s\","
@@ -275,58 +290,23 @@ void PerformanceReporter::ReportCapital(double capital, string currency = "USD")
       "}",
       m_strategyId,
       (AccountInfoInteger(ACCOUNT_TRADE_MODE) == ACCOUNT_TRADE_MODE_DEMO) ? "demo" : "real",
-      capital,
-      currency
+      capital, currency
    );
-   Print("[INFO] Reporting capital: ", capital, " ", currency);
-   SendPostRequest(endpoint, payload);
+   SendPostRequest("/capital/report", payload);
 }
 
 //+------------------------------------------------------------------+
-//| Send heartbeat to backend (FIX 3: only if strategy started)      |
+//| Send heartbeat to backend                                         |
 //+------------------------------------------------------------------+
 void PerformanceReporter::SendHeartbeat()
 {
-   // ✅ FIX 3: Only send heartbeat if strategy has been reported as started
-   if(!m_startReported)
-   {
-      Print("[DEBUG] Heartbeat skipped: strategy not yet reported as started.");
-      return;
-   }
-   
-   string endpoint = "/heartbeat";
-   string payload = StringFormat(
-      "{"
-      "\"strategy_id\":\"%s\""
-      "}",
-      m_strategyId
-   );
-   Print("[DEBUG] Sending heartbeat");
-   SendPostRequest(endpoint, payload);
+   if(!m_startReported) return;
+   string payload = StringFormat("{\"strategy_id\":\"%s\"}", m_strategyId);
+   SendPostRequest("/heartbeat", payload);
 }
 
 //+------------------------------------------------------------------+
-//| Check contract rollover                                           |
-//+------------------------------------------------------------------+
-void PerformanceReporter::CheckRollover()
-{
-   if(m_rolloverAlertDays <= 0) return;
-
-   datetime expiration = SymbolInfoInteger(_Symbol, SYMBOL_EXPIRATION_TIME);
-   if(expiration > 0)
-   {
-      int daysLeft = (int)((expiration - TimeCurrent()) / 86400);
-      if(daysLeft <= m_rolloverAlertDays && daysLeft > 0)
-      {
-         ReportHealthAlert("Contract Rollover",
-            StringFormat("Contract %s expires in %d days. Please rollover.", _Symbol, daysLeft));
-         Print("[INFO] Rollover alert: ", daysLeft, " days left for ", _Symbol);
-      }
-   }
-}
-
-//+------------------------------------------------------------------+
-//| Monitoring: called on each new bar                               |
+//| Inactivity monitoring — call on every new bar                     |
 //+------------------------------------------------------------------+
 void PerformanceReporter::OnBarUpdate(int barsTotal)
 {
@@ -343,45 +323,84 @@ void PerformanceReporter::OnBarUpdate(int barsTotal)
    if(m_barsWithoutTrade >= m_maxBarsWithoutTrade && !m_inactivityAlertSent)
    {
       ReportHealthAlert("Inactive strategy",
-         StringFormat("No trade generated in the last %d bars.", m_maxBarsWithoutTrade));
+         StringFormat("No trade generated in the last %d bars.", m_maxBarsWithoutTrade),
+         "medium");
       m_inactivityAlertSent = true;
    }
 }
 
 //+------------------------------------------------------------------+
-//| Monitoring: order rejected                                        |
+//| Report rejected order                                             |
 //+------------------------------------------------------------------+
 void PerformanceReporter::OnOrderRejected(string orderName, int errorCode, string comment)
 {
    ReportHealthAlert("Order rejected",
-      StringFormat("Order %s rejected. Error: %d, Comment: %s", orderName, errorCode, comment));
+      StringFormat("Order %s rejected. Error: %d, Comment: %s", orderName, errorCode, comment),
+      "high");
 }
 
 //+------------------------------------------------------------------+
-//| Monitoring: order frozen                                          |
+//| Update equity, peak, daily baseline, max DD. Call on every tick   |
 //+------------------------------------------------------------------+
-void PerformanceReporter::OnOrderFrozen(string orderName, datetime orderTime)
+void PerformanceReporter::UpdateEquity()
 {
-   int seconds = (int)(TimeCurrent() - orderTime);
-   ReportHealthAlert("Frozen order",
-      StringFormat("Order %s has been active for %d seconds. Cancelling.", orderName, seconds));
+   double equity = AccountInfoDouble(ACCOUNT_EQUITY);
+
+   if(equity > m_peakEquity)
+      m_peakEquity = equity;
+
+   datetime now = TimeCurrent();
+   int todayKey = BuildDayKey(now);
+   if(todayKey != m_lastDayKey)
+   {
+      m_lastDayKey = todayKey;
+      m_dayStartEquity = equity;
+   }
+
+   if(m_peakEquity > 0)
+   {
+      double totalDD = (m_peakEquity - equity) / m_peakEquity * 100.0;
+      if(totalDD > m_maxDrawdownHit)
+         m_maxDrawdownHit = totalDD;
+   }
 }
 
 //+------------------------------------------------------------------+
-//| Monitoring: partial fill                                          |
+//| Send push + email alert                                           |
 //+------------------------------------------------------------------+
-void PerformanceReporter::OnPartialFill(string orderName, int requested, int filled)
+void PerformanceReporter::SendAlert(string message)
 {
-   ReportHealthAlert("Partial fill",
-      StringFormat("Order %s: requested %d, filled %d. Remaining part not managed.", orderName, requested, filled));
+   SendNotification(message);
+   SendMail("Alphaca Capital Strategy Alert", message);
 }
 
 //+------------------------------------------------------------------+
-//| Monitoring: connection lost                                       |
+//| Computed getters                                                  |
 //+------------------------------------------------------------------+
-void PerformanceReporter::OnConnectionLost()
+double PerformanceReporter::GetWinRate() const
 {
-   ReportHealthAlert("Connection lost", "Connection to broker/data lost. Strategy will not send orders.");
+   if(m_totalTrades == 0) return 0.0;
+   return (double)m_wins / m_totalTrades * 100.0;
+}
+
+double PerformanceReporter::GetProfitFactor() const
+{
+   if(m_grossLoss <= 0) return (m_grossProfit > 0) ? 99.99 : 0.0;
+   return m_grossProfit / m_grossLoss;
+}
+
+double PerformanceReporter::GetDailyDD() const
+{
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   if(m_dayStartEquity <= 0) return 0.0;
+   return (m_dayStartEquity - eq) / m_dayStartEquity * 100.0;
+}
+
+double PerformanceReporter::GetTotalDD() const
+{
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   if(m_peakEquity <= 0) return 0.0;
+   return (m_peakEquity - eq) / m_peakEquity * 100.0;
 }
 
 //+------------------------------------------------------------------+

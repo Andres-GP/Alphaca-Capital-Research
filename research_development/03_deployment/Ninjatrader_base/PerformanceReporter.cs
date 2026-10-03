@@ -15,11 +15,11 @@ namespace NinjaTrader.NinjaScript.Strategies
     {
         [NinjaScriptProperty]
         [Display(Name = "Backend URL", Description = "Base URL of the backend (e.g., https://xxx.ngrok-free.dev)", Order = 0)]
-        public string BackendUrl { get; set; } = "https://laxative-buckskin-gyration.ngrok-free.dev";
+        public string BackendUrl { get; set; } = "";
 
         [NinjaScriptProperty]
         [Display(Name = "Auth Token", Description = "Authentication token for backend", Order = 1)]
-        public string AuthToken { get; set; } = "miclave123";
+        public string AuthToken { get; set; } = "";
 
         [NinjaScriptProperty]
         [Display(Name = "Rollover Alert (days)", Description = "Days before expiry to send alert (0 = disabled)", Order = 2)]
