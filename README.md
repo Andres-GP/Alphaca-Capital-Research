@@ -25,7 +25,7 @@ A modular, data‑centric infrastructure for systematic trading, specifically. T
 ## Project Structure
 
 ```text
-📁 AlphaCapital_research/
+📁 AlphacaCapital_research/
 │
 │
 ├── 📁 research_development/            # 🧪 Lab environment
