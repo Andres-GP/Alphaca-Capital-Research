@@ -9,7 +9,7 @@
 #property copyright "Alphaca Capital"
 #property version   "3.11"
 #property description "RSI(2) MEAN REVERSION - REPORTER INTEGRATED"
-#property description "Entry: RSI(2) < 15 + Close > SMA(200)"
+#property description "Entry: RSI(2) < 20 + Close > SMA(230)"
 #property description "Exit: 2 consecutive green candles"
 
 #include <Trade\Trade.mqh>
@@ -21,8 +21,8 @@
 //+------------------------------------------------------------------+
 input group "====== STRATEGY (VALIDATED - DO NOT MODIFY) ======"
 input int      InpRSIPeriod       = 2;           // RSI period
-input int      InpRSIThreshold    = 15;          // RSI entry threshold
-input int      InpSMATrend        = 200;         // SMA trend filter period
+input int      InpRSIThreshold    = 20;          // RSI entry threshold
+input int      InpSMATrend        = 230;         // SMA trend filter period
 
 input group "====== RISK ENGINE ======"
 input double   InpRiskPercent     = 1.0;         // Risk % per trade
@@ -523,7 +523,7 @@ void UpdateDashboard()
 
    double closeNow = iClose(_Symbol, PERIOD_D1, 0);
    bool aboveSMA = (closeNow > g_smaBuffer[0]);
-   DashLabel("TIS_TRD", "SMA(200): " + (aboveSMA ? "ABOVE OK" : "BELOW X"),
+   DashLabel("TIS_TRD", StringFormat("SMA(%d): ", InpSMATrend) + (aboveSMA ? "ABOVE OK" : "BELOW X"),
              x, y, aboveSMA ? clrLime : clrOrangeRed, 10);
    y += lineH;
 
