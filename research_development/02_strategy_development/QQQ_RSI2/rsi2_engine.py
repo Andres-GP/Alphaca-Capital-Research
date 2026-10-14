@@ -16,6 +16,32 @@ Strategy Blueprint:
       (b) "atr"     -> 1% risk sizing with virtual stop ATR(14)x2, exposure capped at 100%.
 
 Strictly lookahead-free: signals evaluated at close of bar t-1, executed at open of bar t.
+
+CHANGELOG (fix):
+  - run_rsi2_backtest: removed the `elif sma_len != 200` block that recomputed the SMA
+    and dropped extra rows from an already-prepared DataFrame. That shifted i_ent / i_sal
+    relative to the DataFrame the caller passes to daily_returns(), corrupting the daily
+    MTM series (absurd drawdowns) for any sma_len != 200. The DataFrame must now be
+    prepared by the caller with prepare(df, sma_len=...); sma_len is only used when the
+    function has to call prepare() itself.
+  - walk_forward_fixed: default rules now include sma_len, and a partial `rules` dict is
+    merged over the defaults (so {"rsi_thr": 20.0} no longer drops the other settings).
+
+CHANGELOG (review fixes):
+  - run_rsi2_backtest: asserts that an already-prepared DataFrame was built with the
+    same sma_len that is passed in (sma_len used to be silently ignored).
+  - daily_returns: ATR sizing now uses the trade equity 1 + expo * (P/ep - 1), so the
+    compounded daily returns of a trade equal its pnl_atr exactly.
+  - trade_mtm_paths: new helper, daily MTM return path of each trade (used by the
+    Monte Carlo and the validation gate for drawdowns).
+  - walk_forward_fixed: mdd_oos is now measured on daily MTM returns, not trade by trade.
+  - load_qqq: drops the last bar if it belongs to today's session and the session
+    has not closed yet (partial bar).
+  - run_rsi2_backtest: slippage is now passed in explicit basis points
+    (slip_bps_per_side) instead of the ambiguous `> 0.005` percent/fraction heuristic.
+  - run_rsi2_backtest: new flag strict_post_entry_2green (default False = previous
+    behavior) to require that both green candles of the 2green exit are posterior
+    to the entry.
 """
 
 from __future__ import annotations
@@ -25,14 +51,23 @@ import sys
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from typing import Optional, Literal, Dict, Any
+from typing import Optional, Literal, Dict, Any, List
+
+
+# Frozen rules used when no explicit rules are given to walk_forward_fixed().
+DEFAULT_RULES: Dict[str, Any] = {
+    "rsi_thr": 15.0,
+    "sma_len": 200,
+    "exit_mode": "2green",
+    "slip_bps_per_side": 5.0,
+}
 
 
 # ---------------------------------------------------------------------------
 # 1. DATA INGESTION & INDICATOR PREPARATION
 # ---------------------------------------------------------------------------
 
-def load_qqq(start: str = "1999-01-01") -> pd.DataFrame:
+def load_qqq(start: str = "1999-01-01", drop_partial_bar: bool = True) -> pd.DataFrame:
     """
     Download daily historical bars for QQQ from Yahoo Finance.
 
@@ -40,6 +75,10 @@ def load_qqq(start: str = "1999-01-01") -> pd.DataFrame:
     -----------
     start : str
         Start date in YYYY-MM-DD format (default '1999-01-01').
+    drop_partial_bar : bool
+        If True (default), the last bar is dropped when it belongs to today's
+        New York session and the session has not closed yet (before 16:00 NY),
+        because that bar is partial (its close is just the last trade so far).
 
     Returns:
     --------
@@ -55,6 +94,12 @@ def load_qqq(start: str = "1999-01-01") -> pd.DataFrame:
     df = df_raw[["open", "high", "low", "close", "volume"]].copy()
     df.index.name = "time"
     df.index = pd.to_datetime(df.index)
+
+    if drop_partial_bar and len(df) > 0:
+        now_ny = pd.Timestamp.now(tz="America/New_York")
+        last_date = pd.Timestamp(df.index[-1]).date()
+        if last_date == now_ny.date() and now_ny.time() < pd.Timestamp("16:00").time():
+            df = df.iloc[:-1].copy()
     return df
 
 
@@ -133,7 +178,8 @@ def run_rsi2_backtest(
     rsi_thr: float = 15.0,
     sma_len: int = 200,
     exit_mode: Literal["2green", "ma5", "rsi70"] = "2green",
-    slip_pct_per_side: float = 0.05,
+    slip_bps_per_side: float = 5.0,
+    strict_post_entry_2green: bool = False,
 ) -> pd.DataFrame:
     """
     Simulate the TIS RSI(2) mean-reversion strategy on daily bars.
@@ -149,18 +195,34 @@ def run_rsi2_backtest(
       - Terminal state: If in position at dataset end, mark to market at last close
         with reason='open_at_end'.
 
+    IMPORTANT: the columns i_ent / i_sal in the returned trades are positional indices
+    into the DataFrame passed here. Pass the SAME DataFrame to daily_returns().
+
     Parameters:
     -----------
     df : pd.DataFrame
-        DataFrame with OHLC prices and indicators (will call prepare() if missing).
+        DataFrame with OHLC prices and indicators, already built with
+        prepare(df_raw, sma_len=<the SMA you want>). Slices of a prepared DataFrame
+        (in-sample / out-of-sample) are fine: the indicators are NOT recomputed.
+        If the indicator columns are missing, prepare(df, sma_len=sma_len) is called
+        internally (in that case i_ent / i_sal refer to the prepared DataFrame).
+        If the DataFrame is already prepared, an assertion checks that its 'sma'
+        column corresponds to the sma_len passed here.
     rsi_thr : float
         RSI threshold for entry (default 15.0).
     sma_len : int
-        Lookback length for the macro trend filter (default 200).
+        Lookback length for the macro trend filter. Must match the one used in
+        prepare() when the DataFrame is already prepared.
     exit_mode : str
         Exit rule: '2green' (default), 'ma5', or 'rsi70'.
-    slip_pct_per_side : float
-        Slippage/cost per side in percent (default 0.05 = 5 bps = 0.0005).
+    slip_bps_per_side : float
+        Slippage/cost per side in basis points (default 5.0 = 0.05% = 0.0005).
+    strict_post_entry_2green : bool
+        Only for exit_mode='2green'. False (default) keeps the previous behavior:
+        at bar i the exit looks at green[i-1] and green[i-2], so on the first
+        evaluation (i = ei+1) the signal candle (ei-1) can count as one of the two
+        greens. True requires both greens to be bars >= ei (the entry bar or later),
+        i.e. the earliest exit is at ei+2.
 
     Returns:
     --------
@@ -169,16 +231,25 @@ def run_rsi2_backtest(
         ['entry_time', 'exit_time', 'entry_price', 'exit_price', 'type',
          'reason', 'bars', 'rsi_signal', 'pnl', 'pnl_atr', 'win', 'i_ent', 'i_sal', 'expo']
     """
-    # Auto-prepare if required columns are missing or if sma_len differs
+    # Auto-prepare only if required columns are missing. An already-prepared DataFrame
+    # is never modified (no SMA recomputation, no extra rows dropped), so that
+    # i_ent / i_sal stay aligned with the DataFrame the caller holds.
     if "sma" not in df.columns or "rsi2" not in df.columns or "atr14" not in df.columns:
         df = prepare(df, sma_len=sma_len)
-    elif sma_len != 200:
-        df = df.copy()
-        df["sma"] = df["close"].rolling(window=sma_len).mean()
-        df = df.dropna(subset=["sma"])
+    else:
+        # The SMA of the row sma_len-1 only depends on the first sma_len closes of
+        # the DataFrame, so it can be verified even on slices of a prepared DataFrame.
+        if len(df) >= sma_len:
+            expected_sma = float(df["close"].iloc[:sma_len].mean())
+            got_sma = float(df["sma"].iloc[sma_len - 1])
+            assert np.isclose(got_sma, expected_sma, rtol=1e-6), (
+                f"sma_len={sma_len} does not match the SMA column of the prepared "
+                f"DataFrame (expected {expected_sma:.6f}, found {got_sma:.6f}). "
+                f"Prepare the DataFrame with prepare(df, sma_len={sma_len})."
+            )
 
-    # Normalise slippage fraction
-    slip = slip_pct_per_side / 100.0 if slip_pct_per_side > 0.005 else slip_pct_per_side
+    # Slippage fraction from explicit basis points
+    slip = slip_bps_per_side / 10_000.0
 
     opens = df["open"].values
     closes = df["close"].values
@@ -208,6 +279,8 @@ def run_rsi2_backtest(
             # Exit condition evaluated at close of day i-1
             if exit_mode == "2green":
                 exit_signal = (greens[i - 1] == 1) and (greens[i - 2] == 1)
+                if strict_post_entry_2green and (i - 2) < ei:
+                    exit_signal = False
             elif exit_mode == "ma5":
                 exit_signal = closes[i - 1] > ma5s[i - 1]
             elif exit_mode == "rsi70":
@@ -265,6 +338,61 @@ def run_rsi2_backtest(
 # 3. DAILY MARK-TO-MARKET RETURNS
 # ---------------------------------------------------------------------------
 
+def _trade_path(closes: np.ndarray, t, sizing: str) -> np.ndarray:
+    """
+    Daily MTM return path of ONE trade, from its entry day (i_ent) to its exit day (i_sal).
+
+    The equity of the trade on each day is 1 + expo * (P_k / ep - 1), where P_k is the
+    close of day k (entry day and holding days) and the exit price (open - slip) on the
+    exit day. The daily return is equity_k / equity_{k-1} - 1 (equity_{-1} = 1), so the
+    compounded path of the trade equals 1 + expo * (xp / ep - 1) exactly. With
+    sizing='capital' (expo = 1) this is the plain close-to-close return.
+    """
+    expo = 1.0 if sizing == "capital" else min(1.0, float(t["expo"]))
+    i_ent = int(t["i_ent"])
+    i_sal = int(t["i_sal"])
+    ep = float(t["entry_price"])
+    xp = float(t["exit_price"])
+
+    prices = np.empty(i_sal - i_ent + 1, dtype=float)
+    prices[0] = closes[i_ent]
+    prices[1:] = closes[i_ent + 1:i_sal + 1]
+    prices[-1] = xp  # exit day: exit price (open - slip) instead of the close
+
+    equity = 1.0 + expo * (prices / ep - 1.0)
+    prev = np.concatenate(([1.0], equity[:-1]))
+    return equity / prev - 1.0
+
+
+def trade_mtm_paths(
+    df: pd.DataFrame,
+    trades: pd.DataFrame,
+    sizing: Literal["capital", "atr"] = "capital",
+) -> List[np.ndarray]:
+    """
+    Daily MTM return path of each trade (list aligned row by row with `trades`).
+
+    Used by the block Monte Carlo and by the validation gate to measure drawdowns on
+    daily mark-to-market returns instead of trade by trade.
+
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        The SAME DataFrame passed to run_rsi2_backtest().
+    trades : pd.DataFrame
+        Trades DataFrame returned by run_rsi2_backtest.
+    sizing : str
+        'capital' (100% position size) or 'atr' (1% risk sizing).
+
+    Returns:
+    --------
+    list of np.ndarray
+        One array of daily fractional returns per trade (length i_sal - i_ent + 1).
+    """
+    closes = df["close"].values
+    return [_trade_path(closes, t, sizing) for _, t in trades.iterrows()]
+
+
 def daily_returns(
     df: pd.DataFrame,
     trades: pd.DataFrame,
@@ -274,16 +402,18 @@ def daily_returns(
     Generate the daily mark-to-market return Series for the strategy.
 
     Outside of positions, daily return is 0.0.
-    During positions:
+    During positions the equity of each trade is 1 + expo * (P / entry_price - 1):
       - Entry day (ei): return from entry_price to close[ei].
       - Intermediate days (k): return from close[k-1] to close[k].
       - Exit day (i): return from close[i-1] to exit_price.
-    Returns are scaled by exposure (1.0 for capital sizing, or min(1.0, expo) for atr sizing).
+    expo is 1.0 for capital sizing, or min(1.0, expo) for atr sizing. The compounded
+    return of each trade equals its pnl (capital) or pnl_atr (atr) exactly.
 
     Parameters:
     -----------
     df : pd.DataFrame
-        Underlying daily price DataFrame (index must match trade timestamps).
+        Underlying daily price DataFrame. It must be the SAME DataFrame that was
+        passed to run_rsi2_backtest() (trades carry positional indices into it).
     trades : pd.DataFrame
         Trades DataFrame returned by run_rsi2_backtest.
     sizing : str
@@ -301,26 +431,9 @@ def daily_returns(
     closes = df["close"].values
 
     for _, t in trades.iterrows():
-        expo = 1.0 if sizing == "capital" else min(1.0, float(t["expo"]))
         i_ent = int(t["i_ent"])
         i_sal = int(t["i_sal"])
-        ep = float(t["entry_price"])
-        xp = float(t["exit_price"])
-
-        if i_sal == i_ent:
-            # Intra-day trade (entered and exited on the same bar)
-            r[i_ent] = expo * (xp / ep - 1.0)
-            continue
-
-        # Day of entry: open + slip to close
-        r[i_ent] = expo * (closes[i_ent] / ep - 1.0)
-
-        # Holding days: close to close
-        for k in range(i_ent + 1, i_sal):
-            r[k] = expo * (closes[k] / closes[k - 1] - 1.0)
-
-        # Day of exit: close to exit open - slip
-        r[i_sal] = expo * (xp / closes[i_sal - 1] - 1.0)
+        r[i_ent:i_sal + 1] = _trade_path(closes, t, sizing)
 
     return pd.Series(r, index=df.index, name="daily_return")
 
@@ -343,10 +456,14 @@ def walk_forward_fixed(
     Parameters:
     -----------
     df : pd.DataFrame
-        Prepared price DataFrame.
+        Prepared price DataFrame, built with the same sma_len as the rules
+        (e.g. prepare(df_raw, sma_len=250) when testing SMA 250). Windows are slices
+        of this DataFrame, so the SMA is never recomputed per window.
     rules : dict, optional
-        Backtest parameters (rsi_thr, sma_len, exit_mode, slip_pct_per_side).
-        Defaults to strategy frozen rules.
+        Backtest parameters (rsi_thr, sma_len, exit_mode, slip_bps_per_side).
+        Keys not provided fall back to DEFAULT_RULES (rsi_thr=15, sma_len=200,
+        exit_mode='2green', slip=5 bps). To test a variant, pass its parameters
+        explicitly, e.g. rules={"rsi_thr": 20.0, "sma_len": 250}.
     is_years : int
         Number of in-sample years per rolling window (default 3).
 
@@ -355,8 +472,9 @@ def walk_forward_fixed(
     pd.DataFrame
         Table of walk-forward windows with columns:
         ['year', 'ret_is_anual', 'ret_oos', 'n_oos', 'pf_oos', 'mdd_oos']
+        mdd_oos is the max drawdown of the daily mark-to-market equity of the OOS year.
     """
-    params = rules or {"rsi_thr": 15.0, "exit_mode": "2green", "slip_pct_per_side": 0.05}
+    params = {**DEFAULT_RULES, **(rules or {})}
     years = sorted(set(df.index.year))
     rows = []
 
@@ -385,7 +503,8 @@ def walk_forward_fixed(
             g = p[p > 0].sum()
             l = -p[p < 0].sum()
             pf_oos = float(g / l) if l > 0 else np.inf
-            eq = np.cumprod(1.0 + p / 100.0)
+            # Drawdown on daily mark-to-market equity (not trade by trade)
+            eq = (1.0 + daily_returns(d_oos, to, sizing="capital")).cumprod().values
             pk = np.maximum.accumulate(eq)
             mdd_oos = float(((eq - pk) / pk).min())
         else:

@@ -33,11 +33,19 @@ def max_dd_paths(eq):
 
 # ------------------------------------------------------------------ 1. Block Monte Carlo
 def monte_carlo_block(trades_df, n_sim=10000, block=5, mode="additive",
-                      ruin_level=-0.5, dd_limit=-0.25, seed=42, chunk=1000):
+                      ruin_level=-0.5, dd_limit=-0.25, seed=42, chunk=1000,
+                      mtm_paths=None):
     """
     Circular block bootstrap of the trade sequence (keeps winning/losing streaks).
     mode='additive' (fixed size per trade, futures) or 'compound' (reinvesting).
-    ruin_level: cumulative return that counts as ruin (-0.5 = lose 50%).
+    ruin_level: MAX DRAWDOWN that counts as ruin (-0.5 = a 50% drawdown from peak).
+                prob_ruin = share of simulated paths whose max drawdown is <= ruin_level.
+    mtm_paths: optional list of 1-D arrays (one per row of trades_df, same order) with the
+               daily mark-to-market returns of each trade (see rsi2_engine.trade_mtm_paths).
+               When given, trades are still resampled in blocks, but the equity path of
+               each simulation is built by concatenating the daily paths of the sampled
+               trades, so drawdowns are measured on daily MTM instead of trade by trade.
+               When None, drawdowns are measured trade by trade (previous behavior).
     """
     r = trades_df["pnl"].to_numpy(float) / 100.0
     n = len(r)
@@ -48,26 +56,38 @@ def monte_carlo_block(trades_df, n_sim=10000, block=5, mode="additive",
     n_blocks = int(np.ceil(n / block))
     offs = np.arange(block)
 
-    rets, mdds, ruined = [], [], 0
+    paths = None
+    if mtm_paths is not None:
+        if len(mtm_paths) != n:
+            raise ValueError("mtm_paths must have one entry per trade (same order as trades_df)")
+        L = max(len(p) for p in mtm_paths)
+        paths = np.zeros((n, L))            # zero-padded: a 0 return leaves the equity unchanged
+        for i, p in enumerate(mtm_paths):
+            paths[i, :len(p)] = p
+        chunk = max(1, min(chunk, int(5e6 // (n * L))))   # keep memory bounded
+
+    rets, mdds = [], []
     for start in range(0, n_sim, chunk):
         m = min(chunk, n_sim - start)
         starts = rng.integers(0, n, size=(m, n_blocks))
         idx = ((starts[:, :, None] + offs) % n).reshape(m, -1)[:, :n]
-        eq = equity_paths(r[idx], mode)
+        r_sim = r[idx] if paths is None else paths[idx].reshape(m, -1)
+        eq = equity_paths(r_sim, mode)
         rets.append(eq[:, -1] - 1)
         mdds.append(max_dd_paths(eq))
-        ruined += int((eq.min(axis=1) <= 1 + ruin_level).sum())
     rets, mdds = np.concatenate(rets), np.concatenate(mdds)
 
-    real_eq = equity_paths(r[None, :], mode)
+    real_r = r[None, :] if paths is None else paths.reshape(1, -1)
+    real_eq = equity_paths(real_r, mode)
     real_ret, real_mdd = float(real_eq[0, -1] - 1), float(max_dd_paths(real_eq)[0])
     return dict(
         n_sim=n_sim, block=block, mode=mode, n_trades=n,
+        dd_basis="trade" if paths is None else "mtm",
         ret_p5=float(np.percentile(rets, 5)), ret_p50=float(np.median(rets)), ret_p95=float(np.percentile(rets, 95)),
         mdd_p5=float(np.percentile(mdds, 5)),   # the worst 5% of paths
         mdd_p50=float(np.median(mdds)), mdd_worst=float(mdds.min()),
         prob_positive=float((rets > 0).mean()), prob_dd_worse_than_limit=float((mdds < dd_limit).mean()),
-        prob_ruin=ruin / n_sim if (ruin := ruined) is not None else None,
+        prob_ruin=float((mdds <= ruin_level).mean()),
         real_ret=real_ret, real_mdd=real_mdd,
         pct_sims_worse_mdd_than_real=float((mdds < real_mdd).mean()),
         rets=rets, mdds=mdds,
