@@ -1,0 +1,22 @@
+id: RSI2.v2
+edge: rsi2
+status: in_development # in_development | validated | rejected | demo | approved
+
+instrument:
+  ticker: IWM
+  start: "1999-01-01"
+
+split:
+  oos_start: "2018-09-24" # same cut for every variant of the edge
+
+# Values used by notebooks 01 and 03 (frozen after notebook 02)
+params:
+  rsi_thr: 15.0
+  sma_len: 200
+  exit_mode: "2green" # 2green | ma5 | rsi70
+  slip_bps_per_side: 5.0
+
+# Grid swept by notebook 02 and reused by the validation gate in notebook 03
+grid:
+  rsi_values: [5, 10, 15, 20, 25, 30]
+  sma_values: [140, 170, 200, 230, 260, 290]

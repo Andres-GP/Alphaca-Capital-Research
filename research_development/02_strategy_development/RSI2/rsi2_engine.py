@@ -35,7 +35,7 @@ CHANGELOG (review fixes):
   - trade_mtm_paths: new helper, daily MTM return path of each trade (used by the
     Monte Carlo and the validation gate for drawdowns).
   - walk_forward_fixed: mdd_oos is now measured on daily MTM returns, not trade by trade.
-  - load_qqq: drops the last bar if it belongs to today's session and the session
+  - load_data: drops the last bar if it belongs to today's session and the session
     has not closed yet (partial bar).
   - run_rsi2_backtest: slippage is now passed in explicit basis points
     (slip_bps_per_side) instead of the ambiguous `> 0.005` percent/fraction heuristic.
@@ -67,26 +67,26 @@ DEFAULT_RULES: Dict[str, Any] = {
 # 1. DATA INGESTION & INDICATOR PREPARATION
 # ---------------------------------------------------------------------------
 
-def load_qqq(start: str = "1999-01-01", drop_partial_bar: bool = True) -> pd.DataFrame:
+def load_data(ticker: str = "QQQ", start: str = "1999-01-01", drop_partial_bar: bool = True) -> pd.DataFrame:
     """
-    Download daily historical bars for QQQ from Yahoo Finance.
+    Download daily historical bars for `ticker` from Yahoo Finance.
 
     Parameters:
     -----------
+    ticker : str
+        Yahoo Finance symbol (e.g. 'QQQ', 'IWM').
     start : str
-        Start date in YYYY-MM-DD format (default '1999-01-01').
+        Start date in YYYY-MM-DD format.
     drop_partial_bar : bool
         If True (default), the last bar is dropped when it belongs to today's
-        New York session and the session has not closed yet (before 16:00 NY),
-        because that bar is partial (its close is just the last trade so far).
+        New York session and the session has not closed yet (before 16:00 NY).
 
     Returns:
     --------
     pd.DataFrame
-        Clean DataFrame indexed by 'time' (DatetimeIndex) with lowercase
-        columns: ['open', 'high', 'low', 'close', 'volume'].
+        Indexed by 'time' with lowercase columns: ['open', 'high', 'low', 'close', 'volume'].
     """
-    df_raw = yf.download("QQQ", start=start, auto_adjust=True, progress=False)
+    df_raw = yf.download(ticker, start=start, auto_adjust=True, progress=False)
     if isinstance(df_raw.columns, pd.MultiIndex):
         df_raw.columns = df_raw.columns.get_level_values(0)
 
@@ -102,6 +102,10 @@ def load_qqq(start: str = "1999-01-01", drop_partial_bar: bool = True) -> pd.Dat
             df = df.iloc[:-1].copy()
     return df
 
+
+def load_qqq(start: str = "1999-01-01", drop_partial_bar: bool = True) -> pd.DataFrame:
+    """Backward-compatible wrapper: QQQ daily bars."""
+    return load_data("QQQ", start=start, drop_partial_bar=drop_partial_bar)
 
 def rsi_wilder(series: pd.Series, period: int = 2) -> pd.Series:
     """

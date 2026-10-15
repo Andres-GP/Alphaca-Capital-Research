@@ -1,0 +1,51 @@
+{
+  "variant": "RSI2.v1",
+  "ticker": "QQQ",
+  "params_tested": {
+    "rsi_thr": 20.0,
+    "sma_len": 230,
+    "exit_mode": "2green"
+  },
+  "is_end_date": "2018-09-21",
+  "n_is_bars": 4629,
+  "plateau_checks": {
+    "Configured (20, 230)": {
+      "center_pf": 1.9285662848352365,
+      "plateau": true,
+      "worst_neighbor_drop_pct": 24.429044000298894,
+      "anticliff": true,
+      "passed": true,
+      "pct_cells_pf_ok": 0.8888888888888888,
+      "best_cell": [
+        5,
+        290
+      ],
+      "best_pf": 3.9189482253864263,
+      "edge_of_grid": false
+    },
+    "Baseline (15, 200)": {
+      "center_pf": 1.8936109860442838,
+      "plateau": true,
+      "worst_neighbor_drop_pct": 17.90980235773889,
+      "anticliff": true,
+      "passed": true,
+      "pct_cells_pf_ok": 0.8888888888888888,
+      "best_cell": [
+        5,
+        290
+      ],
+      "best_pf": 3.9189482253864263,
+      "edge_of_grid": false
+    }
+  },
+  "grid_4d": {
+    "n_combinations": 216,
+    "pct_pf_ge_1_3": 83.79629629629629,
+    "pct_pf_ge_1_0": 99.53703703703704,
+    "min_pf": 0.9903820815789046,
+    "median_pf": 1.6579517356099345,
+    "max_pf": 3.9812966392142544,
+    "chosen_pf": 1.9285662848352365,
+    "chosen_percentile": 67.5925925925926
+  }
+}
