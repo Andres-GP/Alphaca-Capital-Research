@@ -1,0 +1,26 @@
+{
+  "variant": "RSI2.nasdaq.base",
+  "ticker": "^NDX",
+  "params": {
+    "rsi_thr": 20.0,
+    "sma_len": 230,
+    "exit_mode": "2green",
+    "slip_bps_per_side": 5.0
+  },
+  "oos_start": "2018-09-24",
+  "all": {
+    "n": 354,
+    "pf": 1.9370667163499096,
+    "win_rate": 70.05649717514125
+  },
+  "is": {
+    "n": 231,
+    "pf": 1.751305286939375
+  },
+  "oos": {
+    "n": 123,
+    "pf": 2.312504532128748
+  },
+  "max_dd_atr_pct": -8.475075216213707,
+  "hypothesis_confirmed": true
+}

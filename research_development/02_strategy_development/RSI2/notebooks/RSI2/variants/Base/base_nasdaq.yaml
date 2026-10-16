@@ -1,9 +1,9 @@
-id: RSI2.v2
+id: RSI2.nasdaq.base
 edge: rsi2
 status: in_development # in_development | validated | rejected | demo | approved
 
 instrument:
-  ticker: IWM
+  ticker: ^NDX
   start: "1999-01-01"
 
 split:
@@ -11,12 +11,12 @@ split:
 
 # Values used by notebooks 01 and 03 (frozen after notebook 02)
 params:
-  rsi_thr: 15.0
-  sma_len: 200
+  rsi_thr: 20.0
+  sma_len: 230
   exit_mode: "2green" # 2green | ma5 | rsi70
   slip_bps_per_side: 5.0
 
 # Grid swept by notebook 02 and reused by the validation gate in notebook 03
 grid:
-  rsi_values: [5, 10, 15, 20, 25, 30]
+  rsi_values: [5, 10, 15, 20, 25, 29, 30]
   sma_values: [140, 170, 200, 230, 260, 290]

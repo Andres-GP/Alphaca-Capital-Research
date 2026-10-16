@@ -1,0 +1,26 @@
+{
+  "variant": "RSI2.us500.v2",
+  "ticker": "us500",
+  "params": {
+    "rsi_thr": 15.0,
+    "sma_len": 200,
+    "exit_mode": "2green",
+    "slip_bps_per_side": 5.0
+  },
+  "oos_start": "2018-09-24",
+  "all": {
+    "n": 156,
+    "pf": 1.48564233668493,
+    "win_rate": 69.23076923076923
+  },
+  "is": {
+    "n": 64,
+    "pf": 1.3996761480224111
+  },
+  "oos": {
+    "n": 92,
+    "pf": 1.527881819833942
+  },
+  "max_dd_atr_pct": -5.947734558495879,
+  "hypothesis_confirmed": false
+}

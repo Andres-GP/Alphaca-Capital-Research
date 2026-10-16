@@ -1,0 +1,26 @@
+{
+  "variant": "RSI2.qqq.v1",
+  "ticker": "QQQ",
+  "params": {
+    "rsi_thr": 20.0,
+    "sma_len": 230,
+    "exit_mode": "2green",
+    "slip_bps_per_side": 5.0
+  },
+  "oos_start": "2018-09-24",
+  "all": {
+    "n": 360,
+    "pf": 2.0532053231035188,
+    "win_rate": 70.27777777777777
+  },
+  "is": {
+    "n": 237,
+    "pf": 1.8748441032219452
+  },
+  "oos": {
+    "n": 123,
+    "pf": 2.415655143562688
+  },
+  "max_dd_atr_pct": -6.687421946286149,
+  "hypothesis_confirmed": true
+}

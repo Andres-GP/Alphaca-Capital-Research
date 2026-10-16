@@ -1,0 +1,85 @@
+{
+  "variant": "RSI2.us500.v2",
+  "ticker": "us500",
+  "params": {
+    "rsi_thr": 15.0,
+    "sma_len": 200,
+    "exit_mode": "2green",
+    "slip_bps_per_side": 5.0
+  },
+  "status_atr": "FAILED",
+  "status_capital": "FAILED",
+  "metrics": {
+    "sharpe": 0.3178226376939664,
+    "max_drawdown": -0.0594773455849588,
+    "num_trades": 156
+  },
+  "phases_atr": {
+    "1_oos": {
+      "n": 92,
+      "pf": 1.4580361544401625,
+      "pf_without_best_trade": 1.3869133113591876,
+      "max_dd": -0.05271319405152473,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "2_monte_carlo": {
+      "ret_p5": 0.0009258745221278785,
+      "mdd_p5": -0.12936613031163552,
+      "prob_ruin": 0.0,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "3_monkey": {
+      "pf_real": 1.4060333907876597,
+      "pct_pf": 0.7965,
+      "passed": false
+    },
+    "4_plateau": {
+      "center_pf": 1.3996761480224111,
+      "plateau": false,
+      "worst_drop_pct": 32.669665691851954,
+      "passed": false
+    },
+    "5_edge_decay": {
+      "recent_pf": 1.4182388125390113,
+      "historical_pf": 1.2642655557742246,
+      "warning": false,
+      "informational": true
+    }
+  },
+  "phases_capital": {
+    "1_oos": {
+      "n": 92,
+      "pf": 1.527881819833942,
+      "pf_without_best_trade": 1.4738458197616908,
+      "max_dd": -0.11283448575027738,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "2_monte_carlo": {
+      "ret_p5": 0.04958717993701447,
+      "mdd_p5": -0.20920018960890702,
+      "prob_ruin": 0.0,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "3_monkey": {
+      "pf_real": 1.48564233668493,
+      "pct_pf": 0.857,
+      "passed": false
+    },
+    "4_plateau": {
+      "center_pf": 1.3996761480224111,
+      "plateau": false,
+      "worst_drop_pct": 32.669665691851954,
+      "passed": false
+    },
+    "5_edge_decay": {
+      "recent_pf": 1.3863778013272063,
+      "historical_pf": 1.3762855170831272,
+      "warning": false,
+      "informational": true
+    }
+  }
+}

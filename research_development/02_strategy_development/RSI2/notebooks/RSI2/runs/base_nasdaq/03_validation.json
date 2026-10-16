@@ -1,0 +1,85 @@
+{
+  "variant": "RSI2.nasdaq.base",
+  "ticker": "^NDX",
+  "params": {
+    "rsi_thr": 20.0,
+    "sma_len": 230,
+    "exit_mode": "2green",
+    "slip_bps_per_side": 5.0
+  },
+  "status_atr": "PASSED",
+  "status_capital": "FAILED",
+  "metrics": {
+    "sharpe": 0.6404235815490065,
+    "max_drawdown": -0.08475075216213707,
+    "num_trades": 354
+  },
+  "phases_atr": {
+    "1_oos": {
+      "n": 123,
+      "pf": 2.1062976811679324,
+      "pf_without_best_trade": 2.012378800118672,
+      "max_dd": -0.05575944277765765,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "2_monte_carlo": {
+      "ret_p5": 0.4781229828282785,
+      "mdd_p5": -0.12345971745734713,
+      "prob_ruin": 0.0,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "3_monkey": {
+      "pf_real": 1.8827672373169653,
+      "pct_pf": 0.9975,
+      "passed": true
+    },
+    "4_plateau": {
+      "center_pf": 1.751305286939375,
+      "plateau": true,
+      "worst_drop_pct": 21.12606344700614,
+      "passed": true
+    },
+    "5_edge_decay": {
+      "recent_pf": 2.781861454132552,
+      "historical_pf": 1.8024703429140425,
+      "warning": false,
+      "informational": true
+    }
+  },
+  "phases_capital": {
+    "1_oos": {
+      "n": 123,
+      "pf": 2.312504532128748,
+      "pf_without_best_trade": 2.216940991829783,
+      "max_dd": -0.14123473896226924,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "2_monte_carlo": {
+      "ret_p5": 2.273175026734552,
+      "mdd_p5": -0.32628154985463176,
+      "prob_ruin": 0.0001,
+      "dd_basis": "mtm",
+      "passed": false
+    },
+    "3_monkey": {
+      "pf_real": 1.9370667163499096,
+      "pct_pf": 0.998,
+      "passed": true
+    },
+    "4_plateau": {
+      "center_pf": 1.751305286939375,
+      "plateau": true,
+      "worst_drop_pct": 21.12606344700614,
+      "passed": true
+    },
+    "5_edge_decay": {
+      "recent_pf": 2.6240222055223406,
+      "historical_pf": 1.8671517344037856,
+      "warning": false,
+      "informational": true
+    }
+  }
+}

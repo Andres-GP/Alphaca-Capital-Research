@@ -1,0 +1,85 @@
+{
+  "variant": "RSI2.us500.v2",
+  "ticker": "nas100",
+  "params": {
+    "rsi_thr": 20.0,
+    "sma_len": 230,
+    "exit_mode": "2green",
+    "slip_bps_per_side": 5.0
+  },
+  "status_atr": "FAILED",
+  "status_capital": "FAILED",
+  "metrics": {
+    "sharpe": 0.5024569693851347,
+    "max_drawdown": -0.08299601086051997,
+    "num_trades": 208
+  },
+  "phases_atr": {
+    "1_oos": {
+      "n": 123,
+      "pf": 1.5555119966784758,
+      "pf_without_best_trade": 1.5111568391454246,
+      "max_dd": -0.0511944013096266,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "2_monte_carlo": {
+      "ret_p5": 0.08481458798276616,
+      "mdd_p5": -0.13157532130190824,
+      "prob_ruin": 0.0,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "3_monkey": {
+      "pf_real": 1.5759400606620573,
+      "pct_pf": 0.788,
+      "passed": false
+    },
+    "4_plateau": {
+      "center_pf": 1.3922629065380472,
+      "plateau": false,
+      "worst_drop_pct": 15.375660827040038,
+      "passed": false
+    },
+    "5_edge_decay": {
+      "recent_pf": 1.9694757647537122,
+      "historical_pf": 1.5031854125934163,
+      "warning": false,
+      "informational": true
+    }
+  },
+  "phases_capital": {
+    "1_oos": {
+      "n": 123,
+      "pf": 1.6453316288158528,
+      "pf_without_best_trade": 1.5687444033975275,
+      "max_dd": -0.12230259323734176,
+      "dd_basis": "mtm",
+      "passed": true
+    },
+    "2_monte_carlo": {
+      "ret_p5": 0.17195223408799443,
+      "mdd_p5": -0.31879916147968146,
+      "prob_ruin": 0.0002,
+      "dd_basis": "mtm",
+      "passed": false
+    },
+    "3_monkey": {
+      "pf_real": 1.5638016583108914,
+      "pct_pf": 0.779,
+      "passed": false
+    },
+    "4_plateau": {
+      "center_pf": 1.3922629065380472,
+      "plateau": false,
+      "worst_drop_pct": 15.375660827040038,
+      "passed": false
+    },
+    "5_edge_decay": {
+      "recent_pf": 1.8112670005282514,
+      "historical_pf": 1.5091934258183746,
+      "warning": false,
+      "informational": true
+    }
+  }
+}

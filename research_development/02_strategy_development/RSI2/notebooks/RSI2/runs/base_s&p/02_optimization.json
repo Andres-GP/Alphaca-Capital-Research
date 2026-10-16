@@ -1,0 +1,37 @@
+{
+  "variant": "RSI2.s&p.base",
+  "ticker": "^SPX",
+  "params_tested": {
+    "rsi_thr": 15.0,
+    "sma_len": 200,
+    "exit_mode": "2green"
+  },
+  "is_end_date": "2018-09-21",
+  "n_is_bars": 4674,
+  "plateau_checks": {
+    "Configured (15, 200)": {
+      "center_pf": 1.8479061980945772,
+      "plateau": true,
+      "worst_neighbor_drop_pct": 8.1045035154105,
+      "anticliff": true,
+      "passed": true,
+      "pct_cells_pf_ok": 1.0,
+      "best_cell": [
+        5,
+        140
+      ],
+      "best_pf": 3.3241079845250088,
+      "edge_of_grid": false
+    }
+  },
+  "grid_4d": {
+    "n_combinations": 216,
+    "pct_pf_ge_1_3": 90.74074074074075,
+    "pct_pf_ge_1_0": 100.0,
+    "min_pf": 1.064584570073621,
+    "median_pf": 1.6205199807479338,
+    "max_pf": 5.186691252163124,
+    "chosen_pf": 1.8479061980945772,
+    "chosen_percentile": 68.98148148148148
+  }
+}
