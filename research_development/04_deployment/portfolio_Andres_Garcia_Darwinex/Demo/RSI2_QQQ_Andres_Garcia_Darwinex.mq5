@@ -25,7 +25,7 @@ input int      InpRSIThreshold    = 20;          // RSI entry threshold
 input int      InpSMATrend        = 230;         // SMA trend filter period
 
 input group "====== RISK ENGINE ======"
-input double   InpRiskPercent     = 1.0;         // Risk % per trade
+input double   InpRiskPercent     = 0.33;         // Risk % per trade
 input double   InpMaxDailyDD      = 3.0;         // Daily kill switch %
 input double   InpMaxTotalDD      = 8.0;         // Total kill switch % (D-Score)
 input bool     InpUseATRSizing    = true;        // Position sizing by ATR?

@@ -72,6 +72,16 @@ def _build_session_daily(path: str, tz: str, open_t: str, close_t: str,
 
     ses = raw.between_time(open_t, close_t, inclusive="left")
     ses = ses[ses.index.dayofweek < 5]
+    dkey = ses.index.tz_localize(None).normalize()
+    first_t = ses.index.to_series().groupby(dkey).first().dt.strftime("%H:%M")
+    if (first_t != open_t).mean() > 0.5:
+        raise ValueError(f"First session bar usually starts at {first_t.mode().iat[0]}, not {open_t}: "
+                        f"the CSV timeframe does not align with the session open (use M30 or finer).")
+    n_bars = ses.groupby(dkey).size()
+    short = n_bars[n_bars < 0.8 * n_bars.median()]
+    if len(short):
+        print(f"WARNING: {len(short)} sessions with <80% of the median bar count (truncated?): "
+            f"{[d.strftime('%Y-%m-%d') for d in short.index[:10]]}...")
     g = ses.groupby(ses.index.tz_localize(None).normalize())
     out = pd.DataFrame({
         "open": g["open"].first(),
