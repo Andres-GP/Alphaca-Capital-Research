@@ -1,0 +1,20 @@
+id: RSI2.qqq.v1
+edge: rsi2
+status: demo # in_development | validated | rejected | demo | approved
+
+instrument:
+  ticker: QQQ
+  start: "1999-01-01"
+
+split:
+  oos_start: "2018-09-24"
+
+params:
+  rsi_thr: 20.0
+  sma_len: 230
+  exit_mode: "2green" # 2green | ma5 | rsi70
+  slip_bps_per_side: 5.0
+
+grid:
+  rsi_values: [5, 10, 15, 20, 25, 30]
+  sma_values: [140, 170, 200, 230, 260, 290]
