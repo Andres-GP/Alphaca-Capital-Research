@@ -1,0 +1,46 @@
+id: BBMR.us500.m30
+edge: bbmr
+status: in_development
+
+instrument:
+  ticker: us500
+  start: "2013-01-01" # súbelo si el CSV nuevo no tiene ~252 barras/año desde ahí
+
+split:
+  oos_start: "2018-09-24"
+
+# Parámetros congelados para el edge BBMR (Bollinger + ADX)
+params:
+  bb_len: 20
+  bb_std: 2.0
+  adx_thr: 25.0
+  sma_len: 200
+  rejection_ratio: 0.5
+  max_bars: 15
+  atr_stop_mult: 2.0
+  slip_bps_per_side: 5.0
+
+# La rejilla incluye los ejes que variant_config.py usará para validar los parámetros
+# (aunque como indicas, no corras el notebook 02 en este vehículo, la rejilla debe existir para que el YAML pase la validación).
+grid:
+  # bb_std: 3 → 7 valores (±2 cada lado, step 0.25)
+  bb_std_values: [1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75]
+
+  # adx: 3 → 7 valores (±2 cada lado, step 5)
+  adx_values: [10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0]
+
+  # sma: 6 → 12 valores (±3 cada lado, step 30)
+  sma_values: [50, 80, 110, 140, 170, 200, 230, 260, 290, 320, 350, 380]
+
+  # max_bars, rejection_ratio, etc., al no estar aquí, se tratan como parámetros fijos.
+
+engine_defaults:
+  data_source: csv_intraday
+  csv_path: "../../../data/dukascopy/us500_m5_utc.csv" # el nombre real de tu archivo
+  session_tz: "America/New_York"
+  session_open: "09:30"
+  session_close: "16:00"
+  financing_bps_per_night: 2.0 # pon el de tu broker
+  risk_per_trade_pct: 1.0
+  atr_stop_mult: 2.0
+  max_exposure: 1.0

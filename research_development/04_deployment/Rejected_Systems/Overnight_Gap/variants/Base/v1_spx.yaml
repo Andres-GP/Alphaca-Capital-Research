@@ -1,0 +1,56 @@
+id: v1_us500_gap
+edge: overnight_gap
+status: in_development
+
+instrument:
+  ticker: us500
+  start: "2018-01-01"
+
+split:
+  oos_start: "2022-01-03"
+
+# Nombres = los que lee el motor (overnight_gap_engine.run_gap_backtest) y el notebook 01.
+params:
+  gap_min_trade: 0.5 # antes gap_mr_min_pct   (|gap| mínimo para operar)
+  gap_threshold: 1.0 # antes gap_mr_max_pct   (frontera MR < x <= TF)
+  gap_max_tf: 4.0 # antes gap_tf_max_pct
+  entry_tf_min: 30 # antes confirm_tf_minutes. Tus barras son M30 -> mínimo posible = 30
+  entry_window_start: "09:40"
+  entry_window_end: "11:00" # con barras M30 la 1ª entrada posible es 10:30 (ver nota abajo)
+  mr_fill_target: 0.75 # antes mr_target_fill_pct: 75.0 (ahora fracción 0-1)
+  mr_stop_atr_mult: 1.0
+  tf_target_mult: 1.5 # antes tf_target_gap_mult
+  tf_stop_atr_mult: 1.25
+  time_exit: target_or_eod # stop + objetivo + cierre de sesión
+  skip_fridays: true # antes avoid_fridays
+  slip_bps_per_side: 3.0
+  # NO soportados por el motor (por eso se quitaron de params/grid):
+  #   tf_hold_days  (el motor solo hace trades intradía)
+  #   news_filter   (no hay calendario de noticias)
+  #   atr_length    (el ATR(5) está fijo en session_daily)
+
+grid:
+  # Los dos ejes que usa el notebook 02 (rejilla 2D) — con nombre de parámetro "pelado"
+  gap_min_trade: [0.3, 0.4, 0.5, 0.6, 0.7]
+  gap_threshold: [0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3] # antes gap_mr_max_pct_values
+
+  # MR
+  mr_fill_target_values: [0.30, 0.40, 0.50, 0.60, 0.75, 0.85, 0.95]
+  mr_stop_atr_mult_values: [0.5, 0.7, 0.9, 1.0, 1.1, 1.3, 1.5]
+
+  # TF
+  tf_target_mult_values: [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0]
+  tf_stop_atr_mult_values: [0.75, 1.0, 1.25, 1.5, 1.75]
+
+  # Eliminados: gap_tf_min_pct_values (el motor tiene UNA sola frontera MR/TF = gap_threshold),
+  # confirm_tf_minutes_values (5/10/15/20 imposibles con barras M30), tf_hold_days_values.
+
+engine_defaults:
+  data_source: csv_intraday
+  csv_path: "../../../data/dukascopy/us500_m30_utc.csv"
+  session_tz: "America/New_York"
+  session_open: "09:30"
+  session_close: "16:00"
+  financing_bps_per_night: 2.0
+  risk_per_trade_pct: 1.0
+  max_exposure: 1.0

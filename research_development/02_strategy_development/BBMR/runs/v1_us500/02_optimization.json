@@ -1,0 +1,40 @@
+{
+  "variant": "BBMR.us500.m30",
+  "ticker": "us500",
+  "params_tested": {
+    "adx_thr": 25.0,
+    "bb_std": 2.0,
+    "bb_len": 20,
+    "sma_len": 200,
+    "rejection_ratio": 0.5,
+    "max_bars": 15,
+    "atr_stop_mult": 2.0
+  },
+  "is_end_date": "2018-09-21",
+  "n_is_bars": 1238,
+  "plateau_checks": {
+    "Configured (ADX=25.0, BB_STD=2.0)": {
+      "center_pf": 1.6845837482272104,
+      "plateau": false,
+      "worst_neighbor_drop_pct": 16.48856529428847,
+      "anticliff": true,
+      "passed": false,
+      "pct_cells_pf_ok": 0.7755102040816326,
+      "best_cell": [
+        10.0,
+        1.25
+      ],
+      "best_pf": Infinity,
+      "edge_of_grid": false
+    }
+  },
+  "grid_4d": {
+    "n_combinations": 392,
+    "pct_pf_ge_1_3": 72.1938775510204,
+    "pct_pf_ge_1_0": 93.62244897959184,
+    "min_pf": 0.0,
+    "median_pf": 1.5151231692499454,
+    "max_pf": Infinity,
+    "chosen_pf": 1.6845837482272104
+  }
+}

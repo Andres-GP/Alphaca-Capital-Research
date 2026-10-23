@@ -1,0 +1,36 @@
+{
+  "variant": "v1_us500_gap",
+  "ticker": "us500",
+  "params": {
+    "gap_min_trade": 0.5,
+    "gap_threshold": 1.0,
+    "gap_max_tf": 4.0,
+    "entry_tf_min": 30,
+    "entry_window_start": "09:40",
+    "entry_window_end": "11:00",
+    "mr_fill_target": 0.75,
+    "mr_stop_atr_mult": 1.0,
+    "tf_target_mult": 1.5,
+    "tf_stop_atr_mult": 1.25,
+    "time_exit": "target_or_eod",
+    "skip_fridays": false,
+    "slip_bps_per_side": 3.0
+  },
+  "oos_start": "2022-01-03",
+  "all": {
+    "n": 206,
+    "pf": 0.7198750254014332,
+    "win_rate": 0.5631067961165048
+  },
+  "is": {
+    "n": 102,
+    "pf": 0.49806173178257324
+  },
+  "oos": {
+    "n": 104,
+    "pf": 1.0956906932358557
+  },
+  "max_dd_atr_pct": -10.395947320374722,
+  "risk_limit_ok": true,
+  "hypothesis_confirmed": false
+}
