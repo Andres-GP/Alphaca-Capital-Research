@@ -1,5 +1,5 @@
 {
-  "variant": "RSI2.v1",
+  "variant": "RSI2.qqq.v1",
   "ticker": "QQQ",
   "params": {
     "rsi_thr": 20.0,
@@ -10,40 +10,40 @@
   "status_atr": "PASSED",
   "status_capital": "FAILED",
   "metrics": {
-    "sharpe": 0.7317772959839808,
-    "max_drawdown": -0.06687427327920291,
+    "sharpe": 0.7287242776657334,
+    "max_drawdown": -0.06687442193108975,
     "num_trades": 360
   },
   "phases_atr": {
     "1_oos": {
       "n": 123,
-      "pf": 2.324471441913419,
-      "pf_without_best_trade": 2.220078942422597,
-      "max_dd": -0.04675638292190787,
+      "pf": 2.3091346694094863,
+      "pf_without_best_trade": 2.205430529381008,
+      "max_dd": -0.04675624651770771,
       "dd_basis": "mtm",
       "passed": true
     },
     "2_monte_carlo": {
-      "ret_p5": 0.59179464167185,
-      "mdd_p5": -0.10285504218248134,
+      "ret_p5": 0.587851005317752,
+      "mdd_p5": -0.10301715822837786,
       "prob_ruin": 0.0,
       "dd_basis": "mtm",
       "passed": true
     },
     "3_monkey": {
-      "pf_real": 2.047907544534243,
-      "pct_pf": 1.0,
+      "pf_real": 2.04339186263599,
+      "pct_pf": 0.9995,
       "passed": true
     },
     "4_plateau": {
-      "center_pf": 1.874846094327679,
+      "center_pf": 1.8748368277558871,
       "plateau": true,
-      "worst_drop_pct": 19.614618061136124,
+      "worst_drop_pct": 19.614416425809424,
       "passed": true
     },
     "5_edge_decay": {
-      "recent_pf": 2.9093795036781223,
-      "historical_pf": 1.9317740837388904,
+      "recent_pf": 2.9093954736567684,
+      "historical_pf": 1.931764741974815,
       "warning": false,
       "informational": true
     }
@@ -51,33 +51,33 @@
   "phases_capital": {
     "1_oos": {
       "n": 123,
-      "pf": 2.507817141188334,
-      "pf_without_best_trade": 2.4027457202548734,
-      "max_dd": -0.12137985758994349,
+      "pf": 2.4931873702747973,
+      "pf_without_best_trade": 2.388728368298082,
+      "max_dd": -0.1213797135400401,
       "dd_basis": "mtm",
       "passed": true
     },
     "2_monte_carlo": {
-      "ret_p5": 2.923191027153434,
-      "mdd_p5": -0.29984436259310854,
+      "ret_p5": 2.901393203231829,
+      "mdd_p5": -0.3010731793786701,
       "prob_ruin": 0.0,
       "dd_basis": "mtm",
       "passed": false
     },
     "3_monkey": {
-      "pf_real": 2.0780416295635895,
+      "pf_real": 2.0741759661402392,
       "pct_pf": 1.0,
       "passed": true
     },
     "4_plateau": {
-      "center_pf": 1.874846094327679,
+      "center_pf": 1.8748368277558871,
       "plateau": true,
-      "worst_drop_pct": 19.614618061136124,
+      "worst_drop_pct": 19.614416425809424,
       "passed": true
     },
     "5_edge_decay": {
-      "recent_pf": 2.7774687212358784,
-      "historical_pf": 1.9700763557846865,
+      "recent_pf": 2.777482460532366,
+      "historical_pf": 1.9700684088358267,
       "warning": false,
       "informational": true
     }

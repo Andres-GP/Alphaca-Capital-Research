@@ -1,0 +1,72 @@
+{
+  "variant": "MONDAY.btcusdt.base",
+  "ticker": "btcusdt",
+  "params": {
+    "vol_mode": "pctl",
+    "atr_pctl": 30.0,
+    "atr_len": 48,
+    "skip_first_monday": true,
+    "entry_hour": 0,
+    "hold_bars": 24,
+    "cost_bps_per_side": 14.0
+  },
+  "oos_start": "2024-01-08",
+  "all": {
+    "n": 126,
+    "pf": 1.738171832926511,
+    "win_rate": 53.96825396825397,
+    "t_stat": 2.1933754461602692
+  },
+  "is": {
+    "n": 88,
+    "pf": 1.4749426276853042
+  },
+  "oos": {
+    "n": 38,
+    "pf": 3.9480838222903984
+  },
+  "max_dd_fraction_sizing_pct": -10.703105244627743,
+  "naked_by_era": [
+    {
+      "Era": "Retail (2017-19)",
+      "Mondays": 123,
+      "Gross mean %": 0.321,
+      "Gross t": 0.7855,
+      "Net mean %": 0.0405,
+      "Net t": 0.0994,
+      "Hit rate %": 41.4634
+    },
+    {
+      "Era": "Institutional (2020-23)",
+      "Mondays": 206,
+      "Gross mean %": 0.3556,
+      "Gross t": 1.1971,
+      "Net mean %": 0.075,
+      "Net t": 0.2531,
+      "Hit rate %": 46.6019
+    },
+    {
+      "Era": "ETF (2024+)",
+      "Mondays": 147,
+      "Gross mean %": 0.509,
+      "Gross t": 2.1604,
+      "Net mean %": 0.2279,
+      "Net t": 0.9702,
+      "Hit rate %": 51.0204
+    },
+    {
+      "Era": "All",
+      "Mondays": 476,
+      "Gross mean %": 0.394,
+      "Gross t": 2.1741,
+      "Net mean %": 0.1133,
+      "Net t": 0.6269,
+      "Hit rate %": 46.6387
+    }
+  ],
+  "atr_rank_spearman": {
+    "rho": 0.111702277153398,
+    "p": 0.017896857447064728
+  },
+  "hypothesis_confirmed": true
+}

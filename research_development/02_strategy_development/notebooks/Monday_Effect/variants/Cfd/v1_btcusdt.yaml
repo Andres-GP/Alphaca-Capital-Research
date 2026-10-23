@@ -1,0 +1,33 @@
+id: MONDAY.btcusd.cfd.v1
+edge: monday_effect
+status: in_development # in_development | validated | rejected | demo | approved
+
+instrument:
+  ticker: btcusd # label only: the data comes from the CSV below (broker CFD, NOT Binance)
+  start: "2017-01-01" # FILL_ME: use the first date the broker history actually has
+
+split:
+  oos_start: "2024-01-08" # same cut as the base variant
+
+# Same rules as the base: research is done once on base_btcusdt, this variant only changes the vehicle.
+params:
+  vol_mode: pctl
+  atr_pctl: 30.0
+  atr_len: 48
+  skip_first_monday: true
+  entry_hour: 0 # UTC, Monday 00:00 (signal = Sunday 23:00 close)
+  hold_bars: 24
+  cost_bps_per_side: FILL_ME # half spread + slippage (+ commission) of the broker, in bps of price. A string here makes the run fail loudly.
+
+grid:
+  atr_pctl_values: [0, 10, 20, 30, 40, 50, 60]
+  atr_len_values: [12, 24, 48, 72, 96, 168]
+
+engine_defaults:
+  data_source: csv_hourly
+  csv_path: "../../../data/binance/BTCUSD_1h_utc.csv" # FILL_ME: hourly OHLC exported from the broker, converted to UTC
+  pctl_window: 8760
+  pctl_min_bars: 4380
+  financing_bps_per_night: FILL_ME # broker swap for longs, bps of notional per night (0 if none)
+  rollover_hour_utc: FILL_ME # hour (UTC) when the broker applies the swap
+  size_fraction: 0.40

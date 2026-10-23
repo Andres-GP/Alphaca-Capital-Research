@@ -2,25 +2,25 @@
   "variant": "RSI2.s&p.base",
   "ticker": "^SPX",
   "params": {
-    "rsi_thr": 15.0,
-    "sma_len": 200,
+    "rsi_thr": 10.0,
+    "sma_len": 170,
     "exit_mode": "2green",
     "slip_bps_per_side": 5.0
   },
   "oos_start": "2018-09-24",
   "all": {
-    "n": 272,
-    "pf": 1.7944792201331317,
-    "win_rate": 70.22058823529412
+    "n": 185,
+    "pf": 1.9016070300238677,
+    "win_rate": 73.51351351351352
   },
   "is": {
-    "n": 183,
-    "pf": 1.8117374213103303
+    "n": 122,
+    "pf": 2.1554419364408153
   },
   "oos": {
-    "n": 89,
-    "pf": 1.7612176336692955
+    "n": 63,
+    "pf": 1.57520433267815
   },
-  "max_dd_atr_pct": -7.648081566713878,
+  "max_dd_atr_pct": -8.856375118730456,
   "hypothesis_confirmed": true
 }

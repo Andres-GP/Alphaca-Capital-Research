@@ -11,8 +11,8 @@ split:
 
 # Congelados: copia exacta de RSI2.s&p.base. No se optimizan aquí.
 params:
-  rsi_thr: 15.0
-  sma_len: 200
+  rsi_thr: 10.0
+  sma_len: 170
   exit_mode: "2green"
   slip_bps_per_side: 5.0
 

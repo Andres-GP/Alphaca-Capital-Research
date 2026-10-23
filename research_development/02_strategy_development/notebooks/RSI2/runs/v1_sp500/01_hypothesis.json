@@ -1,0 +1,26 @@
+{
+  "variant": "RSI2.sp500.v1",
+  "ticker": "SP500",
+  "params": {
+    "rsi_thr": 5.0,
+    "sma_len": 80,
+    "exit_mode": "2green",
+    "slip_bps_per_side": 5.0
+  },
+  "oos_start": "2018-09-24",
+  "all": {
+    "n": 64,
+    "pf": 2.0595054915724265,
+    "win_rate": 78.125
+  },
+  "is": {
+    "n": 32,
+    "pf": 2.819747258362744
+  },
+  "oos": {
+    "n": 32,
+    "pf": 1.7464979509438456
+  },
+  "max_dd_atr_pct": -7.678421367694431,
+  "hypothesis_confirmed": true
+}

@@ -10,7 +10,6 @@ except ImportError:
     yf = None
 from typing import Optional, Literal, Dict, Any, List
 
-
 # Frozen rules used when no explicit rules are given to walk_forward_fixed().
 DEFAULT_RULES: Dict[str, Any] = {
     "rsi_thr": 15.0,
@@ -26,8 +25,8 @@ ENGINE_DEFAULTS: Dict[str, Any] = {
     "risk_per_trade_pct": 1.0,        # ATR sizing: % of equity risked per trade
     "atr_stop_mult": 2.0,             # ATR sizing: virtual stop distance, in ATRs
     "max_exposure": 1.0,              # ATR sizing: exposure cap (1.0 = 100% of equity)
-    "data_source": "yahoo",           # "yahoo" | "csv_intraday"
-    "csv_path": None,                 # intraday export (M1/M5/M15/M30), timestamps in UTC
+    "data_source": "yahoo",           # "yahoo" | "csv_intraday" | "csv_daily"
+    "csv_path": None,                 # intraday export (M1/M5/M15/M30), timestamps in UTC; or daily CSV
     "session_tz": "America/New_York",
     "session_open": "09:30",
     "session_close": "16:00",
@@ -108,6 +107,8 @@ def load_data(ticker: str = "QQQ", start: str = "1999-01-01", drop_partial_bar: 
       "yahoo"        : download `ticker` from Yahoo Finance (auto-adjusted).
       "csv_intraday" : build session-aligned daily bars from the broker's intraday CSV
                        (csv_path / session_* in ENGINE_DEFAULTS). `ticker` is then only a label.
+      "csv_daily"    : read daily bars directly from a daily CSV (csv_path in ENGINE_DEFAULTS).
+                       `ticker` is then only a label.
     drop_partial_bar: drop the last bar if it is today's New York session and has not closed (16:00 NY).
     """
     source = (source or ENGINE_DEFAULTS["data_source"]).lower()
@@ -129,8 +130,27 @@ def load_data(ticker: str = "QQQ", start: str = "1999-01-01", drop_partial_bar: 
                                   ENGINE_DEFAULTS["session_open"], ENGINE_DEFAULTS["session_close"])
         df = _clean_bars(df[df.index >= pd.Timestamp(start)])
 
+    elif source == "csv_daily":
+        path = csv_path or ENGINE_DEFAULTS["csv_path"]
+        if not path:
+            raise ValueError("source 'csv_daily' needs csv_path")
+        raw = pd.read_csv(path)
+        raw.columns = [str(c).strip().lower() for c in raw.columns]
+        tcol = next((c for c in ("time", "date", "datetime", "timestamp") if c in raw.columns), None)
+        if tcol is None:
+            raise ValueError("daily CSV needs a time/date/datetime/timestamp column")
+        idx = pd.DatetimeIndex(pd.to_datetime(raw[tcol]))
+        if idx.tz is not None:
+            idx = idx.tz_localize(None)
+        raw.index = idx.normalize()
+        raw.index.name = "time"
+        if "volume" not in raw.columns:
+            raw["volume"] = 0.0
+        df = _clean_bars(raw[["open", "high", "low", "close", "volume"]])
+        df = df[df.index >= pd.Timestamp(start)]
+
     else:
-        raise ValueError(f"Unknown data source: {source!r} (use 'yahoo' or 'csv_intraday')")
+        raise ValueError(f"Unknown data source: {source!r} (use 'yahoo', 'csv_intraday' or 'csv_daily')")
 
     if drop_partial_bar and len(df) > 0:
         now_ny = pd.Timestamp.now(tz="America/New_York")

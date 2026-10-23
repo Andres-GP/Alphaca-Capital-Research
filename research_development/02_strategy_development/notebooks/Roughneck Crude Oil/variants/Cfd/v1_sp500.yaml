@@ -1,0 +1,30 @@
+id: RSI2.sp500.v1
+edge: rsi2
+status: in_development # in_development | validated | rejected | demo | approved
+
+instrument:
+  ticker: SP500
+  start: "1999-01-01"
+
+split:
+  oos_start: "2018-09-24" # same cut for every variant of the edge
+
+# Values used by notebooks 01 and 03 (frozen after notebook 02)
+params:
+  rsi_thr: 5.0
+  sma_len: 80
+  exit_mode: "2green" # 2green | ma5 | rsi70
+  slip_bps_per_side: 5.0
+
+# Grid swept by notebook 02 and reused by the validation gate in notebook 03
+grid:
+  rsi_values: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+  sma_values: [20, 50, 80, 110, 140, 170, 200, 230, 260]
+
+engine_defaults:
+  data_source: csv_daily
+  csv_path: "../../../data/norgate/SP5001d.csv"
+  financing_bps_per_night: 2.0
+  risk_per_trade_pct: 1.0
+  atr_stop_mult: 2.0
+  max_exposure: 1.0

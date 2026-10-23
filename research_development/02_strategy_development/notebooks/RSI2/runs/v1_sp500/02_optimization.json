@@ -1,0 +1,51 @@
+{
+  "variant": "RSI2.sp500.v1",
+  "ticker": "SP500",
+  "params_tested": {
+    "rsi_thr": 5.0,
+    "sma_len": 80,
+    "exit_mode": "2green"
+  },
+  "is_end_date": "2018-09-21",
+  "n_is_bars": 2810,
+  "plateau_checks": {
+    "Configured (5, 80)": {
+      "center_pf": 2.547283214128336,
+      "plateau": false,
+      "worst_neighbor_drop_pct": 27.0296094987193,
+      "anticliff": true,
+      "passed": false,
+      "pct_cells_pf_ok": 0.41414141414141414,
+      "best_cell": [
+        5,
+        20
+      ],
+      "best_pf": 16.862087719051807,
+      "edge_of_grid": true
+    },
+    "Baseline (15, 200)": {
+      "center_pf": 1.5374714415607897,
+      "plateau": false,
+      "worst_neighbor_drop_pct": 16.956932763098088,
+      "anticliff": true,
+      "passed": false,
+      "pct_cells_pf_ok": 0.41414141414141414,
+      "best_cell": [
+        5,
+        20
+      ],
+      "best_pf": 16.862087719051807,
+      "edge_of_grid": false
+    }
+  },
+  "grid_4d": {
+    "n_combinations": 594,
+    "pct_pf_ge_1_3": 33.670033670033675,
+    "pct_pf_ge_1_0": 68.51851851851852,
+    "min_pf": 0.5737984062371048,
+    "median_pf": 1.134103869324238,
+    "max_pf": 16.862087719051807,
+    "chosen_pf": 2.547283214128336,
+    "chosen_percentile": 96.63299663299664
+  }
+}

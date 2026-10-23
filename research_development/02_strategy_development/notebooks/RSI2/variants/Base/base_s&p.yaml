@@ -11,12 +11,12 @@ split:
 
 # Values used by notebooks 01 and 03 (frozen after notebook 02)
 params:
-  rsi_thr: 15.0
-  sma_len: 200
+  rsi_thr: 10.0
+  sma_len: 170
   exit_mode: "2green" # 2green | ma5 | rsi70
   slip_bps_per_side: 5.0
 
 # Grid swept by notebook 02 and reused by the validation gate in notebook 03
 grid:
-  rsi_values: [5, 10, 15, 20, 25, 30]
-  sma_values: [140, 170, 200, 230, 260, 290]
+  rsi_values: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+  sma_values: [80, 110, 140, 170, 200, 230, 260]
