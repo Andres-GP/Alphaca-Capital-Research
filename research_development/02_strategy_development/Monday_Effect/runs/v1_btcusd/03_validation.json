@@ -1,0 +1,170 @@
+{
+  "variant": "MONDAY.btcusd.cfd.v1",
+  "ticker": "btcusd",
+  "params": {
+    "vol_mode": "pctl",
+    "atr_pctl": 40.0,
+    "atr_len": 24,
+    "skip_first_monday": true,
+    "entry_hour": 0,
+    "hold_bars": 24,
+    "cost_bps_per_side": 5.5
+  },
+  "oos_start": "2024-01-08",
+  "official_sizing": "20% (robot)",
+  "status": {
+    "20% (robot)": "PASSED",
+    "30%": "PASSED"
+  },
+  "metrics": {
+    "sharpe": 0.903476182930654,
+    "max_drawdown": -0.06564410547010963,
+    "num_trades": 118
+  },
+  "phases": {
+    "20% (robot)": {
+      "1_oos": {
+        "n": 40,
+        "pf": 6.450765365771587,
+        "pf_without_best_trade": 5.635555414245666,
+        "max_dd": -0.01906649128496346,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "2_monte_carlo": {
+        "ret_p5": 0.15741726744569995,
+        "mdd_p5": -0.11172876630392473,
+        "prob_ruin": 0.0,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "3_monkey": {
+        "pf_real": 2.0466457589210623,
+        "pct_pf": 0.99,
+        "passed": true
+      },
+      "4_plateau": {
+        "center_pf": 1.7061044475522054,
+        "plateau": true,
+        "worst_drop_pct": 13.605574219898408,
+        "passed": true
+      },
+      "5_edge_decay": {
+        "recent_pf": 6.666440763691144,
+        "historical_pf": 1.500946935763922,
+        "warning": false,
+        "informational": true
+      }
+    },
+    "30%": {
+      "1_oos": {
+        "n": 40,
+        "pf": 6.450765365771586,
+        "pf_without_best_trade": 5.635555414245666,
+        "max_dd": -0.02853413387913061,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "2_monte_carlo": {
+        "ret_p5": 0.2397681035247096,
+        "mdd_p5": -0.16348168108249858,
+        "prob_ruin": 0.0,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "3_monkey": {
+        "pf_real": 2.0466457589210623,
+        "pct_pf": 0.99,
+        "passed": true
+      },
+      "4_plateau": {
+        "center_pf": 1.7061044475522054,
+        "plateau": true,
+        "worst_drop_pct": 13.605574219898408,
+        "passed": true
+      },
+      "5_edge_decay": {
+        "recent_pf": 6.666440763691143,
+        "historical_pf": 1.5009469357639222,
+        "warning": false,
+        "informational": true
+      }
+    }
+  },
+  "walk_forward": {
+    "efficiency": 0.8459001049030378,
+    "pct_positive_years": 0.8333333333333334,
+    "worst_mdd": -0.06564410547010968,
+    "passed": true
+  },
+  "monkey": {
+    "A_pct_pf": 0.99,
+    "B_pct_pf": 0.979
+  },
+  "monte_carlo_mdd_p5": {
+    "20% (robot)": -0.11172876630392473,
+    "30%": -0.16348168108249858
+  },
+  "mc_passes_with_1pt_margin": true,
+  "cost_breakeven_bps_per_side": 73.10000000000001,
+  "cost_sweep": [
+    {
+      "Cost bps/side": 5.5,
+      "Round trip %": 0.11,
+      "Trades": 118,
+      "Profit Factor": 2.047,
+      "Mean net %": 1.352,
+      "t-stat": 2.82
+    },
+    {
+      "Cost bps/side": 11.0,
+      "Round trip %": 0.22,
+      "Trades": 118,
+      "Profit Factor": 1.93,
+      "Mean net %": 1.24,
+      "t-stat": 2.59
+    },
+    {
+      "Cost bps/side": 30.0,
+      "Round trip %": 0.6,
+      "Trades": 118,
+      "Profit Factor": 1.576,
+      "Mean net %": 0.856,
+      "t-stat": 1.8
+    },
+    {
+      "Cost bps/side": 40.0,
+      "Round trip %": 0.8,
+      "Trades": 118,
+      "Profit Factor": 1.417,
+      "Mean net %": 0.655,
+      "t-stat": 1.38
+    },
+    {
+      "Cost bps/side": 60.0,
+      "Round trip %": 1.2,
+      "Trades": 118,
+      "Profit Factor": 1.145,
+      "Mean net %": 0.253,
+      "t-stat": 0.53
+    },
+    {
+      "Cost bps/side": 80.0,
+      "Round trip %": 1.6,
+      "Trades": 118,
+      "Profit Factor": 0.924,
+      "Mean net %": -0.148,
+      "t-stat": -0.31
+    }
+  ],
+  "profit_share_top10pct_trades": 0.4339284613567953,
+  "z_protocol": {
+    "mu0": 1.1720280697908507,
+    "sigma0": 6.128863692239519,
+    "z_today": 0.12660890964677068,
+    "zone_today": "green",
+    "z_min": -1.4667602660859944
+  },
+  "edge_decay_warning": false,
+  "stress_ok": true
+}

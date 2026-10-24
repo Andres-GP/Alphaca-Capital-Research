@@ -1,0 +1,354 @@
+{
+  "variant": "MONDAY.btcusd.cfd.v1",
+  "ticker": "btcusd",
+  "params": {
+    "vol_mode": "pctl",
+    "atr_pctl": 40.0,
+    "atr_len": 24,
+    "skip_first_monday": true,
+    "entry_hour": 0,
+    "hold_bars": 24,
+    "cost_bps_per_side": 5.5
+  },
+  "oos_start": "2024-01-08",
+  "all": {
+    "n": 118,
+    "pf": 2.0466457589210627,
+    "win_rate": 61.86440677966102,
+    "t_stat": 2.8217552533204286
+  },
+  "is": {
+    "n": 78,
+    "pf": 1.6533559966563165
+  },
+  "oos": {
+    "n": 40,
+    "pf": 6.450765365771586
+  },
+  "max_dd_fraction_sizing_pct": -6.564410547010962,
+  "hard_limit": {
+    "limit": 0.09,
+    "max_dd_hourly_pct": -6.949480859753354,
+    "passed": true
+  },
+  "naked_by_era": [
+    {
+      "Era": "Retail (2017-19)",
+      "Mondays": 127,
+      "Gross mean %": 0.5633,
+      "Gross t": 1.3303,
+      "Net mean %": 0.4527,
+      "Net t": 1.0703,
+      "Hit rate %": 44.0945
+    },
+    {
+      "Era": "Institutional (2020-23)",
+      "Mondays": 207,
+      "Gross mean %": 0.3324,
+      "Gross t": 1.1098,
+      "Net mean %": 0.222,
+      "Net t": 0.7421,
+      "Hit rate %": 47.8261
+    },
+    {
+      "Era": "ETF (2024+)",
+      "Mondays": 144,
+      "Gross mean %": 0.4501,
+      "Gross t": 1.9079,
+      "Net mean %": 0.3397,
+      "Net t": 1.4413,
+      "Hit rate %": 54.8611
+    },
+    {
+      "Era": "All",
+      "Mondays": 478,
+      "Gross mean %": 0.4292,
+      "Gross t": 2.314,
+      "Net mean %": 0.3187,
+      "Net t": 1.7204,
+      "Hit rate %": 48.954
+    }
+  ],
+  "atr_rank_spearman": {
+    "rho": 0.09458066267334461,
+    "p": 0.04517365582965925
+  },
+  "hypothesis_confirmed": true,
+  "checks_summary": {
+    "pass": 36,
+    "fail": 8,
+    "skip": 1
+  },
+  "checks": [
+    {
+      "section": "3. Data",
+      "name": "IS and OOS are both non-empty",
+      "status": "PASS",
+      "detail": "IS 53,110 bars | OOS 24,420 bars"
+    },
+    {
+      "section": "3. Data",
+      "name": "Mondays without a valid signal bar <= 5%",
+      "status": "PASS",
+      "detail": "7 of 494 Mondays lost to gaps / warm-up (1.4%)"
+    },
+    {
+      "section": "4.1 Day of week",
+      "name": "Monday mean return > 0 in every era",
+      "status": "PASS",
+      "detail": "Retail (2017-19): +0.448%; Institutional (2020-23): +0.373%; ETF (2024+): +0.488%"
+    },
+    {
+      "section": "4.1 Day of week",
+      "name": "Monday is the best weekday over the whole history",
+      "status": "PASS",
+      "detail": "best = Mon (+0.429%)"
+    },
+    {
+      "section": "4.1 Day of week",
+      "name": "Monday is the best weekday in the ETF era",
+      "status": "PASS",
+      "detail": "best = Mon (+0.488%)"
+    },
+    {
+      "section": "4.1 Day of week",
+      "name": "Monday beats the other weekdays (one-sided Welch p < 0.05)",
+      "status": "FAIL",
+      "detail": "Monday +0.429% vs others +0.119% | t = 1.59, p = 0.056"
+    },
+    {
+      "section": "4.2 Naked Monday",
+      "name": "Gross drift is positive and significant (t >= 2)",
+      "status": "PASS",
+      "detail": "mean +0.429% | t = 2.31"
+    },
+    {
+      "section": "4.2 Naked Monday",
+      "name": "Net mean is positive in every era",
+      "status": "PASS",
+      "detail": "Retail (2017-19): +0.453%; Institutional (2020-23): +0.222%; ETF (2024+): +0.340%"
+    },
+    {
+      "section": "4.2 Naked Monday",
+      "name": "Net drift (all eras) covers costs with significance (t >= 2)",
+      "status": "FAIL",
+      "detail": "mean +0.319% | t = 1.72"
+    },
+    {
+      "section": "4.2 Naked Monday",
+      "name": "ETF-era net drift is significant (t >= 2)",
+      "status": "FAIL",
+      "detail": "mean +0.340% | t = 1.44"
+    },
+    {
+      "section": "4.2 Naked Monday",
+      "name": "Era ordering as hypothesised: ETF >= Institutional > Retail (net mean)",
+      "status": "FAIL",
+      "detail": "ETF +0.340% | Institutional +0.222% | Retail +0.453%"
+    },
+    {
+      "section": "4.3 Volatility",
+      "name": "ATR% rank correlates positively with net return (p < 0.05)",
+      "status": "PASS",
+      "detail": "rho = +0.095, p = 0.045"
+    },
+    {
+      "section": "4.3 Volatility",
+      "name": "Same in the ETF era only (p < 0.05)",
+      "status": "PASS",
+      "detail": "rho = +0.260, p = 0.002 (144 Mondays)"
+    },
+    {
+      "section": "4.3 Volatility",
+      "name": "Kept Mondays beat skipped Mondays (one-sided Welch p < 0.05)",
+      "status": "PASS",
+      "detail": "kept +1.038% vs skipped -0.202% | t = 2.72, p = 0.004"
+    },
+    {
+      "section": "4.3 Volatility",
+      "name": "Skipped Mondays do not cover costs (net mean <= 0)",
+      "status": "PASS",
+      "detail": "skipped net mean -0.202% over 296 Mondays"
+    },
+    {
+      "section": "4.3 Volatility",
+      "name": "Calmest quintile (Q1) does not cover costs (net mean <= 0)",
+      "status": "FAIL",
+      "detail": "Q1 net mean +0.057% (t = 0.21)"
+    },
+    {
+      "section": "4.3 Volatility",
+      "name": "Net return rises with the quintile (monotonic)",
+      "status": "FAIL",
+      "detail": "+0.06 -> -0.17 -> -0.61 -> +0.74 -> +1.08"
+    },
+    {
+      "section": "4.4 First Monday",
+      "name": "First Monday is worse than the rest (all eras)",
+      "status": "PASS",
+      "detail": "first +0.138% vs rest +0.371%"
+    },
+    {
+      "section": "4.4 First Monday",
+      "name": "The difference is significant (one-sided Welch p < 0.05)",
+      "status": "FAIL",
+      "detail": "t = -0.56, p = 0.289 (N = 107 vs 371)"
+    },
+    {
+      "section": "4.4 First Monday",
+      "name": "First Monday is worse than the rest in every era",
+      "status": "FAIL",
+      "detail": "Retail (2017-19): worse; Institutional (2020-23): better; ETF (2024+): worse"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, full period >= 1.3",
+      "status": "PASS",
+      "detail": "PF = 2.047"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, IS >= 1.3",
+      "status": "PASS",
+      "detail": "PF = 1.653"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, OOS >= 1.3",
+      "status": "PASS",
+      "detail": "PF = 6.451"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "OOS does not degrade vs IS (OOS PF >= 50% of IS PF)",
+      "status": "PASS",
+      "detail": "OOS 6.451 vs IS 1.653"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "t-stat of the mean trade >= 2",
+      "status": "PASS",
+      "detail": "t = 2.82"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, full period >= 100",
+      "status": "PASS",
+      "detail": "118 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, OOS >= 30",
+      "status": "PASS",
+      "detail": "40 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Expectancy > 0 in IS and OOS (net of costs)",
+      "status": "PASS",
+      "detail": "IS +1.172% | OOS +1.703%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "20% ideal fraction stays inside -9%",
+      "status": "PASS",
+      "detail": "max DD -7.33% | headroom +1.67 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Lot-adjusted sizing stays inside -9%",
+      "status": "PASS",
+      "detail": "max DD -6.95% | headroom +2.05 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Configured fraction <= largest fraction allowed by the limit",
+      "status": "PASS",
+      "detail": "20% vs 24.8%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Capital >= minimum capital for the minimum lot",
+      "status": "PASS",
+      "detail": "10,000 vs 4,037"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Every trade is executable with the minimum lot",
+      "status": "PASS",
+      "detail": "118 of 118 trades taken"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": "No calendar year breaches the hard limit",
+      "status": "PASS",
+      "detail": "years in breach: none | worst year DD -6.9%"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": ">= 75% of full calendar years are profitable",
+      "status": "PASS",
+      "detail": "7/8 full years positive | non-positive: 2022 (-3.3%)"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No lookahead and execution model respected on every trade",
+      "status": "PASS",
+      "detail": "118 trades checked"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Every full calendar year has >= 5 trades",
+      "status": "PASS",
+      "detail": "min 5 (2023) | max 21 (2021) over 8 full years"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "MTM paths telescope to the trade returns (error < 1e-9)",
+      "status": "PASS",
+      "detail": "max abs error 1.11e-15"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Matches the published reference",
+      "status": "SKIP",
+      "detail": "skipped: not the reference v3 rules"
+    },
+    {
+      "section": "7. Variants",
+      "name": "v3 Profit Factor beats naked and v1",
+      "status": "PASS",
+      "detail": "v3 2.047 | naked 1.253 | v1 1.338"
+    },
+    {
+      "section": "7. Variants",
+      "name": "v3 expectancy per trade beats naked and v1",
+      "status": "PASS",
+      "detail": "v3 +1.352% | naked +0.319% | v1 +0.384%"
+    },
+    {
+      "section": "7. Variants",
+      "name": "v3 Sharpe beats naked and v1",
+      "status": "PASS",
+      "detail": "v3 0.90 | naked 0.55 | v1 0.56"
+    },
+    {
+      "section": "7. Variants",
+      "name": "v3 max drawdown is shallower than naked and v1",
+      "status": "PASS",
+      "detail": "v3 -6.56% | naked -11.00% | v1 -10.60%"
+    },
+    {
+      "section": "7. Variants",
+      "name": "v3 final capital is not below naked or v1 (1% tolerance)",
+      "status": "PASS",
+      "detail": "v3 1.361x | naked 1.324x | v1 1.204x"
+    },
+    {
+      "section": "8. Verdict",
+      "name": "Core criteria: PF >= 1.3 (full and OOS), t >= 2, N >= 100",
+      "status": "PASS",
+      "detail": "PF 2.047 / OOS 6.451 | t 2.82 | N 118"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+id: MONDAY.btcusd.cfd.v1
+edge: monday_effect
+status: in_development # in_development | validated | rejected | demo | approved
+
+#USE BTC-JPY CFD IN AXI FOR
+
+instrument:
+  ticker: btcusd # label only: the data comes from the CSV below (Dukascopy BTC/USD proxy for the Axi BTC-JPY CFD)
+  start: "2017-01-01" # check the first date in the download summary; an earlier date than the data is harmless
+
+split:
+  oos_start: "2024-01-08" # same cut as the base variant
+
+# Same rules as the base: research is done once on base_btcusdt, this variant only changes the vehicle.
+params:
+  vol_mode: pctl
+  atr_pctl: 40.0
+  atr_len: 24
+  skip_first_monday: true
+  entry_hour: 0 # UTC, Monday 00:00 (signal = Sunday 23:00 close)
+  hold_bars: 24
+  cost_bps_per_side: 5.5 # PLACEHOLDER: Exness reference (0.11 % round trip). Replace with the Axi spread you measure in the demo
+
+grid:
+  atr_pctl_values: [0, 10, 20, 30, 40, 50, 60]
+  atr_len_values: [12, 24, 48, 72, 96, 168]
+
+engine_defaults:
+  data_source: csv_hourly
+  csv_path: "../../data/dukascopy/btcusd_h1_utc.csv" # output of download_dukascopy_btc.py
+  pctl_window: 8760
+  pctl_min_bars: 4380
+  financing_bps_per_night: 4.11 # Axi BTC-JPY long swap: -15 % annual = 15 / 365 * 100 bps per night
+  rollover_hour_utc: 22 # the Mon 00:00 -> Tue 00:00 hold crosses exactly one rollover either way
+  size_fraction: 0.20 # fits the 9 % hard limit (historical worst: -8.6 %); the base variant used 0.40
+  contract_size: 1.0
+  min_lot: 0.01 # Axi BTC-JPY
+  lot_step: 0.01
