@@ -44,9 +44,9 @@
         "passed": true
       },
       "4_plateau": {
-        "center_pf": 1.7061044475522054,
+        "center_pf": 1.6317323107987125,
         "plateau": true,
-        "worst_drop_pct": 13.605574219898408,
+        "worst_drop_pct": 13.326199154158335,
         "passed": true
       },
       "5_edge_decay": {
@@ -78,9 +78,9 @@
         "passed": true
       },
       "4_plateau": {
-        "center_pf": 1.7061044475522054,
+        "center_pf": 1.6317323107987125,
         "plateau": true,
-        "worst_drop_pct": 13.605574219898408,
+        "worst_drop_pct": 13.326199154158335,
         "passed": true
       },
       "5_edge_decay": {

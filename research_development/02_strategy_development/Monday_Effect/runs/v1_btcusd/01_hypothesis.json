@@ -75,7 +75,7 @@
   },
   "hypothesis_confirmed": true,
   "checks_summary": {
-    "pass": 36,
+    "pass": 37,
     "fail": 8,
     "skip": 1
   },
@@ -90,7 +90,7 @@
       "section": "3. Data",
       "name": "Mondays without a valid signal bar <= 5%",
       "status": "PASS",
-      "detail": "7 of 494 Mondays lost to gaps / warm-up (1.4%)"
+      "detail": "3 of 456 Mondays lost to gaps (0.7%)"
     },
     {
       "section": "4.1 Day of week",
@@ -232,7 +232,7 @@
     },
     {
       "section": "5. Baseline",
-      "name": "Trades, full period >= 100",
+      "name": "Trades, full period >= 97",
       "status": "PASS",
       "detail": "118 trades"
     },
@@ -277,6 +277,12 @@
       "name": "Every trade is executable with the minimum lot",
       "status": "PASS",
       "detail": "118 of 118 trades taken"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Intrabar drawdown (candle lows) stays inside -9%",
+      "status": "PASS",
+      "detail": "max DD intrabar -7.10% (closes only -6.95%) | headroom +1.90 pts"
     },
     {
       "section": "5.2 Annual",
@@ -346,7 +352,7 @@
     },
     {
       "section": "8. Verdict",
-      "name": "Core criteria: PF >= 1.3 (full and OOS), t >= 2, N >= 100",
+      "name": "Core criteria: PF >= 1.3 (full and OOS), t >= 2, N >= 97",
       "status": "PASS",
       "detail": "PF 2.047 / OOS 6.451 | t 2.82 | N 118"
     }

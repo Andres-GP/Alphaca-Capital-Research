@@ -1,0 +1,170 @@
+{
+  "variant": "MONDAY.btcjpy.cfd.v1",
+  "ticker": "btcjpy",
+  "params": {
+    "vol_mode": "pctl",
+    "atr_pctl": 40.0,
+    "atr_len": 24,
+    "skip_first_monday": true,
+    "entry_hour": 0,
+    "hold_bars": 24,
+    "cost_bps_per_side": 5.5
+  },
+  "oos_start": "2024-01-08",
+  "official_sizing": "20% (robot)",
+  "status": {
+    "20% (robot)": "FAILED",
+    "30%": "FAILED"
+  },
+  "metrics": {
+    "sharpe": 1.4716828762316925,
+    "max_drawdown": -0.02195337433619708,
+    "num_trades": 54
+  },
+  "phases": {
+    "20% (robot)": {
+      "1_oos": {
+        "n": 43,
+        "pf": 3.851225140508727,
+        "pf_without_best_trade": 3.3929401385992013,
+        "max_dd": -0.028640048257226526,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "2_monte_carlo": {
+        "ret_p5": 0.09901785210535251,
+        "mdd_p5": -0.03725603882960486,
+        "prob_ruin": 0.0,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "3_monkey": {
+        "pf_real": 3.274805815147933,
+        "pct_pf": 0.998,
+        "passed": true
+      },
+      "4_plateau": {
+        "center_pf": 2.2780470125940013,
+        "plateau": false,
+        "worst_drop_pct": 48.36409963511794,
+        "passed": false
+      },
+      "5_edge_decay": {
+        "recent_pf": 3.074472662140767,
+        "historical_pf": NaN,
+        "warning": false,
+        "informational": true
+      }
+    },
+    "30%": {
+      "1_oos": {
+        "n": 43,
+        "pf": 3.8512251405087286,
+        "pf_without_best_trade": 3.3929401385992017,
+        "max_dd": -0.0428406188138403,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "2_monte_carlo": {
+        "ret_p5": 0.15106488163087342,
+        "mdd_p5": -0.05563782704111083,
+        "prob_ruin": 0.0,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "3_monkey": {
+        "pf_real": 3.2748058151479333,
+        "pct_pf": 0.998,
+        "passed": true
+      },
+      "4_plateau": {
+        "center_pf": 2.2780470125940013,
+        "plateau": false,
+        "worst_drop_pct": 48.36409963511794,
+        "passed": false
+      },
+      "5_edge_decay": {
+        "recent_pf": 3.074472662140767,
+        "historical_pf": NaN,
+        "warning": false,
+        "informational": true
+      }
+    }
+  },
+  "walk_forward": {
+    "efficiency": 0.27078871438111013,
+    "pct_positive_years": 1.0,
+    "worst_mdd": -0.0061897913810330385,
+    "passed": false
+  },
+  "monkey": {
+    "A_pct_pf": 0.998,
+    "B_pct_pf": 0.9935
+  },
+  "monte_carlo_mdd_p5": {
+    "20% (robot)": -0.03725603882960486,
+    "30%": -0.05563782704111083
+  },
+  "mc_passes_with_1pt_margin": true,
+  "cost_breakeven_bps_per_side": 83.14999999999999,
+  "cost_sweep": [
+    {
+      "Cost bps/side": 5.5,
+      "Round trip %": 0.11,
+      "Trades": 54,
+      "Profit Factor": 3.275,
+      "Mean net %": 1.553,
+      "t-stat": 3.3
+    },
+    {
+      "Cost bps/side": 11.0,
+      "Round trip %": 0.22,
+      "Trades": 54,
+      "Profit Factor": 3.015,
+      "Mean net %": 1.442,
+      "t-stat": 3.07
+    },
+    {
+      "Cost bps/side": 30.0,
+      "Round trip %": 0.6,
+      "Trades": 54,
+      "Profit Factor": 2.262,
+      "Mean net %": 1.057,
+      "t-stat": 2.26
+    },
+    {
+      "Cost bps/side": 40.0,
+      "Round trip %": 0.8,
+      "Trades": 54,
+      "Profit Factor": 1.933,
+      "Mean net %": 0.855,
+      "t-stat": 1.83
+    },
+    {
+      "Cost bps/side": 60.0,
+      "Round trip %": 1.2,
+      "Trades": 54,
+      "Profit Factor": 1.416,
+      "Mean net %": 0.452,
+      "t-stat": 0.97
+    },
+    {
+      "Cost bps/side": 80.0,
+      "Round trip %": 1.6,
+      "Trades": 54,
+      "Profit Factor": 1.04,
+      "Mean net %": 0.051,
+      "t-stat": 0.11
+    }
+  ],
+  "profit_share_top10pct_trades": 0.4030438815155131,
+  "z_protocol": {
+    "mu0": 1.5699119957949916,
+    "sigma0": 4.707265261340578,
+    "z_today": -0.8641211547898833,
+    "zone_today": "green",
+    "z_min": -1.213249201612262
+  },
+  "edge_decay_warning": false,
+  "stress_ok": true
+}

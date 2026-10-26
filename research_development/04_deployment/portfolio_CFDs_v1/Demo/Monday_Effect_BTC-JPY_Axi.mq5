@@ -3,14 +3,23 @@
 //|                          Alphaca Capital                          |
 //+------------------------------------------------------------------+
 //========================================================
-//  STATUS: IN DEVELOPMENT (ready for demo forward testing)
-//  Strategy ID : MONDAY.btcusd.cfd.v1
+//  STATUS: IN DEVELOPMENT (demo forward testing)
+//          NOT validated: the BTCJPY plateau / walk-forward gates
+//          failed on ~1 year of in-sample data.
+//  Strategy ID : MONDAY.btcjpy.cfd.v1
 //  Vehicle     : Axi BTCJPY CFD (long only, H1)
-//  Tester reconciled with the strategy
-//  Version: 1.00  |  Last update: 2026-10-24
+//  Version: 1.01  |  Last update: 2026-10-25
+//
+//  v1.01 changes vs v1.00:
+//   - Kill switches no longer depend on the reporter (own equity tracking)
+//   - Time exit / kill close is retried on every tick until the position is closed
+//   - Entry requires the Sunday 23:00 signal bar to exist (engine parity)
+//   - Closed-trade P&L, prices, swap and commission are read from the deal history
+//   - monday_log.csv (every Monday decision) and monday_trades.csv (every closed trade)
+//     written to the Common/Files folder for reconciliation with the Python engine
 //========================================================
 #property copyright "Alphaca Capital"
-#property version   "1.00"
+#property version   "1.01"
 #property description "MONDAY EFFECT - BTCJPY CFD (AXI) - REPORTER INTEGRATED"
 #property description "Entry: Monday 00:00 UTC if ATR(24)% >= 40th percentile of last 8760 H1 bars"
 #property description "Filter: skip first Monday of the month | Exit: 24 H1 bars later (Tuesday 00:00 UTC)"
@@ -37,7 +46,7 @@ enum ENUM_ATR_METHOD
 //+------------------------------------------------------------------+
 //| Inputs                                                            |
 //+------------------------------------------------------------------+
-input group "====== STRATEGY (VALIDATED - DO NOT MODIFY) ======"
+input group "====== STRATEGY (FROZEN PARAMETERS - DO NOT MODIFY) ======"
 input int             InpATRPeriod       = 24;           // ATR period (H1 bars)
 input ENUM_ATR_METHOD InpATRMethod       = ATR_SMA;      // ATR method (must match research engine atr_method)
 input double          InpATRPercentile   = 40.0;         // Min ATR% percentile to trade (atr_pctl)
@@ -64,6 +73,7 @@ input bool            InpEnableTotalKill = true;         // Enable total kill sw
 input bool            InpSendPushAlerts  = true;         // Push/email notifications?
 input int             InpMagicNumber     = 290401;       // Magic Number (unique per EA)
 input bool            InpShowDashboard   = true;         // Show dashboard on chart?
+input bool            InpLogFiles        = true;         // Write monday_log.csv / monday_trades.csv (Common/Files)?
 
 input group "====== PERFORMANCE REPORTER ======"
 input bool            InpEnableReporter  = true;         // Enable backend reporter?
@@ -81,10 +91,15 @@ CPositionInfo        g_posInfo;
 PerformanceReporter* g_reporter = NULL;
 
 datetime             g_lastBarTime;
-datetime             g_dayStamp;
 bool                 g_dailyKillActive;
 bool                 g_totalKillActive;
 string               g_killReason;
+
+// own equity tracking (kill switches do NOT depend on the reporter)
+double               g_peakEquity;
+double               g_dayStartEquity;
+int                  g_dayKey;
+double               g_maxDDHit;
 
 // filter cache (refreshed once per new H1 bar)
 bool                 g_filterOK;        // filter could be computed (enough history)
@@ -123,6 +138,14 @@ int ServerOffsetHours(datetime server)
 
 datetime ServerToUTC(datetime server) { return server - ServerOffsetHours(server) * 3600; }
 
+// "YYYY-MM-DD HH:MM" in UTC from a server timestamp
+string UtcStr(datetime server)
+{
+   MqlDateTime t;
+   TimeToStruct(ServerToUTC(server), t);
+   return StringFormat("%04d-%02d-%02d %02d:%02d", t.year, t.mon, t.day, t.hour, t.min);
+}
+
 //+------------------------------------------------------------------+
 //| OnInit                                                            |
 //+------------------------------------------------------------------+
@@ -153,7 +176,6 @@ int OnInit()
    g_trade.SetTypeFillingBySymbol(_Symbol);
 
    g_lastBarTime     = 0;
-   g_dayStamp        = 0;
    g_dailyKillActive = false;
    g_totalKillActive = false;
    g_killReason      = "";
@@ -161,6 +183,12 @@ int OnInit()
    g_atrPct          = 0;
    g_atrRank         = -1;
    g_atrPermit       = false;
+
+   double eq0        = AccountInfoDouble(ACCOUNT_EQUITY);
+   g_peakEquity      = eq0;
+   g_dayStartEquity  = eq0;
+   g_dayKey          = DayKeyOf(TimeCurrent());
+   g_maxDDHit        = 0;
 
    // live/demo: verify configured broker time matches the real server time
    if(!MQLInfoInteger(MQL_TESTER))
@@ -198,8 +226,10 @@ int OnInit()
       EventSetTimer(InpHeartbeatSecs);
       Print("Reporter active | strategy_id=", g_reporter.GetStrategyId());
    }
+   else
+      Print("Reporter disabled (kill switches still active: they use the EA's own equity tracking)");
 
-   Print("=== ALPHACA MONDAY EFFECT v1.00 ===");
+   Print("=== ALPHACA MONDAY EFFECT v1.01 ===");
    Print("Symbol: ", _Symbol, " | Magic: ", InpMagicNumber);
    PrintFormat("Entry: Mon 00:00 UTC | ATR(%d)%% >= P%.0f of %d bars | skip 1st Monday: %s | hold %dh | size %.0f%%",
                InpATRPeriod, InpATRPercentile, InpPctlWindow, InpSkipFirstMonday ? "yes" : "no",
@@ -213,8 +243,7 @@ int OnInit()
                   npl, AccountInfoString(ACCOUNT_CURRENCY), minLot, InpFractionCapital * 100.0,
                   minLot * npl / InpFractionCapital, AccountInfoString(ACCOUNT_CURRENCY));
 
-   if(g_reporter != NULL && InpSendPushAlerts)
-      g_reporter.SendAlert("EA STARTED | " + _Symbol);
+   PushAlert("EA STARTED | " + _Symbol);
 
    return(INIT_SUCCEEDED);
 }
@@ -238,10 +267,9 @@ void OnDeinit(const int reason)
             " | L: ", g_reporter.GetLosses());
       Print("WR: ", DoubleToString(g_reporter.GetWinRate(), 1), "%",
             " | PF: ", DoubleToString(g_reporter.GetProfitFactor(), 2),
-            " | MaxDD: ", DoubleToString(g_reporter.GetMaxDrawdownHit(), 2), "%");
+            " | MaxDD: ", DoubleToString(g_maxDDHit, 2), "%");
 
-      if(InpSendPushAlerts)
-         g_reporter.SendAlert("EA STOPPED | Trades: " + IntegerToString(g_reporter.GetTotalTrades()));
+      PushAlert("EA STOPPED | Trades: " + IntegerToString(g_reporter.GetTotalTrades()));
 
       delete g_reporter;
       g_reporter = NULL;
@@ -265,20 +293,19 @@ void OnTick()
    if(g_reporter != NULL)
       g_reporter.UpdateEquity();
 
+   UpdateRiskState();
    bool riskOK = RiskEngine();
 
-   if(riskOK)
+   CheckExit();                          // ALWAYS runs: time exit, and retry of any failed close (also under a kill)
+   bool newBar = IsNewBar();
+
+   if(riskOK && newBar)
    {
-      CheckExit();                       // every tick: retries until closed if a close fails
+      if(g_reporter != NULL)
+         g_reporter.OnBarUpdate(Bars(_Symbol, PERIOD_H1));
 
-      if(IsNewBar())
-      {
-         if(g_reporter != NULL)
-            g_reporter.OnBarUpdate(Bars(_Symbol, PERIOD_H1));
-
-         RefreshFilter();
-         if(!HasOpenPosition()) CheckEntry();
-      }
+      RefreshFilter();
+      if(!HasOpenPosition()) CheckEntry();
    }
 
    if(InpShowDashboard)
@@ -286,17 +313,49 @@ void OnTick()
 }
 
 //+------------------------------------------------------------------+
-//| Risk Engine                                                       |
+//| Alerts                                                            |
 //+------------------------------------------------------------------+
-bool RiskEngine()
+void PushAlert(string msg)
 {
-   if(g_reporter == NULL) return true;
+   if(!InpSendPushAlerts) return;
+   if(g_reporter != NULL) g_reporter.SendAlert(msg);
+   else                   SendNotification(msg);
+}
 
-   // daily kill is lifted on a new calendar day; total kill stays until the EA is re-attached
-   datetime today = TimeCurrent() - (TimeCurrent() % 86400);
-   if(today != g_dayStamp)
+//+------------------------------------------------------------------+
+//| Own risk tracking (does not depend on the reporter)               |
+//+------------------------------------------------------------------+
+int DayKeyOf(datetime dt)
+{
+   MqlDateTime s;
+   TimeToStruct(dt, s);
+   return s.year * 10000 + s.mon * 100 + s.day;
+}
+
+double DailyDD()
+{
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   if(g_dayStartEquity <= 0) return 0.0;
+   return (g_dayStartEquity - eq) / g_dayStartEquity * 100.0;
+}
+
+double TotalDD()
+{
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   if(g_peakEquity <= 0) return 0.0;
+   return (g_peakEquity - eq) / g_peakEquity * 100.0;
+}
+
+void UpdateRiskState()
+{
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   if(eq > g_peakEquity) g_peakEquity = eq;
+
+   int key = DayKeyOf(TimeCurrent());
+   if(key != g_dayKey)
    {
-      g_dayStamp = today;
+      g_dayKey         = key;
+      g_dayStartEquity = eq;
       if(g_dailyKillActive)
       {
          g_dailyKillActive = false;
@@ -304,40 +363,131 @@ bool RiskEngine()
       }
    }
 
-   double dailyDD = g_reporter.GetDailyDD();
-   double totalDD = g_reporter.GetTotalDD();
+   double dd = TotalDD();
+   if(dd > g_maxDDHit) g_maxDDHit = dd;
+}
+
+//+------------------------------------------------------------------+
+//| Risk Engine                                                       |
+//|   returns false while a kill switch is active                     |
+//|   (total kill stays until the EA is re-attached)                  |
+//+------------------------------------------------------------------+
+bool RiskEngine()
+{
+   double dailyDD = DailyDD();
+   double totalDD = TotalDD();
 
    if(InpEnableDailyKill)
    {
-      if(dailyDD >= InpMaxDailyDD && !g_dailyKillActive)
+      if(!g_dailyKillActive && dailyDD >= InpMaxDailyDD)
       {
          g_dailyKillActive = true;
          g_killReason = StringFormat("DAILY KILL: -%.2f%% (limit %.1f%%)", dailyDD, InpMaxDailyDD);
          Print(g_killReason);
-         if(InpSendPushAlerts) g_reporter.SendAlert(g_killReason);
-         g_reporter.ReportHealthAlert("KillSwitch", g_killReason, "critical");
+         PushAlert(g_killReason);
+         if(g_reporter != NULL) g_reporter.ReportHealthAlert("KillSwitch", g_killReason, "critical");
          EmergencyCloseAll("Daily Kill");
-         return false;
       }
       if(g_dailyKillActive) return false;
    }
 
    if(InpEnableTotalKill)
    {
-      if(totalDD >= InpMaxTotalDD && !g_totalKillActive)
+      if(!g_totalKillActive && totalDD >= InpMaxTotalDD)
       {
          g_totalKillActive = true;
          g_killReason = StringFormat("TOTAL KILL: -%.2f%% (limit %.1f%%) - EA HALTED",
                                      totalDD, InpMaxTotalDD);
          Print(g_killReason);
-         if(InpSendPushAlerts) g_reporter.SendAlert(g_killReason);
-         g_reporter.ReportHealthAlert("KillSwitch", g_killReason, "critical");
+         PushAlert(g_killReason);
+         if(g_reporter != NULL) g_reporter.ReportHealthAlert("KillSwitch", g_killReason, "critical");
          EmergencyCloseAll("Total Kill");
-         return false;
       }
       if(g_totalKillActive) return false;
    }
 
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| File logs (Common/Files) for reconciliation with the Python engine|
+//+------------------------------------------------------------------+
+// one line per Monday 00:00 UTC bar, whether the EA trades or not
+void LogMonday(string decision, string reason)
+{
+   if(!InpLogFiles) return;
+   int h = FileOpen("monday_log.csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON|FILE_ANSI, ';');
+   if(h == INVALID_HANDLE) return;
+   FileSeek(h, 0, SEEK_END);
+   FileWrite(h, UtcStr(iTime(_Symbol, PERIOD_H1, 0)),
+             DoubleToString(g_atrPct, 6), DoubleToString(g_atrRank, 6), decision, reason);
+   FileClose(h);
+}
+
+// one line per closed trade (times in UTC)
+void LogTrade(string reason, double lots, double entryPrice, double exitPrice, double profit,
+              double swap, double commission, datetime entryTime, datetime exitTime, bool fromDeals)
+{
+   if(!InpLogFiles) return;
+   int h = FileOpen("monday_trades.csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON|FILE_ANSI, ';');
+   if(h == INVALID_HANDLE) return;
+   FileSeek(h, 0, SEEK_END);
+   FileWrite(h, UtcStr(entryTime), UtcStr(exitTime),
+             DoubleToString(entryPrice, _Digits), DoubleToString(exitPrice, _Digits),
+             DoubleToString(lots, 2), DoubleToString(profit, 2),
+             DoubleToString(swap, 2), DoubleToString(commission, 2),
+             reason, fromDeals ? "deal" : "estimate");
+   FileClose(h);
+}
+
+//+------------------------------------------------------------------+
+//| Real numbers of a closed position from the deal history           |
+//+------------------------------------------------------------------+
+bool GetClosedDealInfo(long posId, double &entryPrice, double &exitPrice, double &volume,
+                       double &netProfit, double &commission, double &swap,
+                       datetime &entryTime, datetime &exitTime)
+{
+   if(!HistorySelectByPosition((ulong)posId)) return false;
+   int n = HistoryDealsTotal();
+   if(n < 2) return false;
+
+   double   ep = 0, xp = 0, vol = 0, net = 0, com = 0, sw = 0;
+   datetime et = 0, xt = 0;
+   bool     gotIn = false, gotOut = false;
+
+   for(int k = 0; k < n; k++)
+   {
+      ulong tk = HistoryDealGetTicket(k);
+      if(tk == 0) continue;
+
+      long   entryType = HistoryDealGetInteger(tk, DEAL_ENTRY);
+      double dcom      = HistoryDealGetDouble(tk, DEAL_COMMISSION);
+      double dsw       = HistoryDealGetDouble(tk, DEAL_SWAP);
+
+      net += HistoryDealGetDouble(tk, DEAL_PROFIT) + dsw + dcom + HistoryDealGetDouble(tk, DEAL_FEE);
+      com += dcom;
+      sw  += dsw;
+
+      if(entryType == DEAL_ENTRY_IN)
+      {
+         ep    = HistoryDealGetDouble(tk, DEAL_PRICE);
+         et    = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
+         vol   = HistoryDealGetDouble(tk, DEAL_VOLUME);
+         gotIn = true;
+      }
+      else if(entryType == DEAL_ENTRY_OUT || entryType == DEAL_ENTRY_OUT_BY)
+      {
+         xp     = HistoryDealGetDouble(tk, DEAL_PRICE);
+         xt     = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
+         gotOut = true;
+      }
+   }
+
+   if(!(gotIn && gotOut)) return false;
+
+   entryPrice = ep;  exitPrice  = xp;  volume = vol;
+   netProfit  = net; commission = com; swap   = sw;
+   entryTime  = et;  exitTime   = xt;
    return true;
 }
 
@@ -352,14 +502,19 @@ void CloseAllAndReport(string reason)
       if(g_posInfo.Symbol() != _Symbol) continue;
       if(g_posInfo.Magic() != InpMagicNumber) continue;
 
-      ulong    ticket     = g_posInfo.Ticket();
+      ulong  ticket = g_posInfo.Ticket();
+      long   posId  = g_posInfo.Identifier();
+      ENUM_POSITION_TYPE ptype = g_posInfo.PositionType();
+
+      // estimates (used only if the deal history is not available yet)
       double   entryPrice = g_posInfo.PriceOpen();
       double   exitPrice  = g_posInfo.PriceCurrent();
       double   volume     = g_posInfo.Volume();
       double   commission = g_posInfo.Commission();
-      double   profit     = g_posInfo.Profit() + g_posInfo.Swap() + commission;
+      double   swap       = g_posInfo.Swap();
+      double   profit     = g_posInfo.Profit() + swap + commission;
       datetime entryTime  = (datetime)g_posInfo.Time();
-      ENUM_POSITION_TYPE ptype = g_posInfo.PositionType();
+      datetime exitTime   = TimeCurrent();
 
       double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
       double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
@@ -367,27 +522,33 @@ void CloseAllAndReport(string reason)
 
       if(g_trade.PositionClose(ticket))
       {
+         bool fromDeals = GetClosedDealInfo(posId, entryPrice, exitPrice, volume, profit,
+                                            commission, swap, entryTime, exitTime);
+
          string result = (profit >= 0) ? "WIN" : "LOSS";
          Print("=== CLOSED [", reason, "] #", ticket, " | ", result,
                " | P&L=", DoubleToString(profit, 2), " ", AccountInfoString(ACCOUNT_CURRENCY),
-               " | swap=", DoubleToString(g_posInfo.Swap(), 2),
-               " | exit spread=", DoubleToString(spreadBps, 1), " bps");
+               " | swap=", DoubleToString(swap, 2),
+               " | exit spread=", DoubleToString(spreadBps, 1), " bps",
+               fromDeals ? " | (from deals)" : " | (estimate: deals not available yet)");
+
+         LogTrade(reason, volume, entryPrice, exitPrice, profit, swap, commission,
+                  entryTime, exitTime, fromDeals);
 
          if(g_reporter != NULL)
          {
             g_reporter.ReportTradeClosed(ticket, _Symbol,
                entryPrice, exitPrice, volume, profit,
-               entryTime, TimeCurrent(), commission, ptype);
+               entryTime, exitTime, commission, ptype);
 
-            if(InpSendPushAlerts)
-               g_reporter.SendAlert(StringFormat("%s EXIT %s | %.0f | WR=%.0f%% | PF=%.2f",
-                                    result, _Symbol, profit,
-                                    g_reporter.GetWinRate(), g_reporter.GetProfitFactor()));
+            PushAlert(StringFormat("%s EXIT %s | %.0f | WR=%.0f%% | PF=%.2f",
+                                   result, _Symbol, profit,
+                                   g_reporter.GetWinRate(), g_reporter.GetProfitFactor()));
          }
       }
       else
       {
-         Print("CLOSE FAILED [", reason, "]: ", g_trade.ResultRetcodeDescription());
+         Print("CLOSE FAILED [", reason, "]: ", g_trade.ResultRetcodeDescription(), " (will retry on the next tick)");
          if(g_reporter != NULL)
             g_reporter.OnOrderRejected("Close:" + reason,
                g_trade.ResultRetcode(), g_trade.ResultRetcodeDescription());
@@ -402,11 +563,19 @@ void EmergencyCloseAll(string reason)
 
 //+------------------------------------------------------------------+
 //| CheckExit - time exit: HoldHours after the entry bar              |
+//|   Runs on EVERY tick. If a close fails it is retried next tick,   |
+//|   and under an active kill switch any open position is closed.    |
 //+------------------------------------------------------------------+
 void CheckExit()
 {
    datetime opened = 0;
    if(!GetPositionOpenTime(opened)) return;
+
+   if(g_dailyKillActive || g_totalKillActive)
+   {
+      CloseAllAndReport("Kill switch (retry)");
+      return;
+   }
 
    datetime barNow   = iTime(_Symbol, PERIOD_H1, 0);
    datetime entryBar = (datetime)((long)opened - (long)opened % 3600);
@@ -429,15 +598,25 @@ void CheckEntry()
    bool monday00 = (t.day_of_week == 1 && t.hour == 0);
    if(!monday00) return;
 
+   // engine parity: the Sunday 23:00 signal bar must exist (exactly 1 h before)
+   if(iTime(_Symbol, PERIOD_H1, 1) != barTime - 3600)
+   {
+      Print("No trade: Sunday 23:00 signal bar is missing");
+      LogMonday("SKIP", "no signal bar");
+      return;
+   }
+
    if(InpSkipFirstMonday && t.day <= 7)
    {
       Print("No trade: first Monday of the month");
+      LogMonday("SKIP", "first monday");
       return;
    }
 
    if(!g_filterOK)
    {
       Print("No trade: not enough H1 history for the percentile (sync history / check InpMinBarsPctl)");
+      LogMonday("SKIP", "no history");
       if(g_reporter != NULL)
          g_reporter.ReportHealthAlert("NoHistory", "ATR percentile could not be computed", "high");
       return;
@@ -446,12 +625,14 @@ void CheckEntry()
    {
       PrintFormat("No trade: ATR%% %.3f = percentile %.1f (< %.0f)",
                   g_atrPct, g_atrRank * 100.0, InpATRPercentile);
+      LogMonday("SKIP", "atr low");
       return;
    }
 
    if((TimeCurrent() - barTime) > InpMaxEntryDelayMin * 60)
    {
       PrintFormat("No trade: first tick of the Monday bar arrived %d s late", (int)(TimeCurrent() - barTime));
+      LogMonday("SKIP", "late entry");
       if(g_reporter != NULL)
          g_reporter.ReportHealthAlert("LateEntry", "Monday bar first tick too late, entry skipped", "medium");
       return;
@@ -459,11 +640,16 @@ void CheckEntry()
 
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   if(bid <= 0 || ask <= 0) return;
+   if(bid <= 0 || ask <= 0)
+   {
+      LogMonday("SKIP", "no quote");
+      return;
+   }
    double spreadBps = (ask - bid) / bid * 1e4;
    if(spreadBps > InpMaxSpreadBps)
    {
       PrintFormat("No trade: spread %.1f bps > limit %.1f bps", spreadBps, InpMaxSpreadBps);
+      LogMonday("SKIP", "wide spread");
       if(g_reporter != NULL)
          g_reporter.ReportHealthAlert("WideSpread",
             StringFormat("spread=%.1f bps limit=%.1f bps", spreadBps, InpMaxSpreadBps), "high");
@@ -471,7 +657,11 @@ void CheckEntry()
    }
 
    double lots = CalculateLots();
-   if(lots <= 0) return;
+   if(lots <= 0)
+   {
+      LogMonday("SKIP", "zero lots");
+      return;
+   }
 
    // slippage tolerance expressed in bps of price, converted to points
    ulong dev = (ulong)MathMax(1.0, MathRound(ask * InpMaxSlippageBps / 1e4 / _Point));
@@ -481,18 +671,19 @@ void CheckEntry()
 
    if(g_trade.Buy(lots, _Symbol, 0, 0, 0, comment))
    {
+      LogMonday("BUY", "ok");
       Print("=== ENTRY LONG | ATR%=", DoubleToString(g_atrPct, 3),
             " | P=", DoubleToString(g_atrRank * 100.0, 1),
             " | Lots=", DoubleToString(lots, 2), " @ ", DoubleToString(ask, _Digits),
             " | entry spread=", DoubleToString(spreadBps, 1), " bps");
 
-      if(g_reporter != NULL && InpSendPushAlerts)
-         g_reporter.SendAlert(StringFormat("BUY %s | ATR=%.3f P%.0f | Lots=%.2f | spread %.1f bps",
-                              _Symbol, g_atrPct, g_atrRank * 100.0, lots, spreadBps));
+      PushAlert(StringFormat("BUY %s | ATR=%.3f P%.0f | Lots=%.2f | spread %.1f bps",
+                             _Symbol, g_atrPct, g_atrRank * 100.0, lots, spreadBps));
    }
    else
    {
       Print("BUY FAILED: ", g_trade.ResultRetcodeDescription());
+      LogMonday("SKIP", "buy failed");
       if(g_reporter != NULL)
          g_reporter.OnOrderRejected("EntryBuy", g_trade.ResultRetcode(), g_trade.ResultRetcodeDescription());
    }
@@ -685,7 +876,7 @@ void UpdateDashboard()
 {
    int x = 20, y = 30, lineH = 18;
 
-   DashLabel("ALPHACA_H1", "ALPHACA MONDAY EFFECT v1.00", x, y, clrDodgerBlue, 11);
+   DashLabel("ALPHACA_H1", "ALPHACA MONDAY EFFECT v1.01", x, y, clrDodgerBlue, 11);
    y += lineH + 2;
    DashLabel("ALPHACA_H2", _Symbol + " H1 | Exit: Tue 00:00 UTC", x, y, clrDarkGray, 9);
    y += lineH + 6;
@@ -760,25 +951,25 @@ void UpdateDashboard()
          DashLabel("ALPHACA_ST2", StringFormat("WR: %.1f%% | PF: %.2f", wr, pf), x, y, wrClr, 9);
          y += lineH;
       }
-
-      double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-      DashLabel("ALPHACA_EQ", "Equity: " + DoubleToString(eq, 0) + " " + AccountInfoString(ACCOUNT_CURRENCY),
-                x, y, clrWhite, 9);
-      y += lineH;
-
-      double dailyDD = g_reporter.GetDailyDD();
-      double totalDD = g_reporter.GetTotalDD();
-      color ddClr = clrSilver;
-      if(dailyDD > InpMaxDailyDD * 0.7 || totalDD > InpMaxTotalDD * 0.7) ddClr = clrOrangeRed;
-      else if(dailyDD > InpMaxDailyDD * 0.5 || totalDD > InpMaxTotalDD * 0.5) ddClr = clrYellow;
-
-      DashLabel("ALPHACA_DD", StringFormat("DD: Day=%.1f%%/%.0f%% | Total=%.1f%%/%.1f%%",
-                dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD), x, y, ddClr, 9);
-      y += lineH;
-
-      DashLabel("ALPHACA_MDD", StringFormat("Max DD hit: %.2f%%", g_reporter.GetMaxDrawdownHit()),
-                x, y, clrDarkGray, 8);
    }
+
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   DashLabel("ALPHACA_EQ", "Equity: " + DoubleToString(eq, 0) + " " + AccountInfoString(ACCOUNT_CURRENCY),
+             x, y, clrWhite, 9);
+   y += lineH;
+
+   double dailyDD = DailyDD();
+   double totalDD = TotalDD();
+   color ddClr = clrSilver;
+   if(dailyDD > InpMaxDailyDD * 0.7 || totalDD > InpMaxTotalDD * 0.7) ddClr = clrOrangeRed;
+   else if(dailyDD > InpMaxDailyDD * 0.5 || totalDD > InpMaxTotalDD * 0.5) ddClr = clrYellow;
+
+   DashLabel("ALPHACA_DD", StringFormat("DD: Day=%.1f%%/%.0f%% | Total=%.1f%%/%.1f%%",
+             dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD), x, y, ddClr, 9);
+   y += lineH;
+
+   DashLabel("ALPHACA_MDD", StringFormat("Max DD hit: %.2f%%", g_maxDDHit),
+             x, y, clrDarkGray, 8);
 }
 
 //+------------------------------------------------------------------+

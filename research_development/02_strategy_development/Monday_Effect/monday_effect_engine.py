@@ -32,6 +32,13 @@ Novedades v3.2 (TODO es opt-in: con los defaults los resultados son identicos a 
                                               cuenta (p. ej. 1/USDJPY si el CSV es BTCJPY en yenes y la cuenta en
                                               USD). Con un CSV en USD y cuenta en USD se deja en 1.0.
 
+Novedades v3.3 (solo load_data; el resto del motor no cambia y los resultados son identicos):
+
+    load_data lee CSV con separador distinto de la coma (coma, tabulador, punto y coma) y avisa con un error
+    claro si le pasas el export CRUDO de MetaTrader (cabeceras <DATE> <TIME>, hora del SERVIDOR, no UTC):
+    ese archivo hay que convertirlo antes con convert_axi_h1.py. El mensaje de "sin columna de tiempo"
+    ahora incluye la ruta del archivo y la columna que habria que renombrar.
+
 Regla (v3):
   - Senal al CIERRE de la vela de las 23:00 UTC del domingo; compra en la APERTURA del lunes 00:00.
   - Filtro de volatilidad: ATR(atr_len) en % del precio >= percentil `atr_pctl` de su ultimo ano
@@ -128,18 +135,33 @@ def _find_csv(csv_path) -> Path:
     raise FileNotFoundError(f"No encontre '{csv_path}'. Probe desde cwd={cwd} y desde {_HERE}.")
 
 
+def _read_csv_any_sep(path: Path) -> pd.DataFrame:
+    """Lee el CSV con coma (lo normal). Si sale una sola columna, reintenta detectando el separador
+    (tabulador / punto y coma), que es lo que escribe MetaTrader."""
+    raw = pd.read_csv(path)
+    if raw.shape[1] == 1:
+        raw = pd.read_csv(path, sep=None, engine="python")
+    return raw
+
+
 def load_data(ticker=None, start=None, end=None, source=None, csv_path=None):
     """CSV horario -> DataFrame OHLCV con indice UTC naive (nombre 'time')."""
     source = source or ENGINE_DEFAULTS["data_source"]
     if source != "csv_hourly":
         raise ValueError("Este motor solo usa CSV horario (csv_hourly); no hay Yahoo.")
     path = _find_csv(csv_path or ENGINE_DEFAULTS["csv_path"])
-    raw = pd.read_csv(path)
+    raw = _read_csv_any_sep(path)
+    if any(str(c).strip().startswith("<") for c in raw.columns):
+        raise ValueError(
+            f"'{path.name}' parece el export CRUDO de MetaTrader (cabeceras tipo <DATE> <TIME>): esta en hora del "
+            f"SERVIDOR, no en UTC. Convierte primero con convert_axi_h1.py y apunta csv_path al CSV resultante "
+            f"(columna 'time' en UTC). Columnas: {list(raw.columns)}")
     raw.columns = [str(c).strip().lower().replace(" ", "_") for c in raw.columns]
     tcol = next((c for c in ("open_time", "timestamp", "time", "datetime", "date", "open_timestamp")
                  if c in raw.columns), None)
     if tcol is None:
-        raise KeyError(f"Sin columna de tiempo. Columnas: {list(raw.columns)}")
+        raise KeyError(f"Sin columna de tiempo en '{path}'. Renombra la columna de fechas a 'time' (UTC). "
+                       f"Columnas: {list(raw.columns)}")
     t = raw[tcol]
     if pd.api.types.is_numeric_dtype(t):
         m = float(t.iloc[0])

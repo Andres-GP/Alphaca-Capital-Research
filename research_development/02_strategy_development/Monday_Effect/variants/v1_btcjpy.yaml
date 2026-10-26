@@ -1,17 +1,19 @@
-id: MONDAY.btcusd.cfd.v1
+id: MONDAY.btcjpy.cfd.v1
 edge: monday_effect
 status: in_development # in_development | validated | rejected | demo | approved
 
-#USE BTC-JPY CFD IN AXI FOR
+# VEHICLE: Axi BTC-JPY CFD. Same rules as the base variant (researched once on Binance BTCUSDT);
+# this variant only re-runs the research on the broker's own H1 candles.
 
 instrument:
-  ticker: btcjpy # label only: the data comes from the CSV below (Dukascopy BTC/USD proxy for the Axi BTC-JPY CFD)
-  start: "2017-01-01" # check the first date in the download summary; an earlier date than the data is harmless
+  ticker: btcjpy # label only: the data comes from the CSV below
+  # First REAL hourly candle. The Axi export starts with 3 daily-resolution candles (2022-06-14..16);
+  # starting at 2022-06-17 21:00 keeps them out of the ATR and the percentile window.
+  start: "2022-06-17 21:00"
 
 split:
-  oos_start: "2024-01-08" # same cut as the base variant
+  oos_start: "2024-01-08" # same cut as the base variant (keeps the OOS clean vs the base research)
 
-# Same rules as the base: research is done once on base_btcusdt, this variant only changes the vehicle.
 params:
   vol_mode: pctl
   atr_pctl: 40.0
@@ -19,20 +21,20 @@ params:
   skip_first_monday: true
   entry_hour: 0 # UTC, Monday 00:00 (signal = Sunday 23:00 close)
   hold_bars: 24
-  cost_bps_per_side: 5.5 # PLACEHOLDER: Exness reference (0.11 % round trip). Replace with the Axi spread you measure in the demo
+  cost_bps_per_side: 5.5 # PLACEHOLDER: replace with the spread/side measured in notebook 04 (MT5 reconciliation)
 
 grid:
   atr_pctl_values: [0, 10, 20, 30, 40, 50, 60]
-  atr_len_values: [12, 24, 48, 72, 96, 168]
-
+  atr_len_values: [12, 24, 36, 48, 72, 96, 120, 168, 240, 336]
 engine_defaults:
   data_source: csv_hourly
-  csv_path: "../../data/axi/btcjpy_h1_utc.csv" # output of download_dukascopy_btc.py
+  csv_path: "../../data/axi/btcjpy_h1_utc.csv" # output of convert_axi_h1.py (UTC). NOT the raw MT5 export
   pctl_window: 8760
   pctl_min_bars: 4380
   financing_bps_per_night: 4.11 # Axi BTC-JPY long swap: -15 % annual = 15 / 365 * 100 bps per night
-  rollover_hour_utc: 22 # the Mon 00:00 -> Tue 00:00 hold crosses exactly one rollover either way
-  size_fraction: 0.20 # fits the 9 % hard limit (historical worst: -8.6 %); the base variant used 0.40
+  rollover_hour_utc: 22
+  size_fraction: 0.20
   contract_size: 1.0
   min_lot: 0.01 # Axi BTC-JPY
   lot_step: 0.01
+  quote_to_account: 0.00645 # account currency (USD) per 1 JPY ~ 1/155. The CSV is in JPY, the account in USD
