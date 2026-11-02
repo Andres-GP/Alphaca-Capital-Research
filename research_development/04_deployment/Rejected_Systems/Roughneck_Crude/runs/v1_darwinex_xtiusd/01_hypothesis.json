@@ -1,0 +1,403 @@
+{
+  "variant": "ROUGHNECK.xtiusd.cfd.v1",
+  "ticker": "xtiusd",
+  "params": {
+    "sma_fast": 10,
+    "sma_slow": 20,
+    "trend_lb": 10,
+    "trend_min": 0.25,
+    "trend_mode": "on",
+    "atr_len": 45,
+    "atr_method": "sma",
+    "long_low_n": 8,
+    "long_atr_mult": 1.5,
+    "long_entry_n": 4,
+    "short_high_n": 3,
+    "short_atr_mult": 2.0,
+    "short_entry_n": 4,
+    "early_n": 5,
+    "t1_n": 4,
+    "t2_n": 2,
+    "stop_dollar": 1.0,
+    "early_days": 4,
+    "t1_atr": 2.0,
+    "t2_atr": 4.0,
+    "t3_atr": 5.0,
+    "lock_trigger": 1.0,
+    "lock_level": 0.4,
+    "side": "both",
+    "cost_bps_per_side": 4.0
+  },
+  "oos_start": "2023-01-03",
+  "all": {
+    "n": 282,
+    "pf": 0.5123462785792791,
+    "win_rate": 20.921985815602838,
+    "t_stat": -3.2554021041271133
+  },
+  "is": {
+    "n": 202,
+    "pf": 0.49228868026911543
+  },
+  "oos": {
+    "n": 80,
+    "pf": 0.5700593133723423
+  },
+  "max_dd_fraction_sizing_pct": -83.15883436462144,
+  "hard_limit": {
+    "limit": 0.09,
+    "max_dd_intrabar_pct": -82.19611170148931,
+    "passed": false
+  },
+  "min_capital": {
+    "min_lot_weight": 987.6,
+    "worst_gap": 1800.0000000000005
+  },
+  "trend_filter": [
+    {
+      "Rules": "Naked trigger (no trend filter)",
+      "Trades": 591,
+      "Win %": 23.4,
+      "PF": 0.578,
+      "Mean net %": -0.511,
+      "t-stat": -2.92
+    },
+    {
+      "Rules": "Configured (trend + trigger)",
+      "Trades": 282,
+      "Win %": 20.9,
+      "PF": 0.512,
+      "Mean net %": -0.579,
+      "t-stat": -3.26
+    }
+  ],
+  "sides": [
+    {
+      "Side": "Long only",
+      "Trades": 218,
+      "Win %": 23.4,
+      "PF": 0.629,
+      "Mean net %": -0.404,
+      "t-stat": -1.87,
+      "Net sum %": -88.1
+    },
+    {
+      "Side": "Short only",
+      "Trades": 64,
+      "Win %": 12.5,
+      "PF": 0.225,
+      "Mean net %": -1.174,
+      "t-stat": -4.52,
+      "Net sum %": -75.2
+    },
+    {
+      "Side": "Both (configured)",
+      "Trades": 282,
+      "Win %": 20.9,
+      "PF": 0.512,
+      "Mean net %": -0.579,
+      "t-stat": -3.26,
+      "Net sum %": -163.2
+    }
+  ],
+  "distance_spearman": {
+    "rho": 0.01807730756293502,
+    "p": 0.6609704828983395
+  },
+  "hypothesis_confirmed": false,
+  "checks_summary": {
+    "pass": 22,
+    "fail": 26,
+    "skip": 0
+  },
+  "checks": [
+    {
+      "section": "3. Data",
+      "name": "IS and OOS are both non-empty",
+      "status": "PASS",
+      "detail": "IS 3,021 bars | OOS 996 bars"
+    },
+    {
+      "section": "3. Data",
+      "name": "Prices are strictly positive",
+      "status": "PASS",
+      "detail": "min close 10.82 (cash CFDs sometimes break on 2020-04-20)"
+    },
+    {
+      "section": "3. Data",
+      "name": "OHLC consistent (>= 99.9% of bars)",
+      "status": "PASS",
+      "detail": "0 inconsistent bars"
+    },
+    {
+      "section": "3. Data",
+      "name": "No calendar gap longer than 5 days (>= 99.5% of steps)",
+      "status": "PASS",
+      "detail": "1 gaps > 5 days"
+    },
+    {
+      "section": "3. Data",
+      "name": "Close-to-open jumps above 4 USD are rare (< 0.5% of bars): rollover jumps would show here",
+      "status": "PASS",
+      "detail": "0.22% of bars | largest 8.12"
+    },
+    {
+      "section": "4.1 Trend filter",
+      "name": "Configured PF beats the naked trigger",
+      "status": "FAIL",
+      "detail": "0.512 vs 0.578"
+    },
+    {
+      "section": "4.1 Trend filter",
+      "name": "Configured mean net per trade beats the naked trigger",
+      "status": "FAIL",
+      "detail": "-0.579% vs -0.511%"
+    },
+    {
+      "section": "4.1 Trend filter",
+      "name": "The trend filter does not just cut trades: mean net per trade rises (not only fewer losers)",
+      "status": "FAIL",
+      "detail": "282 vs 591 trades"
+    },
+    {
+      "section": "4.2 Distance",
+      "name": "Distance correlates positively with net return (p < 0.05)",
+      "status": "FAIL",
+      "detail": "rho = +0.018, p = 0.661"
+    },
+    {
+      "section": "4.2 Distance",
+      "name": "Top quintile beats the bottom quintile",
+      "status": "FAIL",
+      "detail": "-1.026% vs -0.855%"
+    },
+    {
+      "section": "4.3 Sides",
+      "name": "Long side PF > 1",
+      "status": "FAIL",
+      "detail": "PF 0.629"
+    },
+    {
+      "section": "4.3 Sides",
+      "name": "Short side PF > 1 (the mirror assumption holds)",
+      "status": "FAIL",
+      "detail": "PF 0.225"
+    },
+    {
+      "section": "4.3 Sides",
+      "name": "Both sides together beat the better single side on net sum (diversifies)",
+      "status": "FAIL",
+      "detail": "-163.2% vs best single side -75.2%"
+    },
+    {
+      "section": "4.4 Exits",
+      "name": "The early exit adds value (full set PF >= without it)",
+      "status": "PASS",
+      "detail": "0.512 vs 0.512"
+    },
+    {
+      "section": "4.4 Exits",
+      "name": "The ATR trailing tiers adds value (full set PF >= without it)",
+      "status": "PASS",
+      "detail": "0.512 vs 0.049"
+    },
+    {
+      "section": "4.4 Exits",
+      "name": "The lock at +$1 adds value (full set PF >= without it)",
+      "status": "FAIL",
+      "detail": "0.512 vs 0.591"
+    },
+    {
+      "section": "4.5 Gaps",
+      "name": "Worst trade loses <= 4 base stops",
+      "status": "PASS",
+      "detail": "worst -3.59% vs 5.28% allowed"
+    },
+    {
+      "section": "4.5 Gaps",
+      "name": "Gap exits are a minority of exits (< 15%)",
+      "status": "PASS",
+      "detail": "0.4%"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, full period >= 1.3",
+      "status": "FAIL",
+      "detail": "PF = 0.512"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, IS >= 1.3",
+      "status": "FAIL",
+      "detail": "PF = 0.492"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, OOS >= 1.3",
+      "status": "FAIL",
+      "detail": "PF = 0.570"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "OOS does not degrade vs IS (OOS PF >= 50% of IS PF)",
+      "status": "PASS",
+      "detail": "OOS 0.570 vs IS 0.492"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "t-stat of the mean trade >= 2",
+      "status": "FAIL",
+      "detail": "t = -3.26"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, full period >= 60",
+      "status": "PASS",
+      "detail": "282 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, OOS >= 20",
+      "status": "PASS",
+      "detail": "80 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Expectancy > 0 in IS and OOS (net of costs)",
+      "status": "FAIL",
+      "detail": "IS -0.624% | OOS -0.464%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "100% ideal fraction stays inside -9% (intrabar)",
+      "status": "FAIL",
+      "detail": "max DD -83.36% | headroom -74.36 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Lot-adjusted sizing stays inside -9% (intrabar)",
+      "status": "FAIL",
+      "detail": "max DD -82.20% | headroom -73.20 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Configured fraction <= largest fraction allowed by the limit",
+      "status": "FAIL",
+      "detail": "100% vs 5.5%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Capital >= minimum capital for the minimum lot",
+      "status": "PASS",
+      "detail": "10,000 vs 988"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Capital >= minimum capital for the worst historical gap",
+      "status": "PASS",
+      "detail": "10,000 vs 1,800"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Every trade is executable with the minimum lot",
+      "status": "PASS",
+      "detail": "282 of 282 trades taken"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": "No calendar year breaches the hard limit",
+      "status": "FAIL",
+      "detail": "years in breach: [2011, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] | worst year DD -29.1%"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": ">= 60% of full calendar years are profitable",
+      "status": "FAIL",
+      "detail": "2/14 full years positive | non-positive: 2011 (-23.7%), 2013 (-1.8%), 2014 (-15.5%), 2015 (-15.2%), 2016 (-2.9%), 2018 (-12.8%), 2019 (-8.0%), 2020 (-3.6%), 2021 (-16.0%), 2022 (-13.8%), 2023 (-22.8%), 2024 (-14.4%)"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No lookahead and execution model respected on every trade",
+      "status": "PASS",
+      "detail": "282 trades checked"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Every full calendar year has >= 3 trades",
+      "status": "FAIL",
+      "detail": "min 0 (2012) | max 29 over 15 full years"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "MTM paths telescope to the trade returns (error < 1e-9)",
+      "status": "PASS",
+      "detail": "max abs error 6.66e-16"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No lookahead: truncating the last year does not change earlier trades",
+      "status": "PASS",
+      "detail": "251 trades compared"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Placebo: no edge on random walks (mean PF within 0.85-1.15)",
+      "status": "PASS",
+      "detail": "mean PF 1.006"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Trades per year within 0.4x-2.5x of the published ~9.8",
+      "status": "PASS",
+      "detail": "ours 17.6 vs published 9.8"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Win rate within 15 points of the published 74%",
+      "status": "FAIL",
+      "detail": "ours 20.9% vs published 74.0%"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "PF at least 50% of the published 1.81 (different instrument, period and cost model)",
+      "status": "FAIL",
+      "detail": "ours 0.512 vs published 1.81"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Configured Profit Factor beats naked trigger and no-tiers variant",
+      "status": "FAIL",
+      "detail": "configured 0.512 | naked 0.578 | no-tiers 0.049"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Configured Sharpe beats naked trigger and no-tiers variant",
+      "status": "FAIL",
+      "detail": "configured -0.75 | naked -0.99 | no-tiers -0.28"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Configured max drawdown is shallower than naked trigger and no-tiers variant",
+      "status": "PASS",
+      "detail": "configured -83.16% | naked -96.86% | no-tiers -88.85%"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Edge survives doubled costs (PF >= 1.1)",
+      "status": "FAIL",
+      "detail": "PF 0.473"
+    },
+    {
+      "section": "7. Variants",
+      "name": "ATR method does not change the verdict (Wilder PF >= 80% of simple-ATR PF)",
+      "status": "PASS",
+      "detail": "Wilder 0.480 vs simple 0.512"
+    },
+    {
+      "section": "8. Verdict",
+      "name": "Core criteria: PF >= 1.3 (full and OOS), t >= 2, N >= 60",
+      "status": "FAIL",
+      "detail": "PF 0.512 / OOS 0.570 | t -3.26 | N 282"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+id: ROUGHNECK.usoil.cfd.v1
+instrument:
+  ticker: usoil # data/usoil*.csv (MT5 export, H1 or D1), any case. Axi cash CFD: VERIFY there are no roll jumps (check 3.1 of notebook 01)
+  start: "2010-01-01"
+params:
+  sma_fast: 10
+  sma_slow: 20
+  trend_lb: 10
+  trend_min: 0.25
+  trend_mode: "on"
+  atr_len: 45
+  atr_method: sma
+  long_low_n: 8
+  long_atr_mult: 1.5
+  long_entry_n: 4
+  short_high_n: 3
+  short_atr_mult: 2.0
+  short_entry_n: 4
+  early_n: 5
+  t1_n: 4
+  t2_n: 2
+  stop_dollar: 1.0
+  early_days: 4
+  t1_atr: 2.0
+  t2_atr: 4.0
+  t3_atr: 5.0
+  lock_trigger: 1.0
+  lock_level: 0.40
+  side: both
+  cost_bps_per_side: 4.0
+grid:
+  long_atr_mult_values: [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5]
+  atr_len_values: [30, 38, 45, 52, 60]
+oos_start_ts: "2023-01-02" # adjust to ~35% of the usable history once the CSV is loaded
+engine_defaults:
+  data_source: csv_h1
+  server_ny_offset_h: 7 # server = NY + 7h all year (GMT+2/+3 with US DST). VERIFY with a known candle; use null + server_tz if the export is in a real tz
+  financing_bps_per_night: 1.5
+  size_fraction: 1.0
+  contract_size: 10.0 # barrels per lot -- VERIFY in MT5 (Specification)
+  min_lot: 1.0
+  lot_step: 1.0
+run_dir: runs/v1_axi_usoil

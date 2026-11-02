@@ -1,0 +1,703 @@
+{
+  "variant": "BTCOVN.btcusd.base.v1",
+  "ticker": "btcusd",
+  "params": {
+    "entry_hour_utc": 21,
+    "hold_hours": 2,
+    "trend_mode": "off",
+    "sma_len": 50,
+    "vol_mode": "off",
+    "vol_len_days": 30,
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "stop_pct": 0.0,
+    "side": "long",
+    "cost_bps_per_side": 3.0
+  },
+  "oos_start": "2023-01-02",
+  "all": {
+    "n": 3180,
+    "pf": 0.8726711217719131,
+    "win_rate": 45.69182389937107,
+    "t_stat": -2.353148546512969
+  },
+  "is": {
+    "n": 1780,
+    "pf": 0.8284855835494418
+  },
+  "oos": {
+    "n": 1400,
+    "pf": 0.9765585573697074
+  },
+  "max_dd_fraction_sizing_pct": -82.49220867338875,
+  "hard_limit": {
+    "limit": 0.07,
+    "max_dd_intrabar_pct": -82.91567243420828,
+    "passed": false
+  },
+  "min_capital": {
+    "min_lot_weight": 7675.746000000001,
+    "worst_gap": 13172.057142857146,
+    "min_lot_weight_of_capital": 0.07675746000000001
+  },
+  "hour_profile": [
+    {
+      "hour": 0,
+      "mean": 0.8121667689647109,
+      "n": 3182,
+      "t": 0.5925222160308244,
+      "rank": 4
+    },
+    {
+      "hour": 1,
+      "mean": -2.8609239233972947,
+      "n": 3178,
+      "t": -2.161220590730993,
+      "rank": 22
+    },
+    {
+      "hour": 2,
+      "mean": -3.3903177043449895,
+      "n": 3179,
+      "t": -2.617197968088111,
+      "rank": 23
+    },
+    {
+      "hour": 3,
+      "mean": -2.373762962167615,
+      "n": 3176,
+      "t": -1.9806429583212612,
+      "rank": 20
+    },
+    {
+      "hour": 4,
+      "mean": -0.9911836212483548,
+      "n": 3179,
+      "t": -0.8867718313718118,
+      "rank": 16
+    },
+    {
+      "hour": 5,
+      "mean": -0.7019209367306724,
+      "n": 3170,
+      "t": -0.6432904896606759,
+      "rank": 12
+    },
+    {
+      "hour": 6,
+      "mean": -0.7593564426125594,
+      "n": 3159,
+      "t": -0.6496377532080966,
+      "rank": 13
+    },
+    {
+      "hour": 7,
+      "mean": -0.5196127450696502,
+      "n": 3164,
+      "t": -0.45133136517804784,
+      "rank": 10
+    },
+    {
+      "hour": 8,
+      "mean": 0.09914701594100424,
+      "n": 3174,
+      "t": 0.07551098409715522,
+      "rank": 8
+    },
+    {
+      "hour": 9,
+      "mean": -1.862010937357913,
+      "n": 3178,
+      "t": -1.6007605303775958,
+      "rank": 19
+    },
+    {
+      "hour": 10,
+      "mean": 0.18470252642663956,
+      "n": 3179,
+      "t": 0.13273555893412342,
+      "rank": 7
+    },
+    {
+      "hour": 11,
+      "mean": -0.6842289336268638,
+      "n": 3178,
+      "t": -0.6013899092791167,
+      "rank": 11
+    },
+    {
+      "hour": 12,
+      "mean": 1.2116331064955852,
+      "n": 3180,
+      "t": 0.8869971408560243,
+      "rank": 2
+    },
+    {
+      "hour": 13,
+      "mean": -0.8822379990776826,
+      "n": 3182,
+      "t": -0.6292412172815546,
+      "rank": 15
+    },
+    {
+      "hour": 14,
+      "mean": -0.8741694437808774,
+      "n": 3181,
+      "t": -0.5271853757845797,
+      "rank": 14
+    },
+    {
+      "hour": 15,
+      "mean": 1.1822137444380905,
+      "n": 3183,
+      "t": 0.7686575703208034,
+      "rank": 3
+    },
+    {
+      "hour": 16,
+      "mean": -2.421772179233405,
+      "n": 3183,
+      "t": -1.6585377738024947,
+      "rank": 21
+    },
+    {
+      "hour": 17,
+      "mean": -1.1829305139171722,
+      "n": 3183,
+      "t": -0.926034019557952,
+      "rank": 17
+    },
+    {
+      "hour": 18,
+      "mean": 0.2280547033451528,
+      "n": 3182,
+      "t": 0.18499200946618666,
+      "rank": 6
+    },
+    {
+      "hour": 19,
+      "mean": -1.5977296636050096,
+      "n": 3181,
+      "t": -1.1719794745006913,
+      "rank": 18
+    },
+    {
+      "hour": 20,
+      "mean": 2.713303667517509,
+      "n": 3181,
+      "t": 1.7407251584644143,
+      "rank": 1
+    },
+    {
+      "hour": 21,
+      "mean": 0.4533312706607267,
+      "n": 3181,
+      "t": 0.35239765260274786,
+      "rank": 5
+    },
+    {
+      "hour": 22,
+      "mean": 0.013890018177654714,
+      "n": 3226,
+      "t": 0.006865758012740306,
+      "rank": 9
+    },
+    {
+      "hour": 23,
+      "mean": -3.4842712468690813,
+      "n": 3180,
+      "t": -2.355707806667185,
+      "rank": 24
+    }
+  ],
+  "weekday": [
+    {
+      "index": "Mon",
+      "Trades": 454,
+      "gross_mean": 0.07683883242094622,
+      "net_mean": -0.0010236985065777717,
+      "win": 47.57709251101321,
+      "swap_nights": 0.32599118942731276,
+      "net_t": -0.022022769379148335
+    },
+    {
+      "index": "Tue",
+      "Trades": 454,
+      "gross_mean": 0.05112118938865907,
+      "net_mean": -0.026741341538864927,
+      "win": 46.69603524229075,
+      "swap_nights": 0.32599118942731276,
+      "net_t": -0.6576341968945131
+    },
+    {
+      "index": "Wed",
+      "Trades": 454,
+      "gross_mean": 0.027032431569254268,
+      "net_mean": -0.05083009935826973,
+      "win": 46.035242290748904,
+      "swap_nights": 0.32599118942731276,
+      "net_t": -1.0041995463050613
+    },
+    {
+      "index": "Thu",
+      "Trades": 455,
+      "gross_mean": 0.029525508524184296,
+      "net_mean": -0.048418191611296665,
+      "win": 45.714285714285715,
+      "swap_nights": 0.3274725274725275,
+      "net_t": -0.9945865942088874
+    },
+    {
+      "index": "Fri",
+      "Trades": 455,
+      "gross_mean": 0.03622216666836435,
+      "net_mean": -0.0776089337380785,
+      "win": 40.43956043956044,
+      "swap_nights": 0.9824175824175824,
+      "net_t": -1.759910473557496
+    },
+    {
+      "index": "Sat",
+      "Trades": 453,
+      "gross_mean": 0.011698197932900067,
+      "net_mean": -0.04830180206709995,
+      "win": 43.4878587196468,
+      "swap_nights": 0.0,
+      "net_t": -1.1140373741452223
+    },
+    {
+      "index": "Sun",
+      "Trades": 455,
+      "gross_mean": 0.020598650321474024,
+      "net_mean": -0.039401349678525974,
+      "win": 49.89010989010989,
+      "swap_nights": 0.0,
+      "net_t": -0.7332762312550715
+    }
+  ],
+  "filters": [
+    {
+      "Rules": "Naked rule (configured)",
+      "Trades": 3180,
+      "Win %": 45.7,
+      "PF": 0.873,
+      "Mean net %": -0.042,
+      "t-stat": -2.35
+    },
+    {
+      "Rules": "Uptrend only (open 00:00 > SMA)",
+      "Trades": 1639,
+      "Win %": 47.8,
+      "PF": 0.96,
+      "Mean net %": -0.012,
+      "t-stat": -0.52
+    },
+    {
+      "Rules": "High vol only (30d vol > past median)",
+      "Trades": 939,
+      "Win %": 47.1,
+      "PF": 0.893,
+      "Mean net %": -0.045,
+      "t-stat": -1.08
+    },
+    {
+      "Rules": "Uptrend + high vol",
+      "Trades": 447,
+      "Win %": 52.6,
+      "PF": 1.148,
+      "Mean net %": 0.057,
+      "t-stat": 0.94
+    }
+  ],
+  "swap": {
+    "n": 3180.0,
+    "pct_crossing": 0.23333333333333334,
+    "avg_swap_drag_pct": 0.017920220556560694,
+    "avg_net_pnl_pct": -0.04177134143502414,
+    "avg_gross_of_swap_pct": -0.02385112087846344,
+    "avg_drag_friday_pct": 0.1643835616438356
+  },
+  "stop_sweep": [
+    {
+      "stop %": 0.0,
+      "Trades": 3180,
+      "PF": 0.873,
+      "Mean net %": -0.0418,
+      "t": -2.35,
+      "Win %": 45.7,
+      "Stopped %": 0.0,
+      "Worst trade %": -10.23
+    },
+    {
+      "stop %": 0.5,
+      "Trades": 3180,
+      "PF": 0.557,
+      "Mean net %": -0.1452,
+      "t": -12.4,
+      "Win %": 30.3,
+      "Stopped %": 52.3,
+      "Worst trade %": -0.74
+    },
+    {
+      "stop %": 1.0,
+      "Trades": 3180,
+      "PF": 0.576,
+      "Mean net %": -0.1703,
+      "t": -11.4,
+      "Win %": 38.3,
+      "Stopped %": 28.8,
+      "Worst trade %": -1.22
+    },
+    {
+      "stop %": 1.5,
+      "Trades": 3180,
+      "PF": 0.592,
+      "Mean net %": -0.1742,
+      "t": -10.37,
+      "Win %": 41.3,
+      "Stopped %": 17.7,
+      "Worst trade %": -1.72
+    },
+    {
+      "stop %": 2.0,
+      "Trades": 3180,
+      "PF": 0.598,
+      "Mean net %": -0.1747,
+      "t": -9.72,
+      "Win %": 42.8,
+      "Stopped %": 11.7,
+      "Worst trade %": -2.22
+    },
+    {
+      "stop %": 3.0,
+      "Trades": 3180,
+      "PF": 0.626,
+      "Mean net %": -0.1622,
+      "t": -8.28,
+      "Win %": 44.0,
+      "Stopped %": 6.2,
+      "Worst trade %": -3.22
+    }
+  ],
+  "hypothesis_confirmed": false,
+  "checks_summary": {
+    "pass": 21,
+    "fail": 30,
+    "skip": 0
+  },
+  "checks": [
+    {
+      "section": "3. Data",
+      "name": "IS and OOS are both non-empty",
+      "status": "PASS",
+      "detail": "IS 42,717 bars | OOS 33,602 bars"
+    },
+    {
+      "section": "3. Data",
+      "name": "Prices are strictly positive",
+      "status": "PASS",
+      "detail": "min close 3173.48"
+    },
+    {
+      "section": "3. Data",
+      "name": "OHLC consistent (>= 99.9% of bars)",
+      "status": "PASS",
+      "detail": "0 inconsistent bars"
+    },
+    {
+      "section": "3. Data",
+      "name": "Entry-hour bars exist on >= 99% of days",
+      "status": "FAIL",
+      "detail": "3181/3228 days have a 21:00 UTC bar (98.5%)"
+    },
+    {
+      "section": "3. Data",
+      "name": "Missing hourly bars <= 1% of the expected count",
+      "status": "FAIL",
+      "detail": "76,319 of 77,469 expected (1.48% missing)"
+    },
+    {
+      "section": "3. Data",
+      "name": "No hourly gap longer than 6 h (>= 99.9% of steps)",
+      "status": "PASS",
+      "detail": "51 gaps > 6 h | largest 25 h"
+    },
+    {
+      "section": "3. Data",
+      "name": "Close-to-open jumps above 2% are rare (< 0.1% of bars)",
+      "status": "FAIL",
+      "detail": "0.453% of bars | largest 12.05%"
+    },
+    {
+      "section": "3. Data",
+      "name": "Server -> UTC conversion looks right: peak hourly volatility falls in 12-17 UTC (US / Europe overlap)",
+      "status": "PASS",
+      "detail": "peak volatility hour = 14:00 UTC (if far off, fix server_ny_offset_h in the YAML)"
+    },
+    {
+      "section": "4.1 Hour profile",
+      "name": "Entry-window hours are among the top 4 hours by mean return",
+      "status": "FAIL",
+      "detail": "ranks [5, 9] of 24"
+    },
+    {
+      "section": "4.1 Hour profile",
+      "name": "Window bars have a positive mean with t >= 2",
+      "status": "FAIL",
+      "detail": "mean +0.23 bps | t = 0.19"
+    },
+    {
+      "section": "4.1 Hour profile",
+      "name": "The window mean is positive in >= 60% of calendar years",
+      "status": "FAIL",
+      "detail": "5/9 years: 2018:-12.6, 2019:+0.8, 2020:-0.5, 2021:+4.7, 2022:-4.2, 2023:+3.9, 2024:+6.3, 2025:+3.3, 2026:-0.5"
+    },
+    {
+      "section": "4.2 Weekday",
+      "name": "Every weekday has a positive gross mean (no day carries the edge alone)",
+      "status": "PASS",
+      "detail": "gross means: Mon +0.077, Tue +0.051, Wed +0.027, Thu +0.030, Fri +0.036, Sat +0.012, Sun +0.021"
+    },
+    {
+      "section": "4.2 Weekday",
+      "name": "Friday gross mean >= mean of the other days (published: Friday is the best day)",
+      "status": "PASS",
+      "detail": "Fri +0.036% vs others +0.036%"
+    },
+    {
+      "section": "4.2 Weekday",
+      "name": "Friday is still positive NET of swap (x3 charge)",
+      "status": "FAIL",
+      "detail": "Fri net -0.078% | swap nights charged avg 0.98"
+    },
+    {
+      "section": "4.3 Filters",
+      "name": "Uptrend filter raises the mean net per trade",
+      "status": "PASS",
+      "detail": "-0.012% vs -0.042%"
+    },
+    {
+      "section": "4.3 Filters",
+      "name": "High-vol filter raises the mean net per trade",
+      "status": "FAIL",
+      "detail": "-0.045% vs -0.042%"
+    },
+    {
+      "section": "4.3 Filters",
+      "name": "A filter is worth adding only if it keeps >= 200 trades and a t-stat >= 2",
+      "status": "FAIL",
+      "detail": "Uptrend only (open 00:00 > SMA): N=1639, t=-0.52; High vol only (30d vol > past median): N=939, t=-1.08; Uptrend + high vol: N=447, t=0.94"
+    },
+    {
+      "section": "4.4 Swap",
+      "name": "Average swap drag <= 25% of the average gross return",
+      "status": "FAIL",
+      "detail": "50% (drag 0.0179% vs gross 0.0361%)"
+    },
+    {
+      "section": "4.4 Swap",
+      "name": "Trades with '1 night charged' stay positive net of swap",
+      "status": "FAIL",
+      "detail": "net -0.158% (gross -0.043%, N=593)"
+    },
+    {
+      "section": "4.4 Swap",
+      "name": "Trades with 'Friday x3 charged' stay positive net of swap",
+      "status": "FAIL",
+      "detail": "net -0.270% (gross -0.046%, N=149)"
+    },
+    {
+      "section": "4.5 Tail",
+      "name": "Worst single trade loses <= 10% (2-hour crash tail)",
+      "status": "FAIL",
+      "detail": "worst -10.23%"
+    },
+    {
+      "section": "4.5 Tail",
+      "name": "A 2% stop keeps >= 80% of the no-stop PF",
+      "status": "FAIL",
+      "detail": "PF 0.598 vs 0.873"
+    },
+    {
+      "section": "4.5 Tail",
+      "name": "A 1% stop keeps >= 80% of the no-stop PF (the stop that would fit a tiny allocation)",
+      "status": "FAIL",
+      "detail": "PF 0.576 vs 0.873"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, full period >= 1.15",
+      "status": "FAIL",
+      "detail": "PF = 0.873"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, IS >= 1.15",
+      "status": "FAIL",
+      "detail": "PF = 0.828"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, OOS >= 1.15",
+      "status": "FAIL",
+      "detail": "PF = 0.977"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "OOS does not degrade vs IS (OOS PF >= 50% of IS PF)",
+      "status": "PASS",
+      "detail": "OOS 0.977 vs IS 0.828"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "t-stat of the mean trade >= 2",
+      "status": "FAIL",
+      "detail": "t = -2.35"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, full period >= 1000",
+      "status": "PASS",
+      "detail": "3180 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, OOS >= 150",
+      "status": "PASS",
+      "detail": "1400 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Expectancy > 0 in IS and OOS (net of costs and swap)",
+      "status": "FAIL",
+      "detail": "IS -0.071% | OOS -0.005%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "100% ideal fraction stays inside -7% (intrabar)",
+      "status": "FAIL",
+      "detail": "max DD -83.26% | headroom -76.26 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Lot-adjusted sizing stays inside -7% (intrabar)",
+      "status": "FAIL",
+      "detail": "max DD -82.92% | headroom -75.92 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Configured fraction <= largest fraction allowed by the limit",
+      "status": "FAIL",
+      "detail": "100% vs 4.3%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Capital >= minimum capital for the minimum lot",
+      "status": "PASS",
+      "detail": "100,000 vs 7,676"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Capital >= minimum capital for the worst historical adverse move",
+      "status": "PASS",
+      "detail": "100,000 vs 13,172"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Every trade is executable with the minimum lot",
+      "status": "PASS",
+      "detail": "3180 of 3180 trades taken"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": "No calendar year breaches the hard limit",
+      "status": "FAIL",
+      "detail": "years in breach: [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] | worst year DD -51.8%"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": ">= 60% of full calendar years are profitable",
+      "status": "FAIL",
+      "detail": "2/8 full years positive | non-positive: 2018 (-31.1%), 2019 (-14.1%), 2020 (-27.7%), 2022 (-44.1%), 2023 (-0.3%), 2025 (-2.7%)"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No lookahead and execution model respected on every trade",
+      "status": "PASS",
+      "detail": "3180 trades checked"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Every full calendar year has >= 200 trades",
+      "status": "PASS",
+      "detail": "min 322 (2018) | max 366 over 8 full years"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "MTM paths telescope to the trade returns (error < 1e-9)",
+      "status": "PASS",
+      "detail": "max abs error 2.22e-16"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No lookahead: truncating the last 6 months does not change earlier trades",
+      "status": "PASS",
+      "detail": "3000 trades compared"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No lookahead in the trend / volatility filters (truncation)",
+      "status": "PASS",
+      "detail": "447 filtered trades compared"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Placebo: no edge on random walks (mean PF within 0.92-1.08)",
+      "status": "PASS",
+      "detail": "mean PF 1.002"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Annualised return (100% capital) within 0.25x-2.5x of the published ~40.6%",
+      "status": "FAIL",
+      "detail": "ours -15.5% vs published 40.6%"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Edge survives doubled costs (PF >= 1.05)",
+      "status": "FAIL",
+      "detail": "PF 0.719"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Edge survives a doubled swap (PF >= 1.05): the broker may change it",
+      "status": "FAIL",
+      "detail": "PF 0.824 (swap OFF 0.925, configured 0.873)"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Swap does not decide the verdict (configured PF >= 80% of the swap-free PF)",
+      "status": "PASS",
+      "detail": "0.873 vs 0.925"
+    },
+    {
+      "section": "7. Variants",
+      "name": "A 1% stop does not make the max drawdown worse",
+      "status": "FAIL",
+      "detail": "stop -99.60% vs none -82.49%"
+    },
+    {
+      "section": "8. Verdict",
+      "name": "Core criteria: PF >= 1.15 (full and OOS), t >= 2, N >= 1000",
+      "status": "FAIL",
+      "detail": "PF 0.873 / OOS 0.977 | t -2.35 | N 3180"
+    }
+  ]
+}

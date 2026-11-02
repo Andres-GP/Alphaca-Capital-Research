@@ -1,0 +1,208 @@
+{
+  "variant": "ROUGHNECK.usoil.cfd.v1",
+  "ticker": "usoil",
+  "params": {
+    "sma_fast": 10,
+    "sma_slow": 20,
+    "trend_lb": 10,
+    "trend_min": 0.25,
+    "trend_mode": "on",
+    "atr_len": 45,
+    "atr_method": "sma",
+    "long_low_n": 8,
+    "long_atr_mult": 1.5,
+    "long_entry_n": 4,
+    "short_high_n": 3,
+    "short_atr_mult": 2.0,
+    "short_entry_n": 4,
+    "early_n": 5,
+    "t1_n": 4,
+    "t2_n": 2,
+    "stop_dollar": 1.0,
+    "early_days": 4,
+    "t1_atr": 2.0,
+    "t2_atr": 4.0,
+    "t3_atr": 5.0,
+    "lock_trigger": 1.0,
+    "lock_level": 0.4,
+    "side": "both",
+    "cost_bps_per_side": 4.0
+  },
+  "oos_start": "2023-01-03",
+  "official_sizing": "100% (robot)",
+  "status": {
+    "100% (robot)": "FAILED",
+    "150%": "FAILED"
+  },
+  "metrics": {
+    "sharpe": -0.5379299853425296,
+    "max_drawdown": -0.7614345468151609,
+    "num_trades": 300
+  },
+  "phases": {
+    "100% (robot)": {
+      "1_oos": {
+        "n": 67,
+        "pf": 0.42781839614661743,
+        "pf_without_best_trade": 0.2702960040171183,
+        "max_dd": -0.4029769422808852,
+        "dd_basis": "mtm",
+        "passed": false
+      },
+      "2_monte_carlo": {
+        "ret_p5": -0.883807107744594,
+        "mdd_p5": -0.8946966243926241,
+        "prob_ruin": 0.9853,
+        "dd_basis": "mtm",
+        "passed": false
+      },
+      "3_monkey": {
+        "pf_real": 0.6550378661351873,
+        "pct_pf": 0.077,
+        "passed": false
+      },
+      "4_plateau": {
+        "center_pf": 0.7102180231561935,
+        "plateau": false,
+        "worst_drop_pct": 8.245244472519197,
+        "passed": false
+      },
+      "5_edge_decay": {
+        "recent_pf": 0.43369679784265336,
+        "historical_pf": 0.7135169754418035,
+        "warning": true,
+        "informational": true
+      }
+    },
+    "150%": {
+      "1_oos": {
+        "n": 67,
+        "pf": 0.42781839614661726,
+        "pf_without_best_trade": 0.2702960040171182,
+        "max_dd": -0.5416248177941196,
+        "dd_basis": "mtm",
+        "passed": false
+      },
+      "2_monte_carlo": {
+        "ret_p5": -0.9625947405268592,
+        "mdd_p5": -0.9676302547414501,
+        "prob_ruin": 0.9996,
+        "dd_basis": "mtm",
+        "passed": false
+      },
+      "3_monkey": {
+        "pf_real": 0.6550378661351874,
+        "pct_pf": 0.077,
+        "passed": false
+      },
+      "4_plateau": {
+        "center_pf": 0.7102180231561935,
+        "plateau": false,
+        "worst_drop_pct": 8.245244472519197,
+        "passed": false
+      },
+      "5_edge_decay": {
+        "recent_pf": 0.4336967978426533,
+        "historical_pf": 0.7135169754418036,
+        "warning": true,
+        "informational": true
+      }
+    }
+  },
+  "walk_forward": {
+    "efficiency": NaN,
+    "pct_positive_years": 0.3076923076923077,
+    "worst_mdd": -0.30765603757373106,
+    "passed": false
+  },
+  "monkey": {
+    "A_pct_pf": 0.0285,
+    "B_pct_pf": 0.0165
+  },
+  "monte_carlo_mdd_p5": {
+    "100% (robot)": -0.8946966243926241,
+    "150%": -0.9676302547414501
+  },
+  "mc_passes_with_1pt_margin": false,
+  "mc_inside_hard_limit": false,
+  "cost_breakeven_bps_per_side": -15.5,
+  "cost_sweep": [
+    {
+      "Cost bps/side": 4.0,
+      "Round trip %": 0.08,
+      "Trades": 300,
+      "Profit Factor": 0.655,
+      "Mean net %": -0.39,
+      "t-stat": -2.21
+    },
+    {
+      "Cost bps/side": 6.0,
+      "Round trip %": 0.12,
+      "Trades": 300,
+      "Profit Factor": 0.629,
+      "Mean net %": -0.43,
+      "t-stat": -2.44
+    },
+    {
+      "Cost bps/side": 8.0,
+      "Round trip %": 0.16,
+      "Trades": 300,
+      "Profit Factor": 0.605,
+      "Mean net %": -0.47,
+      "t-stat": -2.67
+    },
+    {
+      "Cost bps/side": 12.0,
+      "Round trip %": 0.24,
+      "Trades": 300,
+      "Profit Factor": 0.56,
+      "Mean net %": -0.55,
+      "t-stat": -3.12
+    },
+    {
+      "Cost bps/side": 20.0,
+      "Round trip %": 0.4,
+      "Trades": 300,
+      "Profit Factor": 0.484,
+      "Mean net %": -0.71,
+      "t-stat": -4.03
+    },
+    {
+      "Cost bps/side": 30.0,
+      "Round trip %": 0.6,
+      "Trades": 300,
+      "Profit Factor": 0.411,
+      "Mean net %": -0.91,
+      "t-stat": -5.16
+    },
+    {
+      "Cost bps/side": 45.0,
+      "Round trip %": 0.9,
+      "Trades": 300,
+      "Profit Factor": 0.334,
+      "Mean net %": -1.21,
+      "t-stat": -6.86
+    },
+    {
+      "Cost bps/side": 60.0,
+      "Round trip %": 1.2,
+      "Trades": 300,
+      "Profit Factor": 0.279,
+      "Mean net %": -1.51,
+      "t-stat": -8.57
+    }
+  ],
+  "profit_share_top10pct_trades": 0.9271584108112754,
+  "gross_loss_share_worst3": 0.047804861300712945,
+  "pf_ex_worst3": 0.687923976413048,
+  "max_year_gross_loss_share_pct": 11.572600660631236,
+  "z_protocol": {
+    "mu0": -0.3318219861059047,
+    "sigma0": 3.2771587479277486,
+    "z_today": -0.30079630950293246,
+    "zone_today": "green",
+    "z_min": -1.4073950139231888
+  },
+  "edge_decay_warning": true,
+  "stress_ok": false
+}
