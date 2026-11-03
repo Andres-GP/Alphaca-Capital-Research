@@ -1,0 +1,156 @@
+{
+  "variant": "v1_axi_usdjpy",
+  "id": "GOTOBI.usdjpy.cfd.v1",
+  "rules_hash": "99a05a00",
+  "saved_at_utc": "2026-11-03 23:43:42",
+  "window": {
+    "is_start": "2017-01-02",
+    "is_end": "2022-12-31",
+    "years": 5.993155373032169
+  },
+  "baseline_is": {
+    "n": 425,
+    "pf": 1.7640017018350067,
+    "mean": 3.0193410709534776,
+    "t": 3.989069187285709,
+    "win": 60.0
+  },
+  "mean_cost_bps": 0.7662962262919378,
+  "mean_gross_bps": 3.7856372972454158,
+  "time_grid": {
+    "center": [
+      "07:30",
+      "09:55"
+    ],
+    "rank_by_mean": 6,
+    "share_cells_positive": 1.0,
+    "center_pf": 1.7640017018350067,
+    "worst_drop_pct": 26.143370690970674,
+    "plateau": false,
+    "anticliff": true,
+    "edge": false
+  },
+  "costs": {
+    "breakeven_flat_pips": 4.263842338178455,
+    "breakeven_scale": 3.4599929237169262,
+    "breakeven_mult": 4.942847033881323
+  },
+  "calendar": {
+    "loo_min_pf": 1.525362000692732,
+    "by_label_mean_bps": {
+      "5": -2.199172371382553,
+      "10": 3.861056330263297,
+      "15": 2.6206363895995506,
+      "20": 6.359915388102781,
+      "25": 5.818189163778318,
+      "EOM": 1.5934750259746313
+    }
+  },
+  "execution": {
+    "cap": Infinity,
+    "signal_loss": 0.0
+  },
+  "stability": {
+    "years_positive": 6,
+    "years": 6,
+    "worst_rolling_bps": 0.4702843927769542
+  },
+  "checks": [
+    {
+      "section": "2 Setup",
+      "name": "engine validate (in-sample)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "2 Setup",
+      "name": "N in-sample >= n_min",
+      "status": "FAIL",
+      "detail": "425 vs 600"
+    },
+    {
+      "section": "2 Setup",
+      "name": "PF net (in-sample) >= pf_min",
+      "status": "PASS",
+      "detail": "1.764 vs 1.2"
+    },
+    {
+      "section": "2 Setup",
+      "name": "t net (in-sample) >= min_t_net",
+      "status": "PASS",
+      "detail": "3.99 vs 2.5"
+    },
+    {
+      "section": "3 Time window",
+      "name": "plateau (3x3, PF >= pf_min, N >= n_min)",
+      "status": "FAIL",
+      "detail": "center PF 1.76"
+    },
+    {
+      "section": "3 Time window",
+      "name": "anti-cliff (3x3)",
+      "status": "PASS",
+      "detail": "worst drop 26.1% vs 30%"
+    },
+    {
+      "section": "3 Time window",
+      "name": "frozen cell not on grid edge",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "3 Time window",
+      "name": "majority of grid cells have mean net > 0",
+      "status": "PASS",
+      "detail": "100% of cells"
+    },
+    {
+      "section": "4 Costs",
+      "name": "breakeven multiple >= breakeven_mult_min",
+      "status": "PASS",
+      "detail": "4.94x vs 2.0"
+    },
+    {
+      "section": "4 Costs",
+      "name": "mean net > 0 at every YAML flat spread",
+      "status": "PASS",
+      "detail": "worst +2.90 bps at 1 pips"
+    },
+    {
+      "section": "5 Calendar",
+      "name": "leave-one-label-out: PF >= pf_min in every case",
+      "status": "PASS",
+      "detail": "min PF 1.53 (without 20)"
+    },
+    {
+      "section": "5 Calendar",
+      "name": "mean net > 0 in every Gotobi label",
+      "status": "FAIL",
+      "detail": "5/6 labels positive"
+    },
+    {
+      "section": "6 Execution",
+      "name": "signal loss of configured spread cap <= max_signal_loss",
+      "status": "PASS",
+      "detail": "0.0%"
+    },
+    {
+      "section": "7 Stability",
+      "name": "positive in-sample years >= years_pos_min",
+      "status": "PASS",
+      "detail": "6/6 vs 4.5"
+    },
+    {
+      "section": "7 Stability",
+      "name": "every YAML period with data has mean net > 0",
+      "status": "PASS",
+      "detail": "2017-2022: +3.0"
+    }
+  ],
+  "counts": {
+    "PASS": 12,
+    "FAIL": 3,
+    "SKIP": 0
+  },
+  "ready_for_03": false
+}

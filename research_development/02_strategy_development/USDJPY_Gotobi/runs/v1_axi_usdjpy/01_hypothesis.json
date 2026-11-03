@@ -1,0 +1,454 @@
+{
+  "variant": "GOTOBI.usdjpy.cfd.v1",
+  "id": "GOTOBI.usdjpy.cfd.v1",
+  "rules_hash": "99a05a00",
+  "saved_at_utc": "2026-11-03 23:43:24",
+  "ticker": "USDJPY",
+  "params": {
+    "gotobi_days": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ],
+    "include_month_end": true,
+    "shift_rule": "previous",
+    "holiday_source": "holidays",
+    "entry_time_jst": "07:30",
+    "exit_time_jst": "09:55",
+    "direction": "long",
+    "stop_bps": 0
+  },
+  "costs": {
+    "cost_mode": "feed",
+    "spread_scale": 0.7,
+    "max_entry_spread_pips": null,
+    "robustness": {
+      "cost_mode": "flat_pips",
+      "flat_spread_pips": [
+        0.7,
+        1.0
+      ],
+      "sweep_pips": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0,
+        1.25,
+        1.5,
+        1.75,
+        2.0,
+        2.25,
+        2.5
+      ]
+    },
+    "financing_bps_per_night": 0
+  },
+  "oos_start": "2023-01-01",
+  "all": {
+    "n": 697,
+    "pf": 1.525343104809282,
+    "win_rate": 59.82783357245337,
+    "t_stat": 3.9128440531147355
+  },
+  "is": {
+    "n": 425,
+    "pf": 1.7640017018350072
+  },
+  "oos": {
+    "n": 272,
+    "pf": 1.2710302942096086
+  },
+  "max_dd_fraction_sizing_pct": -4.226083425338319,
+  "hard_limit": {
+    "limit": 0.09,
+    "max_dd_bar_pct": -4.98497308825071,
+    "passed": true
+  },
+  "window_by_period": [
+    {
+      "Period": "2010-2014",
+      "Gotobi N": 0,
+      "Gotobi gross %": NaN,
+      "Gotobi t": NaN,
+      "Other N": 0,
+      "Other gross %": NaN,
+      "Other t": NaN
+    },
+    {
+      "Period": "2015-2019",
+      "Gotobi N": 212,
+      "Gotobi gross %": 0.0348,
+      "Gotobi t": 3.7438,
+      "Other N": 561,
+      "Other gross %": -0.0011,
+      "Other t": -0.1857
+    },
+    {
+      "Period": "2020-2022",
+      "Gotobi N": 213,
+      "Gotobi gross %": 0.0409,
+      "Gotobi t": 3.4192,
+      "Other N": 566,
+      "Other gross %": 0.0147,
+      "Other t": 2.3037
+    },
+    {
+      "Period": "OOS 2023+",
+      "Gotobi N": 272,
+      "Gotobi gross %": 0.0267,
+      "Gotobi t": 2.446,
+      "Other N": 722,
+      "Other gross %": 0.0016,
+      "Other t": 0.2366
+    },
+    {
+      "Period": "All",
+      "Gotobi N": 697,
+      "Gotobi gross %": 0.0335,
+      "Gotobi t": 5.3352,
+      "Other N": 1849,
+      "Other gross %": 0.0048,
+      "Other t": 1.3071
+    }
+  ],
+  "placebos": [
+    {
+      "Offset (bdays)": 0,
+      "N": 697,
+      "Gross mean %": 0.0335,
+      "Gross t": 5.3352,
+      "Hit rate %": 61.5495
+    },
+    {
+      "Offset (bdays)": -2,
+      "N": 702,
+      "Gross mean %": 0.0135,
+      "Gross t": 2.1778,
+      "Hit rate %": 56.9801
+    },
+    {
+      "Offset (bdays)": -1,
+      "N": 704,
+      "Gross mean %": 0.0041,
+      "Gross t": 0.727,
+      "Hit rate %": 53.267
+    },
+    {
+      "Offset (bdays)": 1,
+      "N": 700,
+      "Gross mean %": 0.0178,
+      "Gross t": 2.901,
+      "Hit rate %": 56.1429
+    },
+    {
+      "Offset (bdays)": 2,
+      "N": 702,
+      "Gross mean %": 0.0051,
+      "Gross t": 0.9101,
+      "Hit rate %": 55.8405
+    }
+  ],
+  "payment_dates": [
+    {
+      "bucket": "5",
+      "N": 114,
+      "Net mean %": -0.0194,
+      "Net t": -1.2447,
+      "Hit rate %": 44.7368
+    },
+    {
+      "bucket": "10",
+      "N": 118,
+      "Net mean %": 0.0318,
+      "Net t": 1.831,
+      "Hit rate %": 59.322
+    },
+    {
+      "bucket": "15",
+      "N": 118,
+      "Net mean %": 0.0271,
+      "Net t": 1.8769,
+      "Hit rate %": 63.5593
+    },
+    {
+      "bucket": "20",
+      "N": 118,
+      "Net mean %": 0.0574,
+      "Net t": 4.7298,
+      "Hit rate %": 74.5763
+    },
+    {
+      "bucket": "25",
+      "N": 111,
+      "Net mean %": 0.0449,
+      "Net t": 3.442,
+      "Hit rate %": 69.3694
+    },
+    {
+      "bucket": "EOM",
+      "N": 118,
+      "Net mean %": 0.0248,
+      "Net t": 1.3872,
+      "Hit rate %": 50.8475
+    }
+  ],
+  "hypotheses_tested": 17,
+  "min_t_net": 2.5,
+  "hypothesis_confirmed": true,
+  "checks_summary": {
+    "pass": 37,
+    "fail": 4,
+    "skip": 0
+  },
+  "checks": [
+    {
+      "section": "3. Data",
+      "name": "IS and OOS are both non-empty",
+      "status": "PASS",
+      "detail": "IS 447,700 bars | OOS 286,542 bars"
+    },
+    {
+      "section": "3. Data",
+      "name": "Gotobi dates without a tradable window <= 5%",
+      "status": "PASS",
+      "detail": "7 of 704 dates lost to gaps (1.0%)"
+    },
+    {
+      "section": "4.1 Window",
+      "name": "Gotobi window mean return > 0 in every sub-period",
+      "status": "FAIL",
+      "detail": "2010-2014: +nan%; 2015-2019: +0.0348%; 2020-2022: +0.0409%; OOS 2023+: +0.0267%"
+    },
+    {
+      "section": "4.1 Window",
+      "name": "Gotobi beats the other business days (one-sided Welch p < 0.05)",
+      "status": "PASS",
+      "detail": "gotobi +0.0335% vs other +0.0048% | t = 3.95, p = 0.0000"
+    },
+    {
+      "section": "4.1 Window",
+      "name": "Net window drift is significant (t >= 2.5)",
+      "status": "PASS",
+      "detail": "net mean +0.0279% | t = 4.44 (flat 0.7 pips)"
+    },
+    {
+      "section": "4.1 Window",
+      "name": "Gotobi drift is not present in the other business days (t < 2)",
+      "status": "PASS",
+      "detail": "other-days t = 1.31"
+    },
+    {
+      "section": "4.2 Placebos",
+      "name": "Real window has the highest mean of all offsets",
+      "status": "PASS",
+      "detail": "best offset = 0 | real +0.0335% vs best placebo +0.0178%"
+    },
+    {
+      "section": "4.2 Placebos",
+      "name": "No placebo window is significant (t < 2)",
+      "status": "FAIL",
+      "detail": "-2: t = 2.18; -1: t = 0.73; +1: t = 2.90; +2: t = 0.91"
+    },
+    {
+      "section": "4.2 Placebos",
+      "name": "Real window mean is at least 2x the best placebo",
+      "status": "FAIL",
+      "detail": "+0.0335% vs +0.0178%"
+    },
+    {
+      "section": "4.3 Payment dates",
+      "name": "Net mean is positive on every payment date",
+      "status": "FAIL",
+      "detail": "5: -0.0194%; 10: +0.0318%; 15: +0.0271%; 20: +0.0574%; 25: +0.0449%; EOM: +0.0248%"
+    },
+    {
+      "section": "4.3 Payment dates",
+      "name": "No single payment date carries more than 40% of the net edge",
+      "status": "PASS",
+      "detail": "top date = 20 with 31% of the net edge"
+    },
+    {
+      "section": "4.3 Payment dates",
+      "name": "At least 4 of the 6 payment dates are individually positive with t > 1",
+      "status": "PASS",
+      "detail": "5 of 6"
+    },
+    {
+      "section": "4.4 Shift",
+      "name": "Shifted payment days also have a positive net mean",
+      "status": "PASS",
+      "detail": "shifted +0.0225% (N = 226)"
+    },
+    {
+      "section": "4.4 Shift",
+      "name": "Shifted days are not significantly worse than the others (one-sided Welch p > 0.05)",
+      "status": "PASS",
+      "detail": "shifted +0.0225% vs on-date +0.0305%"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, full period >= 1.2",
+      "status": "PASS",
+      "detail": "PF = 1.525"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, IS >= 1.2",
+      "status": "PASS",
+      "detail": "PF = 1.764"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, OOS >= 1.2",
+      "status": "PASS",
+      "detail": "PF = 1.271"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "OOS does not degrade vs IS (OOS PF >= 50% of IS PF)",
+      "status": "PASS",
+      "detail": "OOS 1.271 vs IS 1.764"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Net t-stat of the mean trade >= 2.5 (raised for 17 hypotheses tested)",
+      "status": "PASS",
+      "detail": "t = 3.91"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, full period >= 600",
+      "status": "PASS",
+      "detail": "697 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, OOS >= 150",
+      "status": "PASS",
+      "detail": "272 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Expectancy > 0 in IS and OOS (net of costs)",
+      "status": "PASS",
+      "detail": "IS +0.0302% | OOS +0.0157%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "250% ideal fraction stays inside -9%",
+      "status": "PASS",
+      "detail": "max DD -5.07% | headroom +3.93 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Lot-adjusted sizing stays inside -9%",
+      "status": "PASS",
+      "detail": "max DD -4.98% | headroom +4.02 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Configured fraction <= largest fraction allowed by the limit",
+      "status": "PASS",
+      "detail": "250% vs 436.9%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Capital >= minimum capital for the minimum lot",
+      "status": "PASS",
+      "detail": "10,000 vs 400"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Every trade is executable with the minimum lot",
+      "status": "PASS",
+      "detail": "697 of 697 trades taken"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Intrabar drawdown (candle lows) stays inside -9%",
+      "status": "PASS",
+      "detail": "max DD intrabar -5.10% (closes only -4.98%) | headroom +3.90 pts"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": "No calendar year breaches the hard limit",
+      "status": "PASS",
+      "detail": "years in breach: none | worst year DD -5.0%"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": ">= 75% of full calendar years are profitable",
+      "status": "PASS",
+      "detail": "8/9 full years positive | non-positive: 2025 (-0.0%)"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No lookahead and execution model respected on every trade",
+      "status": "PASS",
+      "detail": "697 trades checked"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Engine calendar matches the notebook calendar (>= 99% of dates)",
+      "status": "PASS",
+      "detail": "0 only in engine, 0 only in notebook of 697"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Every full calendar year has 66-74 trades (acceptance.trades_per_year)",
+      "status": "PASS",
+      "detail": "min 70 (2019) | max 72 (2022) over 8 full years"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "MTM paths telescope to the trade returns (error < 1e-9)",
+      "status": "PASS",
+      "detail": "max abs error 1.33e-15"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Engine gross return equals the notebook window return (error < 1e-6 %)",
+      "status": "PASS",
+      "detail": "max abs diff 5.55e-17 %"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Gotobi Profit Factor beats the naked window",
+      "status": "PASS",
+      "detail": "gotobi 1.525 | naked 1.067"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Gotobi expectancy per trade beats the naked window",
+      "status": "PASS",
+      "detail": "gotobi +0.0245% | naked +0.0036%"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Gotobi Sharpe beats the naked window",
+      "status": "PASS",
+      "detail": "gotobi 1.22 | naked 0.35"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Survives a flat 0.7 pips cost (PF >= 1.2, t >= 2.5)",
+      "status": "PASS",
+      "detail": "PF 1.614 | t 4.44"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Survives a flat 1 pips cost (PF >= 1.2, t >= 2.5)",
+      "status": "PASS",
+      "detail": "PF 1.549 | t 4.06"
+    },
+    {
+      "section": "8. Verdict",
+      "name": "Core criteria: PF >= 1.2 (full and OOS), net t >= 2.5, N >= 600",
+      "status": "PASS",
+      "detail": "PF 1.525 / OOS 1.271 | t 3.91 | N 697"
+    }
+  ]
+}

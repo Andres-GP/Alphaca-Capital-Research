@@ -1,0 +1,427 @@
+{
+  "variant": "v1_axi_usdjpy",
+  "id": "GOTOBI.usdjpy.cfd.v1",
+  "rules_hash": "99a05a00",
+  "saved_at_utc": "2026-11-03 23:43:38",
+  "oos_start": "2023-01-01",
+  "sizing": {
+    "fraction": 2.5,
+    "max_fraction": 4.369354248046875,
+    "hard_limit": 0.09
+  },
+  "performance": {
+    "In-sample": {
+      "n": 425.0,
+      "pf": 1.7640017018350067,
+      "mean": 3.0193410709534776,
+      "t": 3.989069187285709,
+      "win": 60.0,
+      "ret_%": 37.39911262327087,
+      "cagr_%": 5.444416030172827,
+      "sharpe": 1.5801056343729456,
+      "maxdd_close_%": -3.0818691655495
+    },
+    "Out-of-sample": {
+      "n": 272.0,
+      "pf": 1.2710302942096083,
+      "mean": 1.5705962522307007,
+      "t": 1.4438338445407872,
+      "win": 59.55882352941176,
+      "ret_%": 10.940886372585945,
+      "cagr_%": 2.7418313565681363,
+      "sharpe": 0.7211384981012627,
+      "maxdd_close_%": -4.226083425338345
+    },
+    "Full": {
+      "n": 697.0,
+      "pf": 1.5253431048092818,
+      "mean": 2.4539772392567847,
+      "t": 3.9128440531147355,
+      "win": 59.82783357245337,
+      "ret_%": 52.43179341232425,
+      "cagr_%": 4.379667674227061,
+      "sharpe": 1.2159517295434694,
+      "maxdd_close_%": -4.226083425338323
+    }
+  },
+  "oos": {
+    "n": 272,
+    "pf": 1.2710302942096083,
+    "mean": 1.5705962522307007,
+    "t": 1.4438338445407872,
+    "win": 59.55882352941176,
+    "p_one": 0.07439285963649866
+  },
+  "walk_forward": {
+    "efficiency": 0.8658623119775746,
+    "pct_positive": 0.8571428571428571,
+    "worst_mdd": -0.04226083425338334,
+    "folds": 7
+  },
+  "evidence": {
+    "t_bonferroni": 2.754268270633685,
+    "placebo": {
+      "0": {
+        "n": 697,
+        "gross_bps": 3.3499271637910137,
+        "gross_t": 5.335165271568446,
+        "net_bps": 2.4539772392567847,
+        "net_t": 3.9128440531147355,
+        "pf_net": 1.5253431048092818
+      },
+      "-2": {
+        "n": 703,
+        "gross_bps": 1.3701973426017546,
+        "gross_t": 2.2180210902965922,
+        "net_bps": 0.46331857339706956,
+        "net_t": 0.7539949586186787,
+        "pf_net": 1.0842180617389965
+      },
+      "-1": {
+        "n": 704,
+        "gross_bps": 0.40859522532486603,
+        "gross_t": 0.7269682803749914,
+        "net_bps": -0.4625739791057286,
+        "net_t": -0.8202982981598346,
+        "pf_net": 0.9163000999551447
+      },
+      "1": {
+        "n": 702,
+        "gross_bps": 1.8284125283112487,
+        "gross_t": 2.979380339274087,
+        "net_bps": 0.9116208271875677,
+        "net_t": 1.4943055690694074,
+        "pf_net": 1.1714801997511404
+      },
+      "2": {
+        "n": 703,
+        "gross_bps": 0.42914909157106584,
+        "gross_t": 0.7593125507846259,
+        "net_bps": -0.462903794819464,
+        "net_t": -0.8183285876660665,
+        "pf_net": 0.9176166918338972
+      }
+    },
+    "permutation": {
+      "Full · all controls": {
+        "n": 697,
+        "n_control": 1694,
+        "real_mean_bps": 3.3499271637910137,
+        "control_mean_bps": 0.9386701629679095,
+        "sim_mean_bps": 0.9462600981075433,
+        "sim_sd_bps": 0.45751374363495706,
+        "z": 5.253759256686545,
+        "p_one": 0.0001999600079984003
+      },
+      "Full · controls without neighbours": {
+        "n": 697,
+        "n_control": 380,
+        "real_mean_bps": 3.3499271637910137,
+        "control_mean_bps": 1.0669633845314677,
+        "sim_mean_bps": 1.0713563814916929,
+        "sim_sd_bps": 0.5947647571299866,
+        "z": 3.831045392290008,
+        "p_one": 0.0001999600079984003
+      },
+      "OOS only": {
+        "n": 272,
+        "n_control": 661,
+        "real_mean_bps": 2.6691300802685105,
+        "control_mean_bps": 0.7120530352549297,
+        "sim_mean_bps": 0.6873630131052578,
+        "sim_sd_bps": 0.8291509201408882,
+        "z": 2.390116224952767,
+        "p_one": 0.008398320335932814
+      }
+    }
+  },
+  "costs": {
+    "breakeven_flat_pips": 4.171717948852871,
+    "breakeven_scale": 2.618655121622804,
+    "breakeven_mult": 3.740935888032577,
+    "mean_net_by_period": {
+      "2017-2022": {
+        "configured": 3.0193410709534776,
+        "feed x0.7": 3.0193410709534776,
+        "feed x1.4": 2.2532498251210193,
+        "flat 0.7p": 3.1639411399622377,
+        "flat 1p": 2.897523709440547
+      },
+      "2023+": {
+        "configured": 1.5705962522307007,
+        "feed x0.7": 1.5705962522307007,
+        "feed x1.4": 0.47258484738509726,
+        "flat 0.7p": 2.1997135232835583,
+        "flat 1p": 1.9985485278988535
+      }
+    }
+  },
+  "risk": {
+    "max_dd": -0.05187524814541422,
+    "max_dd_close": -0.050713964871750505,
+    "passed": true,
+    "trough_date": "2024-09-04 23:35:00",
+    "years_in_breach": 0
+  },
+  "monte_carlo": {
+    "2.50x (robot)": {
+      "ret_p5": 0.26297446426932464,
+      "ret_p50": 0.5167421330002022,
+      "mdd_p50": -0.053215847871691035,
+      "mdd_p5": -0.0864096623216582,
+      "mdd_worst": -0.16835809844580674,
+      "prob_breach": 0.0358,
+      "prob_pos": 0.9998,
+      "real_mdd": -0.05071396487175128,
+      "real_ret": 0.5243179341232569
+    },
+    "4.37x (ceiling)": {
+      "ret_p5": 0.4922508902284335,
+      "ret_p50": 1.0551743532438072,
+      "mdd_p50": -0.09182063098278076,
+      "mdd_p5": -0.14729578731932003,
+      "mdd_worst": -0.2786843456888093,
+      "prob_breach": 0.53,
+      "prob_pos": 0.9998,
+      "real_mdd": -0.08804433210620899,
+      "real_ret": 1.0727135539099044
+    }
+  },
+  "stress": {
+    "Baseline": {
+      "n": 697.0,
+      "pf": 1.5253431048092818,
+      "mean": 2.4539772392567847,
+      "t": 3.9128440531147355,
+      "win": 59.82783357245337,
+      "se": 0.6271594793826114
+    },
+    "Costs x2 (no spread filter)": {
+      "n": 697.0,
+      "pf": 1.3085737170892127,
+      "mean": 1.5583561752728547,
+      "t": 2.48006814181732,
+      "win": 57.10186513629842,
+      "se": 0.6283521605704503
+    },
+    "Without best 2 years [2017, 2020]": {
+      "n": 556.0,
+      "pf": 1.4043807669189226,
+      "mean": 1.9516703972747256,
+      "t": 2.889265471691526,
+      "win": 59.172661870503596,
+      "se": 0.6754901605258573
+    },
+    "Without best 10% of trades (70)": {
+      "n": 627.0,
+      "pf": 0.825648929844895,
+      "mean": -0.9053517564742517,
+      "t": -1.7508733504949963,
+      "win": 55.34290271132376,
+      "se": 0.5170858053315485
+    },
+    "Winter entries": {
+      "n": 232.0,
+      "pf": 1.3282490869396495,
+      "mean": 1.6114851292059857,
+      "t": 1.5605140484684061,
+      "win": 58.620689655172406,
+      "se": 1.03266300664682
+    },
+    "Summer entries": {
+      "n": 465.0,
+      "pf": 1.6313889051966146,
+      "mean": 2.8743173887875053,
+      "t": 3.6553021840213478,
+      "win": 60.43010752688171,
+      "se": 0.7863419340136062
+    }
+  },
+  "decay": {
+    "recent_ratio": 0.4486818213879673,
+    "z_today": -0.26680879181789624,
+    "mu0": 3.0193410709534776,
+    "sd0": 15.603968709022917
+  },
+  "carried_from_02": [
+    "N in-sample >= n_min",
+    "plateau (3x3, PF >= pf_min, N >= n_min)",
+    "mean net > 0 in every Gotobi label"
+  ],
+  "checks": [
+    {
+      "section": "2 OOS",
+      "name": "N OOS >= n_oos_min",
+      "status": "PASS",
+      "detail": "272 vs 150"
+    },
+    {
+      "section": "2 OOS",
+      "name": "t net OOS >= t_oos_min",
+      "status": "FAIL",
+      "detail": "1.44 vs 1.645"
+    },
+    {
+      "section": "2 OOS",
+      "name": "one-sided p OOS < alpha",
+      "status": "FAIL",
+      "detail": "p 0.074 vs 0.05"
+    },
+    {
+      "section": "2 OOS",
+      "name": "PF net OOS >= pf_min",
+      "status": "PASS",
+      "detail": "1.271 vs 1.2"
+    },
+    {
+      "section": "3 Walk-forward",
+      "name": "efficiency >= 0.5",
+      "status": "PASS",
+      "detail": "0.87"
+    },
+    {
+      "section": "3 Walk-forward",
+      "name": "positive OOS years >= years_pos_min",
+      "status": "PASS",
+      "detail": "86%"
+    },
+    {
+      "section": "3 Walk-forward",
+      "name": "worst-year DD inside hard limit",
+      "status": "PASS",
+      "detail": "-4.23%"
+    },
+    {
+      "section": "4 Evidence",
+      "name": "net t (full) >= min_t_net",
+      "status": "PASS",
+      "detail": "3.91 vs 2.5"
+    },
+    {
+      "section": "4 Evidence",
+      "name": "net t (full) >= Bonferroni threshold",
+      "status": "PASS",
+      "detail": "3.91 vs 2.75"
+    },
+    {
+      "section": "4 Evidence",
+      "name": "placebo: real gross bps > every shifted calendar",
+      "status": "PASS",
+      "detail": "+3.35 vs max +1.83"
+    },
+    {
+      "section": "4 Evidence",
+      "name": "placebo: real net t > every shifted calendar",
+      "status": "PASS",
+      "detail": "3.9 vs max 1.5"
+    },
+    {
+      "section": "4 Evidence",
+      "name": "permutation p < alpha · Full · all controls",
+      "status": "PASS",
+      "detail": "p 0.0002, z 5.3"
+    },
+    {
+      "section": "4 Evidence",
+      "name": "permutation p < alpha · Full · controls without neighbours",
+      "status": "PASS",
+      "detail": "p 0.0002, z 3.8"
+    },
+    {
+      "section": "4 Evidence",
+      "name": "permutation p < alpha · OOS only",
+      "status": "PASS",
+      "detail": "p 0.0084, z 2.4"
+    },
+    {
+      "section": "5 Costs",
+      "name": "breakeven multiple >= breakeven_mult_min",
+      "status": "PASS",
+      "detail": "3.74x"
+    },
+    {
+      "section": "5 Costs",
+      "name": "mean net > 0 (full) at every YAML flat spread",
+      "status": "PASS",
+      "detail": "worst +2.55 bps"
+    },
+    {
+      "section": "5 Costs",
+      "name": "periods with mean net > 0 at flat 1p >= years_pos_min",
+      "status": "PASS",
+      "detail": "2/2 periods"
+    },
+    {
+      "section": "6 Risk",
+      "name": "historical intrabar max DD inside hard limit",
+      "status": "PASS",
+      "detail": "-5.19% vs -9%"
+    },
+    {
+      "section": "6 Risk",
+      "name": "no calendar year breaches the hard limit",
+      "status": "PASS",
+      "detail": "0 years"
+    },
+    {
+      "section": "6 Risk",
+      "name": "worst single trade at nominal size < hard limit",
+      "status": "PASS",
+      "detail": "-1.93% (pnl_frac)"
+    },
+    {
+      "section": "7 Monte Carlo",
+      "name": "P(touching hard limit) <= max (robot size)",
+      "status": "PASS",
+      "detail": "3.6% vs 5%"
+    },
+    {
+      "section": "7 Monte Carlo",
+      "name": "p5 of total return > 0 (robot size)",
+      "status": "PASS",
+      "detail": "26.3%"
+    },
+    {
+      "section": "8 Stress",
+      "name": "costs x2: PF >= 1",
+      "status": "PASS",
+      "detail": "PF 1.309"
+    },
+    {
+      "section": "8 Stress",
+      "name": "without best 2 years: PF >= 1",
+      "status": "PASS",
+      "detail": "PF 1.404"
+    },
+    {
+      "section": "8 Stress",
+      "name": "without best 10% of trades: mean net >= 0",
+      "status": "FAIL",
+      "detail": "-0.91 bps"
+    },
+    {
+      "section": "9 Decay",
+      "name": "recent 3 years / historical mean >= 0.5",
+      "status": "FAIL",
+      "detail": "0.45"
+    },
+    {
+      "section": "9 Decay",
+      "name": "z today not red (> -2)",
+      "status": "PASS",
+      "detail": "z -0.27"
+    },
+    {
+      "section": "9 Decay",
+      "name": "positive years >= years_pos_min (full history)",
+      "status": "PASS",
+      "detail": "10/10"
+    }
+  ],
+  "counts": {
+    "PASS": 24,
+    "FAIL": 4,
+    "SKIP": 0
+  },
+  "ready_for_04": false
+}
