@@ -1,0 +1,72 @@
+id: GOTOBI.usdjpy.cfd.v1
+variant: v1_axi_usdjpy
+description: >
+  Gotobi effect on USDJPY (Axi CFD, M5). Long USDJPY from 07:30 JST to the 09:55 JST Tokyo fixing on Japanese
+  payment days (5, 10, 15, 20, 25 and month-end), moved to the previous bank business day when needed.
+  Rules are FIXED, not optimised.
+
+instrument:
+  symbol: USDJPY # confirmed: the CSV is USDJPY (price 92-158, 3 decimals)
+  broker: Axi
+  start: "2010-01-01" # POST-HOC decision (spreads were 3-5 pips before); do not use earlier data
+  end: null
+  data_csv: data/axi/usdjpy_M5_200001022200_202611030050.csv
+  time_mode: mt5_server_ny # GMT+2 winter / GMT+3 summer (US DST) -> UTC
+
+account:
+  capital: 10000
+  ccy: USD
+  cfd_preset: axi_usdjpy # contract 100,000 · min lot 0.01 · step 0.01 · swap 0 (never crosses a rollover)
+
+rule: # FIXED, not optimised
+  gotobi_days: [5, 10, 15, 20, 25]
+  include_month_end: true # last day of the month (28/29/30/31), NOT a literal "day 30"
+  shift_rule: previous
+  holiday_source: holidays # 'holidays' package (Japan) + 31 Dec and 1-3 Jan
+  entry_time_jst: "07:30" # 22:30 UTC
+  exit_time_jst: "09:55" # 00:55 UTC (Tokyo fixing)
+  direction: long
+  stop_bps: 0
+
+costs:
+  cost_mode: feed
+  spread_scale: 0.7 # PLACEHOLDER until the logger measurement (Axi at 22:30 UTC)
+  max_entry_spread_pips: null # no execution filter in v1
+  robustness:
+    cost_mode: flat_pips
+    flat_spread_pips: [0.7, 1.0] # scenarios shown in the cost table (section 5.3)
+    sweep_pips: [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5] # break-even sweep
+  financing_bps_per_night: 0 # never crosses a rollover (validate() checks it)
+
+evidence_thresholds:
+  hypotheses_tested: 16 # current counter; every new exploration adds 1
+  # Bonferroni one-sided critical t with 16 = 2.73 (two-sided 2.96); with 17 = 2.76
+  min_t_net: 2.5 # declared operating threshold; see hypothesis_threshold()
+
+acceptance: # PASS / FAIL thresholds of notebook 01 (declared BEFORE looking at results; edit only with a log entry)
+  pf_min: 1.2 # net Profit Factor (full, IS and OOS)
+  n_min: 800 # trades, full period
+  n_oos_min: 150 # trades, OOS
+  alpha: 0.05 # significance level of the descriptive tests
+  t_oos_min: 1.645 # one-sided 5 %: minimum net t of the OOS trades
+  max_signal_loss: 0.05 # max share of Gotobi dates without a valid entry/exit bar
+  years_pos_min: 0.75 # share of full calendar years that must be profitable
+  breakeven_mult_min: 2.0 # break-even flat spread must be >= this multiple of the declared Axi spread
+  perm_draws: 5000 # permutation test draws
+  seed: 42
+  roll_trades: 100 # window of the rolling-edge plot
+  trades_per_year: [66, 74] # expected trades in a full calendar year (engine validate())
+
+periods: # JST entry years, inclusive; IS = first two, OOS = last
+  "2010-2016": [2010, 2016]
+  "2017-2022": [2017, 2022]
+  "2023+": [2023, 2100]
+
+splits: { is: "2010-2022", oos_start: "2023-01-01" }
+placebo_offsets_bdays: [-2, -1, 1, 2]
+risk: { hard_limit: 0.10, size_fraction: 1.0 }
+
+open_items:
+  - real Axi spread at 22:30 UTC (logger)
+  - correlation with Monday Effect (trades_all)
+  - "25 Dec: the feed has no bar on 24 Dec at 22:30 UTC (11 dates dropped); confirm whether Axi quotes"
