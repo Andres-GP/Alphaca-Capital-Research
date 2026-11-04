@@ -1,0 +1,222 @@
+{
+  "variant": "v1_darwinex_usdjpy",
+  "id": "GOTOBI.usdjpy.cfd.v1",
+  "rules_hash": "94955b32",
+  "saved_at_utc": "2026-11-04 23:02:15",
+  "ea_spec": {
+    "direction": "long",
+    "gotobi_days": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ],
+    "month_end": true,
+    "shift_rule": "previous",
+    "entry_server_time": {
+      "summer": "01:30",
+      "winter": "00:30"
+    },
+    "exit_server_time": {
+      "summer": "03:55",
+      "winter": "02:55"
+    },
+    "bars_held": 29,
+    "stop": "none",
+    "spread_cap_axi_pips": null,
+    "spread_cap_on_feed_spread_pips": null,
+    "size_fraction": 2.5,
+    "hard_limit": 0.09,
+    "calendar_csv": "/Users/luyandy/Documents/Alphaca Capital/Alphaca-Capital-Research/research_development/02_strategy_development/USDJPY_Gotobi/runs/v1_darwinex_usdjpy/gotobi_calendar_ea.csv"
+  },
+  "engine": {
+    "trades": 95,
+    "dates": 96,
+    "data_loss": 0.010416666666666666,
+    "validate": {
+      "weekly_structure": true,
+      "no_rollover": true,
+      "constant_window": true,
+      "no_overlap": true,
+      "mtm_reconciles": true,
+      "trades_per_year": true,
+      "entry_is_2230_utc": true,
+      "all_ok": true
+    }
+  },
+  "clock": [
+    {
+      "season": "summer",
+      "trades": 71,
+      "entry": "01:30",
+      "exit": "03:55",
+      "same_date_as_JST": true,
+      "expected entry": "01:30",
+      "expected exit": "03:55"
+    },
+    {
+      "season": "winter",
+      "trades": 24,
+      "entry": "00:30",
+      "exit": "02:55",
+      "same_date_as_JST": true,
+      "expected entry": "00:30",
+      "expected exit": "02:55"
+    }
+  ],
+  "lots": {
+    "capital": 10000.0,
+    "min_capital": 400.0,
+    "skipped": 0.0,
+    "eff_fraction_mean": 2.4489537650053457,
+    "max_dd": -0.024530084564873267
+  },
+  "ea_log_checked": true,
+  "checks": [
+    {
+      "section": "2 Engine",
+      "name": "engine validate() all True",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "2 Engine",
+      "name": "data loss (missing bars / spread) <= max_signal_loss",
+      "status": "PASS",
+      "detail": "1.04%"
+    },
+    {
+      "section": "2 Engine",
+      "name": "engine trades == signal_table takes",
+      "status": "PASS",
+      "detail": "95 vs 95"
+    },
+    {
+      "section": "3 Calendar",
+      "name": "engine calendar == independent calendar",
+      "status": "PASS",
+      "detail": "0 differences over 2025-2026"
+    },
+    {
+      "section": "4 Clock",
+      "name": "one entry/exit clock time per season, as expected",
+      "status": "PASS",
+      "detail": "entry {'summer': '01:30', 'winter': '00:30'}"
+    },
+    {
+      "section": "4 Clock",
+      "name": "server date == JST date for entry and exit",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "4 Clock",
+      "name": "server<->UTC conversion round-trips",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "4 Clock",
+      "name": "weekly-open structure >= 99%",
+      "status": "PASS",
+      "detail": "100.0%"
+    },
+    {
+      "section": "5 EA log",
+      "name": "no duplicated dates in the log",
+      "status": "PASS",
+      "detail": "0 duplicates"
+    },
+    {
+      "section": "5 EA log",
+      "name": "no date present on only one side",
+      "status": "PASS",
+      "detail": "0 only engine, 0 only EA"
+    },
+    {
+      "section": "5 EA log",
+      "name": "decisions identical (BUY == take)",
+      "status": "PASS",
+      "detail": "0 differ of 96"
+    },
+    {
+      "section": "5 EA log",
+      "name": "spread difference <= 0.1 pips",
+      "status": "PASS",
+      "detail": "max 0.000"
+    },
+    {
+      "section": "6 Fills",
+      "name": "every trade present on both sides",
+      "status": "PASS",
+      "detail": "0 unmatched"
+    },
+    {
+      "section": "6 Fills",
+      "name": "median |entry slippage| <= 1 bps",
+      "status": "PASS",
+      "detail": "0.25 bps"
+    },
+    {
+      "section": "6 Fills",
+      "name": "median |exit slippage| <= 1 bps",
+      "status": "PASS",
+      "detail": "0.25 bps"
+    },
+    {
+      "section": "6 Fills",
+      "name": "EA mean net within tolerance of engine",
+      "status": "PASS",
+      "detail": "+0.10 bps"
+    },
+    {
+      "section": "7 Lots",
+      "name": "capital >= minimum capital for the target fraction",
+      "status": "PASS",
+      "detail": "10,000 vs 400"
+    },
+    {
+      "section": "7 Lots",
+      "name": "trades lost to the minimum lot <= max_signal_loss",
+      "status": "PASS",
+      "detail": "0.0%"
+    },
+    {
+      "section": "7 Lots",
+      "name": "mean effective fraction within +-10% of target",
+      "status": "PASS",
+      "detail": "2.449x vs 2.50x"
+    },
+    {
+      "section": "7 Lots",
+      "name": "hard limit respected with integer lots (intrabar)",
+      "status": "PASS",
+      "detail": "-2.45% vs -9%"
+    },
+    {
+      "section": "6 Fills",
+      "name": "commission ~ 0.50 bps per round trip (0.25/side)",
+      "status": "PASS",
+      "detail": "0.50 bps"
+    },
+    {
+      "section": "6 Fills",
+      "name": "EA mean net (after commission) within 2 bps of engine",
+      "status": "PASS",
+      "detail": "-0.41 bps"
+    },
+    {
+      "section": "7 Lots",
+      "name": "EA lots within 0.02 of engine lots",
+      "status": "PASS",
+      "detail": "max diff 0.01"
+    }
+  ],
+  "counts": {
+    "PASS": 23,
+    "FAIL": 0,
+    "SKIP": 0
+  },
+  "ready_for_live": true
+}

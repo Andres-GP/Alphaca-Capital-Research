@@ -1,0 +1,75 @@
+id: GOTOBI.usdjpy.cfd.v1
+variant: v1_darwinex_usdjpy
+description: >
+  Gotobi effect on USDJPY, Darwinex replication of v1_axi_usdjpy (M5). Long USDJPY from 07:30 JST to the 09:55 JST
+  Tokyo fixing on Japanese payment days (5, 10, 15, 20, 25 and month-end), moved to the previous bank business day
+  when needed. Rules are IDENTICAL to v1: only broker, data feed and costs change.
+  Short sample (~95 trades): reconciliation and cost measurement, NOT a new test of the edge (see notebook 05).
+  Reconciliation (notebook 06, Strategy Tester, 2026-11-04): 23 PASS / 0 FAIL.
+
+instrument:
+  symbol: USDJPY
+  broker: Darwinex
+  start: "2025-07-02"
+  end: null
+  data_csv: data/darwinex/usdjpy_M5_202507022000_202611041220.csv
+  time_mode: mt5_server_ny
+
+account:
+  capital: 10000
+  ccy: USD
+  cfd_preset: axi_usdjpy # same contract spec on Darwinex: contract 100,000 · min lot 0.01 · step 0.01
+
+rule: # FIXED, identical to v1_axi_usdjpy
+  gotobi_days: [5, 10, 15, 20, 25]
+  include_month_end: true
+  shift_rule: previous
+  holiday_source: holidays
+  entry_time_jst: "07:30"
+  exit_time_jst: "09:55"
+  direction: long
+  stop_bps: 0
+
+costs:
+  cost_mode: feed
+  spread_scale: 1.0 # REAL Darwinex feed spread
+  commission_bps_per_side: 0.25 # CONFIRMED: 2.5 USD/lot per deal, 0.50 bps per round trip measured on 95/95 deals
+  max_entry_spread_pips: null
+  robustness:
+    cost_mode: flat_pips
+    flat_spread_pips: [0.7, 1.0]
+    sweep_pips: [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5]
+  financing_bps_per_night: 0
+
+evidence_thresholds:
+  hypotheses_tested: 17 # same rule, new broker: no new hypothesis
+  min_t_net: 2.5
+
+acceptance:
+  pf_min: 1.2
+  n_min: 600
+  n_oos_min: 150
+  alpha: 0.05
+  t_oos_min: 1.645
+  max_signal_loss: 0.05
+  years_pos_min: 0.75
+  breakeven_mult_min: 2.0
+  perm_draws: 5000
+  seed: 42
+  roll_trades: 100
+  trades_per_year: [66, 74]
+
+periods: # placeholders (not used by notebook 04/06)
+  "2025": [2025, 2025]
+  "2026+": [2026, 2100]
+
+splits: { is: "2025", oos_start: "2026-01-01" }
+placebo_offsets_bdays: [-2, -1, 1, 2]
+risk: { hard_limit: 0.09, size_fraction: 2.5 } # reconciled at 2.5x; must equal the EA InpFractionCapital used live
+
+open_items:
+  - tester slippage vs engine: EA net +0.58 vs engine +0.99 bps/trade (gap -0.41), concentrated in winter entries (30 min after rollover, wide intra-bar spread); verify on the first live trades
+  - 4 of 95 Darwinex entry bars have feed spread = 0: check whether Darwinex really quoted 0 at 22:30 UTC
+  - Darwinex DARWIN VaR not modelled; EA kill switches (daily 5 % / total 8.5 %) are the Axi Select numbers
+  - final live InpFractionCapital (2.5 reconciled; the EA label says "MOVE TO 0.30"): decide before going live
+  - production calendar: copy runs/v1_darwinex_usdjpy/gotobi_calendar_ea.csv to Common/Files (13 months, EA alerts at < 30 days)

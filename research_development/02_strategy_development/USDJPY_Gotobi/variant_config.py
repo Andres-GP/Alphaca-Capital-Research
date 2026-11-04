@@ -121,7 +121,7 @@ def rules_hash(cfg: dict) -> str:
     return hashlib.sha1(json.dumps(keep, sort_keys=True, default=str).encode()).hexdigest()[:8]
 
 
-def load_variant(name: str) -> dict:
+def load_variant(name: str, verbose: bool = True) -> dict:
     path = _variants_dir() / f"{name}.yaml"
     if not path.is_file():
         raise FileNotFoundError(f"{path} does not exist. Available variants: {list_variants()}")
@@ -135,6 +135,14 @@ def load_variant(name: str) -> dict:
     cfg["engine_defaults"] = _engine_defaults(raw)
     cfg["run_dir"] = Path(EDGE_DIR) / "runs" / name
     cfg["run_dir"].mkdir(parents=True, exist_ok=True)
+
+    if verbose:
+        comm_yaml = raw["costs"].get("commission_bps_per_side")
+        print(f"[load_variant] {name} | costs.commission_bps_per_side (YAML) = {comm_yaml} "
+              f"| engine_defaults = {cfg['engine_defaults']}")
+        if comm_yaml and "commission_bps_per_side" not in cfg["engine_defaults"]:
+            print("[load_variant] WARNING: the YAML commission is NOT in engine_defaults "
+                  "(_engine_defaults does not map it): apply it in the notebook (see the check cell).")
     return cfg
 
 

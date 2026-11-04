@@ -2,7 +2,7 @@
   "variant": "v1_axi_usdjpy",
   "id": "GOTOBI.usdjpy.cfd.v1",
   "rules_hash": "99a05a00",
-  "saved_at_utc": "2026-11-03 23:43:38",
+  "saved_at_utc": "2026-11-04 21:07:41",
   "oos_start": "2023-01-01",
   "sizing": {
     "fraction": 2.5,
