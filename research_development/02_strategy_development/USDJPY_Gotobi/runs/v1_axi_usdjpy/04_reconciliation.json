@@ -1,8 +1,8 @@
 {
   "variant": "v1_axi_usdjpy",
   "id": "GOTOBI.usdjpy.cfd.v1",
-  "rules_hash": "bd6258ae",
-  "saved_at_utc": "2026-11-03 22:31:40",
+  "rules_hash": "99a05a00",
+  "saved_at_utc": "2026-11-04 17:13:54",
   "ea_spec": {
     "direction": "long",
     "gotobi_days": [
@@ -26,14 +26,14 @@
     "stop": "none",
     "spread_cap_axi_pips": null,
     "spread_cap_on_feed_spread_pips": null,
-    "size_fraction": 1.0,
-    "hard_limit": 0.1,
+    "size_fraction": 2.5,
+    "hard_limit": 0.09,
     "calendar_csv": "/Users/luyandy/Documents/Alphaca Capital/Alphaca-Capital-Research/research_development/02_strategy_development/USDJPY_Gotobi/runs/v1_axi_usdjpy/gotobi_calendar_ea.csv"
   },
   "engine": {
-    "trades": 1195,
-    "dates": 1206,
-    "data_loss": 0.00912106135986733,
+    "trades": 697,
+    "dates": 704,
+    "data_loss": 0.009943181818181818,
     "validate": {
       "weekly_structure": true,
       "no_rollover": true,
@@ -48,7 +48,7 @@
   "clock": [
     {
       "season": "summer",
-      "trades": 791,
+      "trades": 465,
       "entry": "01:30",
       "exit": "03:55",
       "same_date_as_JST": true,
@@ -57,7 +57,7 @@
     },
     {
       "season": "winter",
-      "trades": 404,
+      "trades": 232,
       "entry": "00:30",
       "exit": "02:55",
       "same_date_as_JST": true,
@@ -67,12 +67,12 @@
   ],
   "lots": {
     "capital": 10000.0,
-    "min_capital": 1000.0,
+    "min_capital": 400.0,
     "skipped": 0.0,
-    "eff_fraction_mean": 0.9423041576090582,
-    "max_dd": -0.0676299681248288
+    "eff_fraction_mean": 2.4623448446690754,
+    "max_dd": -0.05098197525836046
   },
-  "ea_log_checked": false,
+  "ea_log_checked": true,
   "checks": [
     {
       "section": "2 Engine",
@@ -84,19 +84,19 @@
       "section": "2 Engine",
       "name": "data loss (missing bars / spread) <= max_signal_loss",
       "status": "PASS",
-      "detail": "0.91%"
+      "detail": "0.99%"
     },
     {
       "section": "2 Engine",
       "name": "engine trades == signal_table takes",
       "status": "PASS",
-      "detail": "1195 vs 1195"
+      "detail": "697 vs 697"
     },
     {
       "section": "3 Calendar",
       "name": "engine calendar == independent calendar",
       "status": "PASS",
-      "detail": "0 differences over 2010-2026"
+      "detail": "0 differences over 2017-2026"
     },
     {
       "section": "4 Clock",
@@ -120,61 +120,61 @@
       "section": "4 Clock",
       "name": "weekly-open structure >= 99%",
       "status": "PASS",
-      "detail": "99.8%"
+      "detail": "100.0%"
     },
     {
       "section": "5 EA log",
       "name": "no duplicated dates in the log",
-      "status": "SKIP",
-      "detail": "no log"
+      "status": "PASS",
+      "detail": "0 duplicates"
     },
     {
       "section": "5 EA log",
       "name": "no date present on only one side",
-      "status": "SKIP",
-      "detail": "no log"
+      "status": "PASS",
+      "detail": "0 only engine, 0 only EA"
     },
     {
       "section": "5 EA log",
       "name": "decisions identical (BUY == take)",
-      "status": "SKIP",
-      "detail": "no log"
+      "status": "PASS",
+      "detail": "0 differ of 313"
     },
     {
       "section": "5 EA log",
       "name": "spread difference <= 0.1 pips",
-      "status": "SKIP",
-      "detail": "no log"
+      "status": "PASS",
+      "detail": "max 0.000"
     },
     {
       "section": "6 Fills",
       "name": "every trade present on both sides",
-      "status": "SKIP",
-      "detail": "no deals file"
+      "status": "PASS",
+      "detail": "0 unmatched"
     },
     {
       "section": "6 Fills",
       "name": "median |entry slippage| <= 1 bps",
-      "status": "SKIP",
-      "detail": "no deals file"
+      "status": "PASS",
+      "detail": "0.30 bps"
     },
     {
       "section": "6 Fills",
       "name": "median |exit slippage| <= 1 bps",
-      "status": "SKIP",
-      "detail": "no deals file"
+      "status": "PASS",
+      "detail": "0.00 bps"
     },
     {
       "section": "6 Fills",
       "name": "EA mean net within tolerance of engine",
-      "status": "SKIP",
-      "detail": "no deals file"
+      "status": "PASS",
+      "detail": "-0.71 bps"
     },
     {
       "section": "7 Lots",
       "name": "capital >= minimum capital for the target fraction",
       "status": "PASS",
-      "detail": "10,000 vs 1,000"
+      "detail": "10,000 vs 400"
     },
     {
       "section": "7 Lots",
@@ -186,19 +186,19 @@
       "section": "7 Lots",
       "name": "mean effective fraction within +-10% of target",
       "status": "PASS",
-      "detail": "0.942x vs 1.00x"
+      "detail": "2.462x vs 2.50x"
     },
     {
       "section": "7 Lots",
       "name": "hard limit respected with integer lots (intrabar)",
       "status": "PASS",
-      "detail": "-6.76% vs -10%"
+      "detail": "-5.10% vs -9%"
     }
   ],
   "counts": {
-    "PASS": 12,
+    "PASS": 20,
     "FAIL": 0,
-    "SKIP": 8
+    "SKIP": 0
   },
-  "ready_for_live": false
+  "ready_for_live": true
 }
