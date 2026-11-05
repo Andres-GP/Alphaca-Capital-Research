@@ -1,0 +1,125 @@
+{
+  "portfolio_id": "portfolio_darwinex",
+  "hypothesis": "Risk-parity base across v1_axi_usdjpy, v1_qqq keeps the account inside -8%.",
+  "window": [
+    "2017-01-05",
+    "2026-10-30"
+  ],
+  "capital": 10000.0,
+  "hard_limit": 0.08,
+  "edges": {
+    "v1_axi_usdjpy": {
+      "id": "GOTOBI.usdjpy.cfd.v1",
+      "source": "development",
+      "risk_weight": 0.515439279330784,
+      "size_fraction": 1.8814454664424267,
+      "configured": 2.5
+    },
+    "v1_qqq": {
+      "id": "RSI2.qqq.v1",
+      "source": "approved",
+      "risk_weight": 0.48456072066921607,
+      "size_fraction": 0.6222455900910193,
+      "configured": 1.0
+    }
+  },
+  "L_hard_limit": 0.5136917259278562,
+  "binding_caps": [],
+  "tilt_identified": true,
+  "blend": 0.5,
+  "schemes_compared": 4,
+  "params": {
+    "TARGET_VOL": 0.1,
+    "PRIOR_RHO": 0.2,
+    "SHRINK_RHO": 0.5,
+    "MEAN_SHRINK": 0.5,
+    "INTRABAR_FACTOR": 1.25,
+    "BLOCK_DAYS": 21,
+    "MC_YEARS": 3,
+    "MC_BREACH_MAX": 0.05,
+    "N_BOOT": 300,
+    "N_MC": 2000,
+    "SEED": 42
+  },
+  "checks": [
+    {
+      "section": "2. Data",
+      "name": "common window >= 2 years",
+      "status": "PASS",
+      "detail": "9.82"
+    },
+    {
+      "section": "4. Correlation",
+      "name": "v1_axi_usdjpy/v1_qqq: weekly corr estimable (>= 30 co-active weeks)",
+      "status": "PASS",
+      "detail": "270 co-active weeks"
+    },
+    {
+      "section": "4. Correlation",
+      "name": "v1_axi_usdjpy/v1_qqq: weekly corr < 0.5",
+      "status": "PASS",
+      "detail": "+0.02 (CI90 -0.04..+0.09)"
+    },
+    {
+      "section": "4. Correlation",
+      "name": "structural reason declared (WHY_UNCORRELATED)",
+      "status": "PASS",
+      "detail": "see EXPERIMENT"
+    },
+    {
+      "section": "4. Correlation",
+      "name": "shared JPY factor measured",
+      "status": "SKIP",
+      "detail": "set JPY_PROXY_CSV"
+    },
+    {
+      "section": "7. Weights",
+      "name": "final weights sum to 1 and are >= 0",
+      "status": "PASS",
+      "detail": "{'v1_axi_usdjpy': 0.515, 'v1_qqq': 0.485}"
+    },
+    {
+      "section": "8. Risk",
+      "name": "P(touching -8%) <= 5% at final sizes",
+      "status": "PASS",
+      "detail": "5.0%"
+    },
+    {
+      "section": "8. Risk",
+      "name": "historical close DD x intrabar factor inside the hard limit",
+      "status": "PASS",
+      "detail": "6.40% vs 8%"
+    },
+    {
+      "section": "8. Risk",
+      "name": "p5 of 3-year return > 0",
+      "status": "PASS",
+      "detail": "7.0%"
+    },
+    {
+      "section": "8. Risk",
+      "name": "no edge above its validated size",
+      "status": "PASS",
+      "detail": "clipped: none"
+    },
+    {
+      "section": "9. Compounding",
+      "name": "portfolio Sharpe >= mean Sharpe of its edges (diversification adds)",
+      "status": "PASS",
+      "detail": "1.54 vs 1.10 (best edge 1.24)"
+    },
+    {
+      "section": "10. Stress",
+      "name": "simultaneous worst day (intrabar) inside the hard limit",
+      "status": "PASS",
+      "detail": "-3.27% vs -8%"
+    },
+    {
+      "section": "11. Walk-forward",
+      "name": "OOS Sharpe of ERC (weights without looking ahead) > 0",
+      "status": "PASS",
+      "detail": "1.52 over 8 fold(s)"
+    }
+  ],
+  "params_hash": "1c682f1f"
+}
