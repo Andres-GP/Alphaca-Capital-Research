@@ -1,0 +1,143 @@
+{
+  "variant": "MONTHEND_FIX.eurgbp.cfd.v2",
+  "k_tests": 18,
+  "verdict": "STOP",
+  "signal_counts": {
+    "month_ends": 94,
+    "with_signal": 49
+  },
+  "all": {
+    "n": 49,
+    "net_bps": -0.22895190470978063,
+    "pf": 0.9769481951554431,
+    "t_stat": -0.05995150041560495
+  },
+  "is": {
+    "n": 11,
+    "net_bps": 4.6080854678307785
+  },
+  "oos": {
+    "n": 38,
+    "net_bps": -1.6291469336031,
+    "t_stat": -0.38823568376927686
+  },
+  "sign_permutation": {
+    "p": 0.42391521695660866,
+    "obs": 0.7708888451583201,
+    "ctrl": 0.028175421963567402
+  },
+  "v1_same_days": {
+    "n": 49,
+    "net_bps": 0.6232123427626749
+  },
+  "gates": [
+    {
+      "name": "t net (full period)",
+      "value": -0.05995150041560495,
+      "threshold": 2.0,
+      "op": ">=",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": 1.0299757502078024
+    },
+    {
+      "name": "t net corrected (k = 18)",
+      "value": -0.05995150041560495,
+      "threshold": 2.772921294608663,
+      "op": ">=",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": 1.0216203397233694
+    },
+    {
+      "name": "Profit Factor",
+      "value": 0.9769481951554431,
+      "threshold": 1.3,
+      "op": ">=",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": 0.2485013883419669
+    },
+    {
+      "name": "n OOS",
+      "value": 38.0,
+      "threshold": 30,
+      "op": ">=",
+      "kill": false,
+      "status": "PASS",
+      "shortfall": 0.0
+    },
+    {
+      "name": "t OOS",
+      "value": -0.38823568376927686,
+      "threshold": 1.645,
+      "op": ">=",
+      "kill": true,
+      "status": "FAIL",
+      "shortfall": 1.2360095342062474
+    },
+    {
+      "name": "Positive years",
+      "value": 0.4,
+      "threshold": 0.75,
+      "op": ">=",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": 0.4666666666666666
+    },
+    {
+      "name": "Sign permutation p (does the signal add value?)",
+      "value": 0.42391521695660866,
+      "threshold": 0.05,
+      "op": "<",
+      "kill": true,
+      "status": "FAIL",
+      "shortfall": 7.4783043391321735
+    },
+    {
+      "name": "Net mean without the best 10% (bps)",
+      "value": -5.0678985612035365,
+      "threshold": 0.0,
+      "op": ">",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": Infinity
+    },
+    {
+      "name": "Gross edge / spread",
+      "value": 0.7708888451583201,
+      "threshold": 3.0,
+      "op": ">=",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": 0.7430370516138933
+    },
+    {
+      "name": "Intrabar DD, min lot (%)",
+      "value": -3.033717380625378,
+      "threshold": -9.0,
+      "op": ">=",
+      "kill": false,
+      "status": "PASS",
+      "shortfall": 0.0
+    },
+    {
+      "name": "IS -> OOS decay",
+      "value": 1.3535409542588213,
+      "threshold": 0.5,
+      "op": "<",
+      "kill": true,
+      "status": "FAIL",
+      "shortfall": 1.7070819085176425
+    },
+    {
+      "name": "|Correlation| with Gotobi",
+      "value": null,
+      "threshold": 0.3,
+      "op": "<",
+      "kill": false,
+      "status": "PENDING",
+      "shortfall": 0.0
+    }
+  ]
+}

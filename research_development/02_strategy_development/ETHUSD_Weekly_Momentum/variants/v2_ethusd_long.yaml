@@ -1,0 +1,48 @@
+id: WEEKLY_MOM.ethusd.cfd.v1
+edge: weekly_momentum
+status: in_development # in_development | validated | rejected | demo | approved
+
+# VEHICLE: Axi ETHUSD CFD (1 CFD = 1 ETH, min lot 0.1, step 0.1). Weekly time-series momentum, long AND short.
+# Rules frozen in the research on Axi ETHUSD H1 2018-2026 (IS 2018-23, OOS 2024-26). The research OOS did NOT
+# pass the strict gate (t = 1.68, perm p = 0.081 gross; weaker net of swap), so this variant is a CONDITIONAL
+# candidate: notebook 01 measures it with the real engine, swap and minimum-lot sizing.
+
+instrument:
+  ticker: ethusd # label only: the data comes from the CSV below
+  # The Axi export starts with daily-resolution candles (2016-05..2018-02) and a stretch with weekend gaps in
+  # early 2018 (until 2018-04-21). Starting at 2018-04-22 keeps that head out of the momentum reference and the signal.
+  start: "2018-01-01 00:00"
+
+split:
+  oos_start: "2024-01-01" # same cut as the research (IS 2018-23 / OOS 2024+)
+
+params:
+  lookback_days: 28 # sign of the previous 28-day return (4 weeks)
+  hold_days: 7 # Monday 00:00 server -> next Monday 00:00 server
+  entry_dow: 0 # Monday on the SERVER clock (NY + 7 h)
+  entry_hour: 0 # 00:00 server (signal = close of the candle before)
+  direction: long_only # both | long_only | short_only
+  cost_mode: spread # real spread of the correct candle (long = entry, short = exit)
+  cost_bps_per_side: 0.0 # only used if cost_mode: fixed
+
+grid:
+  lookback_days_values: [7, 14, 21, 28, 35, 42, 56] # for the plateau notebook (02); the point is NOT chosen from here
+  hold_days_values: [7, 14]
+
+engine_defaults:
+  data_source: csv_hourly
+  csv_path: "../../data/axi/ETHUSD_H1_201605020000_202611061200.csv" # output of convert_axi_h1.py (UTC, 'time' column). NOT the raw MT5 export
+  entry_clock: server
+  server_offset_hours: 7
+  point_size: 0.001 # 3 digits
+  use_swap: true
+  swap_long_pct_annual: -20.0 # Axi ETHUSD, annual % on the current price
+  swap_short_pct_annual: -5.0
+  swap_day_mult: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 3, 5: 0, 6: 0 }
+  swap_days_per_year: 365.0
+  size_fraction: 0.25 # ideal fraction of capital per trade (lots are rounded to the 0.1 step)
+  contract_size: 1.0
+  min_lot: 0.1
+  lot_step: 0.1
+  quote_to_account: 1.0 # ETHUSD is quoted in USD and the account is in USD
+  below_min_lot: min_lot # trade the minimum lot even if it weighs more than size_fraction (measures the REAL drawdown)

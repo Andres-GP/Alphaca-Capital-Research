@@ -1,0 +1,58 @@
+id: MONTHEND_FIX.eurgbp.cfd.v2
+edge: month_end_fix
+status: in_development # in_development | validated | rejected | demo | approved
+
+# VEHICLE: Axi EURGBP CFD. v1 (always short) was REJECTED: STOP, t OOS 0.52, IS -> OOS decay 74%.
+# THIS RULE IS DECLARED BEFORE RUNNING IT AND IS TESTED ONCE (k = 18). Nothing below may change after the run.
+#
+# Same days, same window, same costs as v1 (last business day of the month, 12:00 -> 16:00 London, no stop).
+# The ONLY change is the direction of each trade:
+#   R = (GER40 return) - (UK100 return), from the OPEN of the 12:00 London bar of the last business day of the
+#   PREVIOUS month to the OPEN of the 12:00 London bar of the fix day. Both are known at entry (no lookahead).
+#   R > 0 -> SHORT EURGBP  (European equities outperformed: hedgers sell EUR against GBP into the 4 pm fix)
+#   R < 0 -> LONG  EURGBP
+#   R == 0 or missing index data -> no trade.
+# No threshold, no parameters. The opposite mapping is NOT tested, nor other indices, windows or days.
+#
+# Honest prior: low. If hedging flow were the driver, EURUSD and GBPUSD should have shown it and gave STOP;
+# EURGBP was also the best of four pairs, so the 2019-2026 sample carries selection bias.
+#
+# Decision rule (fixed now): any kill gate failing (t OOS, sign permutation, IS -> OOS decay) -> status: rejected,
+# v1 and v2 are archived and the edge is closed. The only re-run allowed is on fresh data (after split.fresh_start).
+
+instrument:
+  ticker: eurgbp # label only: the data comes from the CSV below
+  start: "2019-01-01" # same sample as v1 on purpose (no new degrees of freedom). 2017-2018 only as a labelled sensitivity afterwards.
+
+split:
+  oos_start: "2023-01-01" # same cut as v1
+  fresh_start: "2024-11-07" # first day AFTER the freeze (last CSV bar 2026-11-06)
+
+params:
+  side: relative_equity # direction comes from the signal block below (R > 0 short, R < 0 long)
+  entry_hour: 12 # London local time, OPEN of the 12:00 bar
+  exit_hour: 16 # London local time, OPEN of the 16:00 bar (fix hour). Intraday: 4 bars, no overnight
+  cost_bps_per_side: 0.5 # PLACEHOLDER: half of the ~1.0 bp spread (BID prices). Replace with the spread measured on the 16:00 bar
+
+signal:
+  # Raw MT5 M5 exports of the indices (same broker server time as EURGBP). Set the real file names.
+  # They must start at least one month before instrument.start (the first signal needs the previous month-end).
+  index_a_csv: "../../data/axi/GER40_M5_202201100100_202611062255.csv" # PLACEHOLDER: set the real file name
+  index_b_csv: "../../data/axi/UK100_M5_201701020000_202611062355.csv" # PLACEHOLDER: set the real file name
+
+correlation:
+  gotobi_trades_csv: null # e.g. "../../data/trades/gotobi_usdjpy_trades.csv"
+
+engine_defaults:
+  data_source: csv_hourly
+  csv_path: "../../data/axi/EURGBP_M5_201701020000_202611062355.csv" # raw MT5 export (M5, SERVER time)
+  server_tz: ny_close # MT5 server clock = New York + 7 h. The timezone was validated on v1 (entry UTC hour 11 BST / 12 GMT)
+  resample_h1: true
+  tz: Europe/London
+  financing_bps_per_night: 0.0
+  rollover_hour_utc: 22
+  size_fraction: 1.0
+  contract_size: 100000.0 # Axi EURGBP: 1 lot = 100,000 EUR
+  min_lot: 0.01
+  lot_step: 0.01
+  quote_to_account: 1.30 # PLACEHOLDER: GBPUSD

@@ -1,0 +1,49 @@
+id: MONTHEND_FIX.eurgbp.cfd.v1
+edge: month_end_fix
+status: in_development # in_development | validated | rejected | demo | approved
+
+# VEHICLE: Axi EURGBP CFD. Rule FROZEN before seeing results (screening verdict so far: CASI-PASA, not strict CASI):
+# short EURGBP from 12:00 to 16:00 London time on the last business day of the month (month-end rebalancing
+# flow into the 4 pm WM/Reuters fix). No grid on purpose: sweeping windows, days or parameters is not allowed.
+# Screening reference (same rule, same broker candles): n 118, net +5.0 bps, t 2.07, perm p 0.00, edge 5.8x spread;
+# fails t OOS 0.45, years positive 70%, corrected t (~2.5) and the mean without the best 10% (+0.2 bps).
+
+instrument:
+  ticker: eurgbp # label only: the data comes from the CSV below
+  # First REAL hourly candle. If the Axi export of this account starts with sparse daily-resolution candles
+  # (2017-2018), starting at 2019-01-01 keeps them out. Confirm with the "gaps" warning of load_data.
+  start: "2019-01-01"
+
+split:
+  oos_start: "2024-01-01" # screening cut: OOS from 2023-01-01
+  fresh_start: "2026-11-07" # first day AFTER the freeze (last CSV bar 2026-11-06): data never used to decide anything.
+  #                           The CASI review is only valid on candles from this date on (~12 trades/year, ~3 years for n >= 36)
+
+params:
+  side: short
+  entry_hour: 12 # London local time (BST/GMT handled by the engine), OPEN of the 12:00 bar
+  exit_hour: 16 # London local time, OPEN of the 16:00 bar (fix hour). Intraday: 4 bars, no overnight
+  cost_bps_per_side: 0.5 # PLACEHOLDER: half of the ~1.0 bp median spread (BID prices: one spread round trip). Replace with the spread measured in notebook 04 (MT5 reconciliation)
+
+correlation:
+  # CSV of trades of the other edge (columns: exit_time or entry_time, and pnl_frac or pnl). null = not available yet -> that gate stays PENDING
+  gotobi_trades_csv: null # e.g. "../../data/trades/gotobi_usdjpy_trades.csv"
+
+engine_defaults:
+  data_source: csv_hourly
+  # RAW MT5 export (M5, tab-separated, <DATE> <TIME> headers, SERVER time). The engine converts it to UTC with
+  # server_tz and aggregates it to 1 h candles (resample_h1). No need for convert_axi_h1.py. If you do have a
+  # CSV already in UTC with a 'time' column, point csv_path to it and set server_tz: null.
+  csv_path: "../../data/axi/EURGBP_M5_201701020000_202611062355.csv"
+  server_tz: ny_close # MT5 server clock = New York + 7 h (GMT+2 winter / GMT+3 summer, US DST). VERIFY with
+  #                     weekly_boundaries_check(df): last Friday bar at 21 h London, first Sunday bar at 22 h London.
+  #                     If it does not match, try Europe/Athens or confirm the server timezone with Axi.
+  resample_h1: true # M5 -> 1 h candles (open first, high max, low min, close last). Ignored if the CSV is already 1 h
+  tz: Europe/London
+  financing_bps_per_night: 0.0 # intraday (12:00-16:00 London) never crosses the 22:00 UTC rollover: 0 nights, checked in notebook section 6
+  rollover_hour_utc: 22
+  size_fraction: 1.0 # notional / capital of the "ideal" reference (1x). The real sizing is the minimum lot (see below)
+  contract_size: 100000.0 # Axi EURGBP: 1 lot = 100,000 EUR
+  min_lot: 0.01 # Axi EURGBP
+  lot_step: 0.01
+  quote_to_account: 1.30 # PLACEHOLDER: GBPUSD. The price quotes in GBP per EUR, the account is in USD. Update before reading lot sizes

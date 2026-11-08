@@ -1,0 +1,391 @@
+{
+  "variant": "WEEKLY_MOM.ethusd.cfd.v1",
+  "ticker": "ethusd",
+  "params": {
+    "lookback_days": 28,
+    "hold_days": 7,
+    "entry_dow": 0,
+    "entry_hour": 0,
+    "direction": "long_only",
+    "cost_mode": "spread",
+    "cost_bps_per_side": 0.0
+  },
+  "evaluation_rules": "Monday Effect final PASS / FAIL rules",
+  "oos_start": "2024-01-01",
+  "all": {
+    "n": 237,
+    "pf": 1.5469469738891592,
+    "win_rate": 53.58649789029536,
+    "t_stat": 2.39856894022901
+  },
+  "is": {
+    "n": 162,
+    "pf": 1.5810970371004556,
+    "t_stat": 2.1180711458719927
+  },
+  "oos": {
+    "n": 75,
+    "pf": 1.450100260032184,
+    "t_stat": 1.1198886027959762
+  },
+  "max_dd_fraction_sizing_pct": -21.227600566218136,
+  "hard_limit": {
+    "limit": 0.09,
+    "capital": 2000.0,
+    "max_dd_hourly_pct": -21.1249344696108,
+    "passed": false,
+    "capital_needed_min_lot": 3000.0
+  },
+  "excess_over_drift": [
+    {
+      "Sample": "IS",
+      "n": 302,
+      "Traded n": 162,
+      "Naked long gross %": 1.1718,
+      "Momentum gross %": 2.7095,
+      "Excess over drift %": 1.5377,
+      "Gross t": 2.7045,
+      "Perm null mean %": 1.168,
+      "Perm p (1-sided)": 0.021
+    },
+    {
+      "Sample": "OOS",
+      "n": 147,
+      "Traded n": 75,
+      "Naked long gross %": 0.4246,
+      "Momentum gross %": 1.6868,
+      "Excess over drift %": 1.2623,
+      "Gross t": 1.51,
+      "Perm null mean %": 0.4112,
+      "Perm p (1-sided)": 0.0842
+    },
+    {
+      "Sample": "All",
+      "n": 449,
+      "Traded n": 237,
+      "Naked long gross %": 0.9272,
+      "Momentum gross %": 2.3859,
+      "Excess over drift %": 1.4587,
+      "Gross t": 3.0987,
+      "Perm null mean %": 0.9317,
+      "Perm p (1-sided)": 0.0096
+    }
+  ],
+  "legs": [
+    {
+      "Leg": "Long",
+      "n": 237,
+      "Gross %": 2.3859,
+      "Spread %": -0.1592,
+      "Swap %": -0.3875,
+      "Net %": 1.8392,
+      "Net t": 2.3986,
+      "Win %": 53.5865,
+      "Cost+swap / gross": 0.2291
+    },
+    {
+      "Leg": "All traded",
+      "n": 237,
+      "Gross %": 2.3859,
+      "Spread %": -0.1592,
+      "Swap %": -0.3875,
+      "Net %": 1.8392,
+      "Net t": 2.3986,
+      "Win %": 53.5865,
+      "Cost+swap / gross": 0.2291
+    }
+  ],
+  "momentum_spearman": {
+    "rho": 0.11345264609184429,
+    "p": 0.016168609202900017
+  },
+  "hypothesis_confirmed": true,
+  "go": false,
+  "essential_failed": [
+    "Lot-adjusted sizing stays inside -9%",
+    "No calendar year breaches the hard limit"
+  ],
+  "checks_summary": {
+    "pass": 31,
+    "fail": 13,
+    "skip": 2
+  },
+  "checks": [
+    {
+      "section": "3. Data",
+      "name": "IS and OOS are both non-empty",
+      "status": "PASS",
+      "detail": "IS 162 trades | OOS 75 trades"
+    },
+    {
+      "section": "3. Data",
+      "name": "Weeks without a valid trade <= 5%",
+      "status": "PASS",
+      "detail": "2 of 451 weeks lost to gaps (0.4%)"
+    },
+    {
+      "section": "4.1 Predictive",
+      "name": "Mean next-week move is higher after UP than after DOWN momentum (IS, OOS and all)",
+      "status": "PASS",
+      "detail": "IS: +2.71% vs -0.61%; OOS: +1.69% vs -0.89%; All: +2.39% vs -0.70%"
+    },
+    {
+      "section": "4.1 Predictive",
+      "name": "The difference is significant (one-sided Welch p < 0.05)",
+      "status": "PASS",
+      "detail": "up +2.39% vs down -0.70% | t = 2.85, p = 0.002"
+    },
+    {
+      "section": "4.1 Predictive",
+      "name": "Past 28-day return correlates positively with the next week (Spearman p < 0.05)",
+      "status": "PASS",
+      "detail": "rho = +0.113, p = 0.016"
+    },
+    {
+      "section": "4.1 Predictive",
+      "name": "Same correlation in the OOS only (Spearman p < 0.05)",
+      "status": "FAIL",
+      "detail": "rho = +0.105, p = 0.205 (n = 147)"
+    },
+    {
+      "section": "4.2 Excess",
+      "name": "Gross mean is positive and significant (t >= 2), all weeks",
+      "status": "PASS",
+      "detail": "gross +2.39% | t = 3.10"
+    },
+    {
+      "section": "4.2 Excess",
+      "name": "Momentum beats the naked position on gross mean (all weeks)",
+      "status": "PASS",
+      "detail": "excess +1.46% per week"
+    },
+    {
+      "section": "4.2 Excess",
+      "name": "Permutation p < 0.05 (IS)",
+      "status": "PASS",
+      "detail": "p = 0.021"
+    },
+    {
+      "section": "4.2 Excess",
+      "name": "Permutation p < 0.05 (OOS)",
+      "status": "FAIL",
+      "detail": "p = 0.084"
+    },
+    {
+      "section": "4.2 Excess",
+      "name": "Permutation p < 0.05 (all weeks)",
+      "status": "PASS",
+      "detail": "p = 0.010"
+    },
+    {
+      "section": "4.3 Costs",
+      "name": "Long leg is positive net of spread and swap",
+      "status": "PASS",
+      "detail": "net +1.84% (t = 2.40)"
+    },
+    {
+      "section": "4.3 Costs",
+      "name": "Short leg is positive net of spread and swap",
+      "status": "SKIP",
+      "detail": "not traded (direction = long_only)"
+    },
+    {
+      "section": "4.3 Costs",
+      "name": "Spread + swap take less than 50% of the gross mean (long_only)",
+      "status": "PASS",
+      "detail": "23% of the gross mean"
+    },
+    {
+      "section": "4.4 Concentration",
+      "name": "Net t-stat stays >= 1.5 after removing the best calendar year (2020)",
+      "status": "FAIL",
+      "detail": "t = 1.38"
+    },
+    {
+      "section": "4.4 Concentration",
+      "name": "Net mean stays positive after removing the two best years",
+      "status": "PASS",
+      "detail": "[2020, 2021] removed: +0.469%"
+    },
+    {
+      "section": "4.4 Concentration",
+      "name": "Net mean is positive in at least 2/3 of the calendar years",
+      "status": "PASS",
+      "detail": "7 of 9 years"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, full period >= 1.3",
+      "status": "PASS",
+      "detail": "PF = 1.547"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, IS >= 1.3",
+      "status": "PASS",
+      "detail": "PF = 1.581"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, OOS >= 1.3",
+      "status": "PASS",
+      "detail": "PF = 1.450"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "OOS does not degrade vs IS (OOS PF >= 50% of IS PF)",
+      "status": "PASS",
+      "detail": "OOS 1.450 vs IS 1.581"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "t-stat of the mean trade >= 2",
+      "status": "PASS",
+      "detail": "t = 2.40"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, full period >= 100",
+      "status": "PASS",
+      "detail": "237 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, OOS >= 30",
+      "status": "PASS",
+      "detail": "75 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Expectancy > 0 in IS and OOS (net of spread and swap)",
+      "status": "PASS",
+      "detail": "IS +2.113% | OOS +1.247%"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Strict research gate: t-stat >= 2 in IS and in OOS",
+      "status": "FAIL",
+      "detail": "IS t = 2.12 | OOS t = 1.12"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "25% ideal fraction stays inside -9%",
+      "status": "FAIL",
+      "detail": "max DD -21.62% | headroom -12.62 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Lot-adjusted sizing stays inside -9%",
+      "status": "FAIL",
+      "detail": "max DD -21.12% at capital 2,000 | headroom -12.12 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Configured fraction <= largest fraction allowed by the limit",
+      "status": "FAIL",
+      "detail": "25% vs 9.9%"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Capital >= minimum capital for the minimum lot",
+      "status": "PASS",
+      "detail": "2,000 vs 893"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Every trade is executable with the minimum lot",
+      "status": "PASS",
+      "detail": "237 of 237 trades taken"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Intrabar drawdown (candle lows/highs) stays inside -9%",
+      "status": "FAIL",
+      "detail": "max DD intrabar -29.78% (closes only -21.12%) | headroom -20.78 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Capital reaches the capital the hard limit needs with the minimum lot",
+      "status": "FAIL",
+      "detail": "needed 3000 vs capital 2,000"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": "No calendar year breaches the hard limit",
+      "status": "FAIL",
+      "detail": "years in breach: [2018, 2019, 2020, 2021, 2022] | worst year DD -20.7%"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": ">= 75% of full calendar years are profitable",
+      "status": "FAIL",
+      "detail": "5/8 full years positive | non-positive: 2018 (-13.1%), 2019 (-2.9%), 2022 (-0.5%)"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No lookahead and execution model respected on every trade",
+      "status": "PASS",
+      "detail": "237 trades checked"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Every full calendar year has >= 20 trades",
+      "status": "FAIL",
+      "detail": "min 18 (2022) | max 39 (2020) over 7 full years"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "MTM paths telescope to the trade returns (error < 1e-9)",
+      "status": "PASS",
+      "detail": "max abs error 2.66e-15"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Swap is charged: every trade crosses 6-8 rollovers",
+      "status": "PASS",
+      "detail": "n_rolls min 7 / max 7"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Matches the research reference",
+      "status": "SKIP",
+      "detail": "skipped: not the research rules (28 d / 7 d / both / spread)"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Configured rule beats the other directions on Profit Factor",
+      "status": "PASS",
+      "detail": "Long only (traded) 1.547 | Both legs 1.326 | Short only 1.108"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Configured rule beats the other directions on expectancy per trade",
+      "status": "PASS",
+      "detail": "Long only (traded) +1.839% | Both legs +1.164% | Short only +0.409%"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Configured rule beats the other directions on Sharpe",
+      "status": "PASS",
+      "detail": "Long only (traded) 0.82 | Both legs 0.72 | Short only 0.18"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Configured rule max drawdown is shallower than the other directions",
+      "status": "PASS",
+      "detail": "Long only (traded) -21.2% | Both legs -28.9% | Short only -32.9%"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Configured rule final capital is not below the other directions (1% tolerance)",
+      "status": "FAIL",
+      "detail": "Long only (traded) 2.680x | Both legs 3.065x | Short only 1.144x"
+    },
+    {
+      "section": "8. Verdict",
+      "name": "Core criteria: PF >= 1.3 (full and OOS), t >= 2, N >= 100",
+      "status": "PASS",
+      "detail": "PF 1.547 / OOS 1.450 | t 2.40 | N 237"
+    }
+  ]
+}

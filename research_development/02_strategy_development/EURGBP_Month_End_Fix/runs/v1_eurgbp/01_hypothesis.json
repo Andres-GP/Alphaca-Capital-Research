@@ -1,0 +1,382 @@
+{
+  "variant": "MONTHEND_FIX.eurgbp.cfd.v1",
+  "ticker": "eurgbp",
+  "params": {
+    "side": "short",
+    "entry_hour": 12,
+    "exit_hour": 16,
+    "cost_bps_per_side": 0.5
+  },
+  "oos_start": "2024-01-01",
+  "fresh_start": "2026-11-07",
+  "k_tests": 17,
+  "all": {
+    "n": 94,
+    "gross_bps": 5.5875162332111135,
+    "net_bps": 4.588025010272343,
+    "pf": 1.578903552469332,
+    "win_rate": 59.57446808510638,
+    "t_stat": 1.6326139269890476
+  },
+  "is": {
+    "n": 60,
+    "net_bps": 7.498156861388919,
+    "pf": 1.9561981655198235
+  },
+  "oos": {
+    "n": 34,
+    "net_bps": -0.5475017858157321,
+    "pf": 0.9321822890284525,
+    "t_stat": -0.1330374604117071
+  },
+  "fresh": {
+    "n": 0,
+    "net_bps": null
+  },
+  "permutation": {
+    "p": 0.0015996800639872025,
+    "rule_bps": 5.5875162332111135,
+    "control_bps": 0.019877696186137137,
+    "p_same_hour": 0.016796640671865627
+  },
+  "years_positive": 0.625,
+  "net_without_best_10pct_bps": -0.5613941170383369,
+  "edge_over_spread": 5.5875162332111135,
+  "hard_limit": {
+    "limit": 0.09,
+    "max_dd_intrabar_min_lot_pct": {
+      "1000": -1.4471922314773566,
+      "2000": -0.74557717853313
+    },
+    "passed": true
+  },
+  "correlation_gotobi": null,
+  "gates": [
+    {
+      "name": "t net (full period)",
+      "value": 1.6326139269890476,
+      "threshold": 2.0,
+      "op": ">=",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": 0.1836930365054762
+    },
+    {
+      "name": "t net corrected (k = 17)",
+      "value": 1.6326139269890476,
+      "threshold": 2.754268270633685,
+      "op": ">=",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": 0.4072422267663034
+    },
+    {
+      "name": "Profit Factor",
+      "value": 1.578903552469332,
+      "threshold": 1.3,
+      "op": ">=",
+      "kill": false,
+      "status": "PASS",
+      "shortfall": 0.0
+    },
+    {
+      "name": "n OOS",
+      "value": 34.0,
+      "threshold": 30,
+      "op": ">=",
+      "kill": false,
+      "status": "PASS",
+      "shortfall": 0.0
+    },
+    {
+      "name": "t OOS",
+      "value": -0.1330374604117071,
+      "threshold": 1.645,
+      "op": ">=",
+      "kill": true,
+      "status": "FAIL",
+      "shortfall": 1.0808738361165393
+    },
+    {
+      "name": "Positive years",
+      "value": 0.625,
+      "threshold": 0.75,
+      "op": ">=",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": 0.16666666666666666
+    },
+    {
+      "name": "Permutation p (random windows)",
+      "value": 0.0015996800639872025,
+      "threshold": 0.05,
+      "op": "<",
+      "kill": true,
+      "status": "PASS",
+      "shortfall": 0.0
+    },
+    {
+      "name": "Net mean without the best 10% (bps)",
+      "value": -0.5613941170383369,
+      "threshold": 0.0,
+      "op": ">",
+      "kill": false,
+      "status": "FAIL",
+      "shortfall": Infinity
+    },
+    {
+      "name": "Gross edge / spread",
+      "value": 5.5875162332111135,
+      "threshold": 3.0,
+      "op": ">=",
+      "kill": false,
+      "status": "PASS",
+      "shortfall": 0.0
+    },
+    {
+      "name": "Intrabar DD, min lot (%)",
+      "value": -1.4471922314773566,
+      "threshold": -9.0,
+      "op": ">=",
+      "kill": false,
+      "status": "PASS",
+      "shortfall": 0.0
+    },
+    {
+      "name": "IS -> OOS decay",
+      "value": 1.0730181824596179,
+      "threshold": 0.5,
+      "op": "<",
+      "kill": true,
+      "status": "FAIL",
+      "shortfall": 1.1460363649192358
+    },
+    {
+      "name": "|Correlation| with Gotobi",
+      "value": null,
+      "threshold": 0.3,
+      "op": "<",
+      "kill": false,
+      "status": "PENDING",
+      "shortfall": 0.0
+    }
+  ],
+  "verdict": "STOP",
+  "checks_summary": {
+    "pass": 25,
+    "fail": 9,
+    "skip": 1
+  },
+  "checks": [
+    {
+      "section": "3. Data",
+      "name": "IS and OOS are both non-empty",
+      "status": "PASS",
+      "detail": "IS 31,149 bars | OOS 17,758 bars"
+    },
+    {
+      "section": "3. Data",
+      "name": "Month-ends without a valid window <= 5%",
+      "status": "PASS",
+      "detail": "0 of 94 month-ends lost to gaps (0.0%)"
+    },
+    {
+      "section": "4.1 Month-end day",
+      "name": "Last business day beats the other days (gross mean)",
+      "status": "PASS",
+      "detail": "+5.59 vs +0.42 bps"
+    },
+    {
+      "section": "4.1 Month-end day",
+      "name": "The difference is significant (one-sided Welch p < 0.05)",
+      "status": "PASS",
+      "detail": "t = 1.81, p = 0.037 (N = 94 vs 1944)"
+    },
+    {
+      "section": "4.1 Month-end day",
+      "name": "The naked window has no significant edge of its own on other days (t < 2)",
+      "status": "PASS",
+      "detail": "other days +0.42 bps | t = 0.81"
+    },
+    {
+      "section": "4.2 Permutation",
+      "name": "Rule beats random windows on non-target days (p < 0.05)",
+      "status": "PASS",
+      "detail": "rule +5.59 vs control +0.02 bps | z = 3.23, p = 0.0016"
+    },
+    {
+      "section": "4.2 Permutation",
+      "name": "Rule beats the same hour on non-target days (p < 0.05)",
+      "status": "PASS",
+      "detail": "rule +5.59 vs control +0.42 bps | z = 2.17, p = 0.0168"
+    },
+    {
+      "section": "4.3 Years",
+      "name": ">= 75% of the years are profitable (net mean)",
+      "status": "FAIL",
+      "detail": "5/8 years: 2019: +17.0, 2020: +13.3, 2021: +1.8, 2022: -3.3, 2023: +8.7, 2024: +2.6, 2025: -0.9, 2026: -3.9"
+    },
+    {
+      "section": "4.3 Years",
+      "name": "Net mean is positive in both IS and OOS",
+      "status": "FAIL",
+      "detail": "IS +7.50 | OOS -0.55 bps"
+    },
+    {
+      "section": "4.4 Concentration",
+      "name": "Net mean stays > 0 without the best 10% of trades",
+      "status": "FAIL",
+      "detail": "-0.56 bps without 10 trades (all: +4.59 bps)"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, full period >= 1.3",
+      "status": "PASS",
+      "detail": "PF = 1.579"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, IS >= 1.3",
+      "status": "PASS",
+      "detail": "PF = 1.956"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Profit Factor, OOS >= 1.3",
+      "status": "FAIL",
+      "detail": "PF = 0.932"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "OOS does not decay vs IS (decay < 50%)",
+      "status": "FAIL",
+      "detail": "IS +7.50 -> OOS -0.55 bps (decay 107%)"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "t-stat of the mean net trade >= 2",
+      "status": "FAIL",
+      "detail": "t = 1.63"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "t-stat >= 2.75 (corrected for k = 17 tests)",
+      "status": "FAIL",
+      "detail": "t = 1.63"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Trades, OOS >= 30",
+      "status": "PASS",
+      "detail": "34 trades"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "t-stat OOS >= 1.645",
+      "status": "FAIL",
+      "detail": "t OOS = -0.13"
+    },
+    {
+      "section": "5. Baseline",
+      "name": "Expectancy > 0 in IS and OOS (net of costs)",
+      "status": "FAIL",
+      "detail": "IS +7.50 | OOS -0.55 bps"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "1x ideal fraction stays inside -9% (intrabar)",
+      "status": "PASS",
+      "detail": "max DD -1.38% | headroom +7.62 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Minimum lot on 1,000 stays inside -9% (intrabar)",
+      "status": "PASS",
+      "detail": "max DD -1.45% (closes only -1.36%) | headroom +7.55 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Minimum lot on 2,000 stays inside -9% (intrabar)",
+      "status": "PASS",
+      "detail": "max DD -0.75% (closes only -0.70%) | headroom +8.25 pts"
+    },
+    {
+      "section": "5.1 Hard limit",
+      "name": "Every trade is executable with the minimum lot",
+      "status": "PASS",
+      "detail": "94 of 94 trades taken on every capital"
+    },
+    {
+      "section": "5.2 Annual",
+      "name": "No calendar year breaches the hard limit",
+      "status": "PASS",
+      "detail": "years in breach: none | worst year DD -0.63%"
+    },
+    {
+      "section": "5.3 Fresh data",
+      "name": "Fresh data: n >= 36 and t >= 1.645",
+      "status": "SKIP",
+      "detail": "only 0 trades since the freeze: not enough to say anything yet"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Calendar, direction, execution model and costs respected on every trade",
+      "status": "PASS",
+      "detail": "94 trades checked"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "No trade crosses the rollover (0 nights, swap does not apply)",
+      "status": "PASS",
+      "detail": "0 nights over 94 trades"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Entry UTC hour is 11 (BST) or 12 (GMT) on every trade",
+      "status": "PASS",
+      "detail": "{11: 55, 12: 39}"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "Every full calendar year has >= 10 trades",
+      "status": "PASS",
+      "detail": "min 12 (2020) | max 12 (2020) over 6 full years"
+    },
+    {
+      "section": "6. Sanity",
+      "name": "MTM paths telescope to the trade returns (error < 1e-9)",
+      "status": "PASS",
+      "detail": "max abs error 2.22e-16"
+    },
+    {
+      "section": "6. Reference (info)",
+      "name": "Trades per year match the screening (\u00b115%)",
+      "status": "PASS",
+      "detail": "12.0 vs 12.0"
+    },
+    {
+      "section": "6. Reference (info)",
+      "name": "Net mean matches the screening (\u00b12 bps; the cost model differs)",
+      "status": "PASS",
+      "detail": "+4.59 vs +5.00 bps"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Rule net mean beats the naked window",
+      "status": "PASS",
+      "detail": "rule +4.59 | naked -0.34 bps"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Rule Profit Factor beats the naked window",
+      "status": "PASS",
+      "detail": "rule 1.579 | naked 0.959"
+    },
+    {
+      "section": "7. Variants",
+      "name": "Rule t-stat beats the naked window",
+      "status": "PASS",
+      "detail": "rule 1.63 | naked -0.67"
+    }
+  ]
+}
