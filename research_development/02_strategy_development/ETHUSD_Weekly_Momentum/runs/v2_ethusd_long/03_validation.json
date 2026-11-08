@@ -1,0 +1,385 @@
+{
+  "variant": "WEEKLY_MOM.ethusd.cfd.v1",
+  "ticker": "ethusd",
+  "params": {
+    "lookback_days": 31,
+    "hold_days": 11,
+    "entry_dow": 0,
+    "entry_hour": 0,
+    "direction": "long_only",
+    "cost_mode": "spread",
+    "cost_bps_per_side": 0.0
+  },
+  "oos_start": "2024-01-01",
+  "official_sizing": "5% (robot)",
+  "n_trials": 2,
+  "status": {
+    "5% (robot)": "PASSED",
+    "10% (2x robot)": "PASSED"
+  },
+  "metrics": {
+    "sharpe": 0.9191791977496968,
+    "max_drawdown": -0.0581542340536407,
+    "num_trades": 221
+  },
+  "oos": {
+    "n": 72,
+    "pf": 1.6458547094022649,
+    "t_stat": 1.4929813711606148,
+    "pf_without_best": 1.496206706601405
+  },
+  "hard_limit": [
+    {
+      "Case": "Full, ideal fraction",
+      "Max DD intra-candle %": -6.554,
+      "Max DD closes %": -6.533,
+      "Headroom pts": 2.446,
+      "Hard limit": "PASS"
+    },
+    {
+      "Case": "OOS, ideal fraction",
+      "Max DD intra-candle %": -4.967,
+      "Max DD closes %": -4.958,
+      "Headroom pts": 4.033,
+      "Hard limit": "PASS"
+    },
+    {
+      "Case": "Full, lot-adjusted (capital 3,500)",
+      "Max DD intra-candle %": -8.802,
+      "Max DD closes %": -8.679,
+      "Headroom pts": 0.198,
+      "Hard limit": "PASS"
+    }
+  ],
+  "phases": {
+    "5% (robot)": {
+      "1_oos": {
+        "n": 72,
+        "pf": 1.6458547094022644,
+        "pf_without_best_trade": 1.496206706601405,
+        "max_dd": -0.045058077486973505,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "2_monte_carlo": {
+        "ret_p5": 0.16911665257708253,
+        "mdd_p5": -0.09891968423356194,
+        "prob_ruin": 0.0,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "3_monkey": {
+        "pf_real": 1.8861292988482723,
+        "pct_pf": 0.983,
+        "passed": true
+      },
+      "4_plateau": {
+        "center_pf": 1.9889596917638104,
+        "plateau": true,
+        "worst_drop_pct": 13.703538267851666,
+        "passed": true
+      },
+      "5_edge_decay": {
+        "recent_pf": 1.644974436430362,
+        "historical_pf": 2.094379515450103,
+        "warning": true,
+        "informational": true
+      }
+    },
+    "10% (2x robot)": {
+      "1_oos": {
+        "n": 72,
+        "pf": 1.6458547094022644,
+        "pf_without_best_trade": 1.496206706601405,
+        "max_dd": -0.08839262245804563,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "2_monte_carlo": {
+        "ret_p5": 0.3527528193997306,
+        "mdd_p5": -0.1898244991678224,
+        "prob_ruin": 0.0,
+        "dd_basis": "mtm",
+        "passed": true
+      },
+      "3_monkey": {
+        "pf_real": 1.8861292988482723,
+        "pct_pf": 0.983,
+        "passed": true
+      },
+      "4_plateau": {
+        "center_pf": 1.9889596917638104,
+        "plateau": true,
+        "worst_drop_pct": 13.703538267851666,
+        "passed": true
+      },
+      "5_edge_decay": {
+        "recent_pf": 1.644974436430362,
+        "historical_pf": 2.094379515450103,
+        "warning": true,
+        "informational": true
+      }
+    }
+  },
+  "walk_forward": {
+    "efficiency": 0.5494649880579984,
+    "pct_positive_years": 1.0,
+    "worst_mdd": -0.038436114115015685,
+    "passed": true
+  },
+  "monkey": {
+    "A_pct_pf": 0.9835,
+    "B_pct_pf": 0.999,
+    "B_required": 0.975
+  },
+  "monte_carlo_mdd_p5": {
+    "5% (robot)": -0.09891968423356194,
+    "10% (2x robot)": -0.1898244991678224
+  },
+  "cost_sweep": [
+    {
+      "Scenario": "Base",
+      "Trades": 221,
+      "Profit Factor": 1.886,
+      "Mean net %": 3.315,
+      "t-stat": 3.25
+    },
+    {
+      "Scenario": "Spread x2",
+      "Trades": 221,
+      "Profit Factor": 1.838,
+      "Mean net %": 3.177,
+      "t-stat": 3.13
+    },
+    {
+      "Scenario": "Swap x2",
+      "Trades": 221,
+      "Profit Factor": 1.671,
+      "Mean net %": 2.699,
+      "t-stat": 2.66
+    },
+    {
+      "Scenario": "Spread x2 + Swap x2",
+      "Trades": 221,
+      "Profit Factor": 1.629,
+      "Mean net %": 2.562,
+      "t-stat": 2.53
+    },
+    {
+      "Scenario": "Spread x3 + Swap x3",
+      "Trades": 221,
+      "Profit Factor": 1.41,
+      "Mean net %": 1.811,
+      "t-stat": 1.8
+    }
+  ],
+  "cost_breakeven_multiple": {
+    "spread_and_swap": 5.388612480211216,
+    "swap_only": 6.383657321195849
+  },
+  "profit_share_top10pct_trades": 0.49799714808919465,
+  "z_protocol": {
+    "mu0": 3.8083965373829147,
+    "sigma0": 16.31736878662505,
+    "z_today": -0.6439200729125115,
+    "zone_today": "green",
+    "z_min": -2.077641485547251
+  },
+  "edge_decay_warning": true,
+  "stress_ok": true,
+  "capital": 3500.0,
+  "lot_adjusted_fraction": 0.05478044889250961,
+  "monte_carlo_lot_adjusted_mdd_p5": -0.1352775898312696,
+  "t_overlap_adjusted": {
+    "is": 2.538589003459859,
+    "oos": 1.3867721858828592,
+    "full": 2.8903870493586172,
+    "lags": 1
+  },
+  "bonferroni_bar": {
+    "trials": 1.9599639845400545,
+    "yaml": 1.9599639845400545,
+    "grid": 3.8391583524613564
+  },
+  "weaknesses_from_02": [
+    "plateau without the bull years (diagnostic)",
+    "dose-response p >= 0.05"
+  ],
+  "checks": [
+    {
+      "section": "2 OOS",
+      "name": "N OOS >= 30",
+      "status": "PASS",
+      "detail": "72 trades"
+    },
+    {
+      "section": "2 OOS",
+      "name": "PF net OOS >= 1.3",
+      "status": "PASS",
+      "detail": "1.646"
+    },
+    {
+      "section": "2 OOS",
+      "name": "t net OOS (overlap-adjusted) >= 1.645",
+      "status": "FAIL",
+      "detail": "1.39 (plain 1.49, one-sided 5 %)"
+    },
+    {
+      "section": "2 OOS",
+      "name": "hard limit at the ideal fraction (full period)",
+      "status": "PASS",
+      "detail": "max DD -6.55% vs -9%"
+    },
+    {
+      "section": "2 OOS",
+      "name": "hard limit lot-adjusted at capital 3,500",
+      "status": "PASS",
+      "detail": "max DD -8.80% | headroom +0.20 pts"
+    },
+    {
+      "section": "3 Walk-forward",
+      "name": "efficiency >= 0.5",
+      "status": "PASS",
+      "detail": "0.55"
+    },
+    {
+      "section": "3 Walk-forward",
+      "name": "positive OOS years >= 60%",
+      "status": "PASS",
+      "detail": "100% (4/4)"
+    },
+    {
+      "section": "3 Walk-forward",
+      "name": "worst-year OOS drawdown inside -20% (gate)",
+      "status": "PASS",
+      "detail": "-3.84%"
+    },
+    {
+      "section": "3 Walk-forward",
+      "name": "worst-year OOS drawdown inside the hard limit (-9%)",
+      "status": "PASS",
+      "detail": "-3.84%"
+    },
+    {
+      "section": "4 Monte Carlo",
+      "name": "worst-5% DD inside the gate limit (-25%)",
+      "status": "PASS",
+      "detail": "-9.89% at 5% (robot)"
+    },
+    {
+      "section": "4 Monte Carlo",
+      "name": "worst-5% DD inside the hard limit (-9%) at the robot size",
+      "status": "FAIL",
+      "detail": "-9.89%"
+    },
+    {
+      "section": "4 Monte Carlo",
+      "name": "worst-5% DD inside the hard limit at the real lot-adjusted size (capital 3,500)",
+      "status": "FAIL",
+      "detail": "-13.53% at 5.5% per trade"
+    },
+    {
+      "section": "4 Monte Carlo",
+      "name": "p5 of total return > 0 (robot size)",
+      "status": "PASS",
+      "detail": "16.9%"
+    },
+    {
+      "section": "4 Monte Carlo",
+      "name": "probability of ruin (50% DD) <= 1% (robot size)",
+      "status": "PASS",
+      "detail": "0.00%"
+    },
+    {
+      "section": "5 Monkey",
+      "name": "A \u00b7 timing monkey: beats >= 95% on PF",
+      "status": "PASS",
+      "detail": "98.4%"
+    },
+    {
+      "section": "5 Monkey",
+      "name": "B \u00b7 signal monkey: beats >= 97.5% on PF (2 trials)",
+      "status": "PASS",
+      "detail": "99.9%"
+    },
+    {
+      "section": "5 Evidence",
+      "name": "full-period t >= Bonferroni bar for 2 hypotheses",
+      "status": "PASS",
+      "detail": "2.89 vs 1.96"
+    },
+    {
+      "section": "5 Evidence",
+      "name": "bar if the whole grid (810 cells) counts as the family",
+      "status": "INFO",
+      "detail": "full t 2.89 vs 3.84 -> does not clear"
+    },
+    {
+      "section": "6 Stress",
+      "name": "spread x2 + swap x2: PF >= 1",
+      "status": "PASS",
+      "detail": "PF 1.629"
+    },
+    {
+      "section": "6 Stress",
+      "name": "without the best 2 years: PF >= 1",
+      "status": "PASS",
+      "detail": "PF 1.341 (excluded [2020, 2021])"
+    },
+    {
+      "section": "6 Stress",
+      "name": "without the best 10% of trades: mean net >= 0",
+      "status": "FAIL",
+      "detail": "-0.222% (best 10% carry 50% of gross profit)"
+    },
+    {
+      "section": "6 Stress",
+      "name": "without the bull years (2020, 2021): PF >= 1",
+      "status": "PASS",
+      "detail": "PF 1.341"
+    },
+    {
+      "section": "6 Stress",
+      "name": "cost break-even multiple >= 2x",
+      "status": "PASS",
+      "detail": "5.4x (swap alone 6.4x)"
+    },
+    {
+      "section": "6 Stress",
+      "name": "approximate stop test (informational)",
+      "status": "INFO",
+      "detail": "worst trade -39.9% without stop; best mean +3.64% at stop 10"
+    },
+    {
+      "section": "7 Decay",
+      "name": "recent 3 years / historical expectancy >= 0.5",
+      "status": "FAIL",
+      "detail": "0.44"
+    },
+    {
+      "section": "7 Decay",
+      "name": "z today not red (> -2)",
+      "status": "PASS",
+      "detail": "z -0.64 (green)"
+    },
+    {
+      "section": "7 Decay",
+      "name": "positive years >= 75% (full history)",
+      "status": "PASS",
+      "detail": "7/8"
+    }
+  ],
+  "counts": {
+    "PASS": 20,
+    "FAIL": 5,
+    "SKIP": 0,
+    "INFO": 2
+  },
+  "overall_failed": [
+    "t net OOS (overlap-adjusted) >= 1.645",
+    "worst-5% DD inside the hard limit (-9%) at the robot size",
+    "worst-5% DD inside the hard limit at the real lot-adjusted size (capital 3,500)",
+    "without the best 10% of trades: mean net >= 0",
+    "recent 3 years / historical expectancy >= 0.5"
+  ]
+}

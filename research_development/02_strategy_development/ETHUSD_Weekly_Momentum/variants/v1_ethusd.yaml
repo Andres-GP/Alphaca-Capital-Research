@@ -21,7 +21,7 @@ params:
   hold_days: 7 # Monday 00:00 server -> next Monday 00:00 server
   entry_dow: 0 # Monday on the SERVER clock (NY + 7 h)
   entry_hour: 0 # 00:00 server (signal = close of the candle before)
-  direction: long_only # both | long_only | short_only
+  direction: both # both | long_only | short_only
   cost_mode: spread # real spread of the correct candle (long = entry, short = exit)
   cost_bps_per_side: 0.0 # only used if cost_mode: fixed
 

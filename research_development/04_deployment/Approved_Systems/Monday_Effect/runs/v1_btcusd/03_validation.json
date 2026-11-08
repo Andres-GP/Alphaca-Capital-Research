@@ -17,7 +17,7 @@
     "30%": "PASSED"
   },
   "metrics": {
-    "sharpe": 0.903476182930654,
+    "sharpe": 0.9014635310407497,
     "max_drawdown": -0.06564410547010963,
     "num_trades": 118
   },
@@ -40,7 +40,7 @@
       },
       "3_monkey": {
         "pf_real": 2.0466457589210623,
-        "pct_pf": 0.99,
+        "pct_pf": 0.991,
         "passed": true
       },
       "4_plateau": {
@@ -74,7 +74,7 @@
       },
       "3_monkey": {
         "pf_real": 2.0466457589210623,
-        "pct_pf": 0.99,
+        "pct_pf": 0.991,
         "passed": true
       },
       "4_plateau": {
@@ -98,8 +98,8 @@
     "passed": true
   },
   "monkey": {
-    "A_pct_pf": 0.99,
-    "B_pct_pf": 0.979
+    "A_pct_pf": 0.991,
+    "B_pct_pf": 0.9845
   },
   "monte_carlo_mdd_p5": {
     "20% (robot)": -0.11172876630392473,

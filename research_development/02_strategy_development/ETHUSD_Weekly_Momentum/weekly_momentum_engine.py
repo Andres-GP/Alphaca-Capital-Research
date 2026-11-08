@@ -1,15 +1,29 @@
 """
-weekly_momentum_engine.py  ·  02_strategy_development/Weekly_Momentum/weekly_momentum_engine.py
+weekly_momentum_engine.py  ·  02_strategy_development/Weekly_Momentum/weekly_momentum_engine.py   (v2)
 
 Engine of the Weekly Momentum edge (weekly time-series momentum) on 1 h candles (UTC) of an Axi CFD
-(variant v1_ethusd). Same API shape as monday_effect_engine / rsi2_engine so notebooks 01/02/03 follow
-the same pattern:
+(variants v1_ethusd / v2_ethusd_long). Same API shape as monday_effect_engine / rsi2_engine so notebooks 01/02/03
+follow the same pattern:
 
     load_data / prepare / run_weekly_backtest / daily_returns / trade_mtm_paths /
     walk_forward_fixed / set_engine_defaults / ENGINE_DEFAULTS
     apply_cfd_preset / CFD_PRESETS · lot_size / min_capital_for_target / cfd_trade_sizes
     hourly_returns / hourly_worst_returns / hard_limit_report / hard_limit_report_intrabar
-    annual_returns / max_fraction_for_limit · split_trades (new)
+    annual_returns / max_fraction_for_limit · split_trades · max_concurrent
+
+What changed in v2 (nothing changes unless you ask for it; with trend_filter_days = 0 every number is identical
+to v1 of the engine):
+  - NEW optional regime filter `trend_filter_days` (0 = OFF, the default). With N > 0 a LONG is only taken if the
+    close of the signal candle is above the mean of the closes of the previous N calendar days, and a SHORT only
+    if it is below. It is evaluated at the signal candle (the candle BEFORE the entry): no lookahead. Skipped
+    weeks are counted in trades.attrs['skipped']['trend_filter'] / ['trend_warmup'].
+    It is ONE pre-declared rule, not a grid: choosing N after looking at the results is another trial on the
+    same dataset and must be counted as such in the multiple-trials correction.
+  - NEW helper max_concurrent(trades): maximum number of trades open at the same time. With hold_days > 7 the
+    weekly trades OVERLAP by design (hold 11 -> up to 2 open at once), so "no overlap" is only a valid sanity
+    check for hold_days <= 7; for longer holds the check is max_concurrent <= ceil(hold_days / 7).
+  - Docstrings: the research rule (28 d / 7 d) is the DEFAULT; the candidate variants set lookback_days and
+    hold_days in their YAML (candidate: 31 / 11, long only). Rollovers crossed per trade = hold_days.
 
 Data input (load_data):
   - Either a CSV already converted (column 'time' in UTC) or the RAW MetaTrader 5 export as it comes out of
@@ -17,12 +31,12 @@ Data input (load_data):
     comma or tab separated). The raw export is converted INSIDE load_data (server time -> UTC), so there is no
     separate conversion step: the same file that MT5 gives is the one the engine reads.
 
-Rule (v1, frozen in the research on ETHUSD H1 Axi 2018-2026):
+Rule (research reference, frozen on ETHUSD H1 Axi 2018-2026; defaults lookback 28 d / hold 7 d):
   - Every MONDAY 00:00 Axi SERVER time (= New York time + 7 h; in UTC it falls on Sunday 21:00 or 22:00).
   - Signal at the CLOSE of the candle before the entry (no lookahead): sign of the return of the previous
-    `lookback_days` (28) days, measured against the close of the candle before the entry 28 days earlier.
+    `lookback_days` days, measured against the close of the candle before the entry `lookback_days` days earlier.
   - LONG if the return > 0, SHORT if < 0. Entry at the OPEN of the 00:00 server candle; exit at the open of the
-    00:00 server candle `hold_days` (7) days later. No stop, no target, no filters.
+    00:00 server candle `hold_days` days later. No stop, no target (optional trend filter, see above).
   - CSV prices are BID. LONG pays the spread of the ENTRY candle (buys at the ask);
     SHORT pays the spread of the EXIT candle (buys back at the ask). cost_mode="fixed" uses cost_bps_per_side.
   - Swap in annual % on the current price (Axi ETHUSD: long -20, short -5), charged at every server rollover
@@ -37,6 +51,7 @@ Deliberate differences from monday_effect_engine:
     weeks last 167 or 169 h in UTC). entry_clock="utc" uses the UTC clock instead.
   - below_min_lot: "skip" (default, like the Monday engine: 0 lots = trade not taken) or "min_lot" (trades the
     minimum lot even if it weighs more than size_fraction; useful to measure the real drawdown with small capital).
+  - With hold_days > 7 positions overlap; the MTM / drawdown functions add the exposure of every open trade.
 
 Conventions (same as Monday):
   - trades['pnl'] is in % of the entry notional, NET of cost and swap (same as utils.compute_metrics).
@@ -72,6 +87,7 @@ ENGINE_DEFAULTS = dict(
     direction="both",              # "both" | "long_only" | "short_only"
     cost_mode="spread",            # "spread" = spread of the correct candle | "fixed" = cost_bps_per_side
     cost_bps_per_side=0.0,
+    trend_filter_days=0,           # 0 = OFF. N > 0: long only above / short only below the mean close of the last N days
     point_size=0.001,              # Axi ETHUSD: 3 digits (the CSV SPREAD is expressed in points)
     use_swap=True,
     swap_long_pct_annual=-20.0,    # annual % on the current price
@@ -278,15 +294,30 @@ def _momentum(df, srv, anch, ie, lookback_days) -> np.ndarray:
     return out
 
 
-def prepare(df, lookback_days=None, entry_dow=None, entry_hour=None):
+def _trend_dev(df, ie, trend_days) -> np.ndarray:
+    """Deviation (%) of the close of the SIGNAL candle (the one before each entry) from the mean close of the
+    previous `trend_days` calendar days (window ending at that same candle, inclusive). NaN if the window is
+    less than 90% full (start of the data, big gaps). Uses only information available at the signal candle."""
+    s = df["close"]
+    ma = s.rolling(f"{int(trend_days)}D", min_periods=int(0.9 * 24 * int(trend_days))).mean().to_numpy(float)
+    ip = np.maximum(ie - 1, 0)
+    c = s.to_numpy(float)
+    out = (c[ip] / ma[ip] - 1.0) * 100.0
+    out[ie < 1] = np.nan
+    return out
+
+
+def prepare(df, lookback_days=None, entry_dow=None, entry_hour=None, trend_filter_days=None):
     """
     Adds: srv_time (server clock), is_roll / roll_day_mult (swap rollovers), spread_px / spread_filled and,
     ONLY on the entry candles (entry_ok=True, with a contiguous signal candle): mom_ret (% of the previous
-    `lookback_days` days; NaN during the warm-up or if a reference candle is missing).
+    `lookback_days` days; NaN during the warm-up or if a reference candle is missing) and trend_dev (% distance
+    of the signal close from its N-day mean; NaN everywhere if trend_filter_days = 0).
     Computed ONCE over the whole history so IS/OOS can be sliced without losing the warm-up.
     """
     lookback_days = int(_cfg("lookback_days", lookback_days))
     entry_dow, entry_hour = _cfg("entry_dow", entry_dow), _cfg("entry_hour", entry_hour)
+    trend_days = int(_cfg("trend_filter_days", trend_filter_days))
     d = df.copy()
     srv = _server_clock(d.index)
     d["srv_time"] = srv
@@ -301,11 +332,14 @@ def prepare(df, lookback_days=None, entry_dow=None, entry_hour=None):
     cand = cand[np.asarray((d.index[cand] - d.index[cand - 1]) == H1)]      # contiguous signal candle
     mom = np.full(len(d), np.nan)
     mom[cand] = _momentum(d, srv, _anchors(srv, entry_hour), cand, lookback_days)
+    tdev = np.full(len(d), np.nan)
+    if trend_days > 0 and len(cand):
+        tdev[cand] = _trend_dev(d, cand, trend_days)
     entry_ok = np.zeros(len(d), bool)
     entry_ok[cand] = True
-    d["mom_ret"], d["entry_ok"] = mom, entry_ok
+    d["mom_ret"], d["entry_ok"], d["trend_dev"] = mom, entry_ok, tdev
     d.attrs.update(lookback_days=lookback_days, entry_dow=entry_dow, entry_hour=entry_hour,
-                   entry_clock=ENGINE_DEFAULTS["entry_clock"])
+                   entry_clock=ENGINE_DEFAULTS["entry_clock"], trend_filter_days=trend_days)
     return d
 
 
@@ -324,17 +358,20 @@ TRADE_COLS = ["entry_time", "exit_time", "entry_price", "exit_price", "type", "s
 
 def run_weekly_backtest(df, lookback_days=None, hold_days=None, entry_dow=None, entry_hour=None,
                         direction=None, cost_mode=None, cost_bps_per_side=None, use_swap=None,
-                        size_fraction=None):
+                        size_fraction=None, trend_filter_days=None):
     """
-    One trade per week. direction: 'both' (v1 rule) | 'long_only' | 'short_only'.
+    One trade per week. direction: 'both' | 'long_only' | 'short_only'.
     cost_mode: 'spread' (spread of the correct candle; long = entry, short = exit) | 'fixed' (bps per side).
+    trend_filter_days: 0 = off; N > 0 = long only above / short only below the N-day mean close (see module doc).
     pnl is in % of the entry notional, net of cost and swap. i_ent / i_sal are positions inside the df received.
+    With hold_days > 7 consecutive trades overlap (see max_concurrent).
     Discarded weeks are counted in trades.attrs['skipped'].
     """
     if "mom_ret" not in df.columns:
         raise ValueError("Call prepare(df) first.")
     lb = int(_pick(df, "lookback_days", lookback_days))
     edow, ehr = _pick(df, "entry_dow", entry_dow), _pick(df, "entry_hour", entry_hour)
+    tf = int(_pick(df, "trend_filter_days", trend_filter_days))
     hold = int(_cfg("hold_days", hold_days))
     direction, cost_mode = _cfg("direction", direction), _cfg("cost_mode", cost_mode)
     cost_bps = float(_cfg("cost_bps_per_side", cost_bps_per_side))
@@ -354,7 +391,8 @@ def run_weekly_backtest(df, lookback_days=None, hold_days=None, entry_dow=None, 
     ie = np.flatnonzero(df["entry_ok"].to_numpy(bool))
     mom_all = df["mom_ret"].to_numpy(float)[ie]
     T = srv[ie]
-    sk = dict(candidates=len(ie), warmup=0, no_signal_bar=0, zero_signal=0, no_exit=0, direction_filter=0)
+    sk = dict(candidates=len(ie), warmup=0, no_signal_bar=0, zero_signal=0, no_exit=0, direction_filter=0,
+              trend_warmup=0, trend_filter=0)
     warm = (T - pd.Timedelta(days=lb)) < srv.min()
     sk["warmup"] = int(warm.sum())
     sk["no_signal_bar"] = int((~np.isfinite(mom_all) & ~warm).sum())
@@ -368,6 +406,13 @@ def run_weekly_backtest(df, lookback_days=None, hold_days=None, entry_dow=None, 
         want = 1 if direction == "long_only" else -1
         sk["direction_filter"] = int((ok & (side_all != want)).sum())
         ok &= side_all == want
+    if tf > 0:
+        tdev = df["trend_dev"].to_numpy(float)[ie]
+        sk["trend_warmup"] = int((ok & ~np.isfinite(tdev)).sum())
+        ok &= np.isfinite(tdev)
+        agree = ((side_all > 0) & (tdev > 0)) | ((side_all < 0) & (tdev < 0))
+        sk["trend_filter"] = int((ok & ~agree).sum())
+        ok &= agree
 
     i0, i1 = ie[ok], ix[ok].astype(int)
     sd, sig = side_all[ok], mom_all[ok]
@@ -415,6 +460,18 @@ def split_trades(trades, oos_start):
     return trades[et < ts].copy(), trades[et >= ts].copy()
 
 
+def max_concurrent(trades) -> int:
+    """Maximum number of trades open at the same time (a trade is open from its entry candle up to, not
+    including, its exit candle). 1 when hold_days <= 7; with hold_days = 11 and a weekly entry it is 2.
+    Sanity bound for any hold: max_concurrent(trades) <= ceil(hold_days / 7)."""
+    if len(trades) == 0:
+        return 0
+    starts = np.sort(trades["i_ent"].to_numpy(int))
+    ends = np.sort(trades["i_sal"].to_numpy(int))
+    open_at_start = np.searchsorted(starts, starts, "right") - np.searchsorted(ends, starts, "right")
+    return int(open_at_start.max())
+
+
 # ------------------------------------------------------------------ CFD sizing
 def lot_size(capital, price, target_fraction=None, contract_size=None, min_lot=None, lot_step=None,
              quote_to_account=None, below_min_lot=None):
@@ -450,6 +507,8 @@ def cfd_trade_sizes(trades, capital, target_fraction=None, contract_size=None, m
     (size_fraction, ready to be used as `sizing`). With compounding=True the size follows the equity;
     with False it is computed on the initial `capital`. With below_min_lot='skip' a trade with 0 lots is not
     taken; with 'min_lot' the minimum lot is traded and flagged forced_min_lot=True.
+    Note: the equity used here is updated trade by trade (each trade's pnl is booked in entry order), an
+    approximation when trades overlap (hold_days > 7); the MTM functions below are the exact path.
     """
     contract_size = _cfg("contract_size", contract_size)
     fx = float(_cfg("quote_to_account", quote_to_account))

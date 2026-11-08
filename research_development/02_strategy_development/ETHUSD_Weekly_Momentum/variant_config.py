@@ -79,7 +79,8 @@ def _jsonable(o):
     if isinstance(o, np.bool_):
         return bool(o)
     if isinstance(o, (pd.Timestamp, Path)):
-        return str(o)    return str(o)
+        return str(o)
+    return str(o)
 
 
 def save_json(cfg: dict, name: str, payload: dict) -> Path:
