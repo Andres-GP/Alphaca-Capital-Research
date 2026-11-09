@@ -1,8 +1,8 @@
 {
   "portfolio_id": "portfolio_Axi_v1_Andres",
-  "hypothesis": "Risk-parity base across v1_axi_usdjpy, v1_btcusd keeps the account inside -8%.",
+  "hypothesis": "Risk-parity base across v1_axi_usdjpy, v1_btcjpy, v2_ethusd_long keeps the account inside -8%.",
   "window": [
-    "2018-01-29",
+    "2023-01-16",
     "2026-08-24"
   ],
   "capital": 10000.0,
@@ -11,19 +11,26 @@
     "v1_axi_usdjpy": {
       "id": "GOTOBI.usdjpy.cfd.v1",
       "source": "approved",
-      "risk_weight": 0.5142263685519686,
-      "size_fraction": 1.9873794217578626,
+      "risk_weight": 0.33001223737188146,
+      "size_fraction": 1.8683807086838935,
       "configured": 2.5
     },
-    "v1_btcusd": {
-      "id": "MONDAY.btcusd.cfd.v1",
+    "v1_btcjpy": {
+      "id": "MONDAY.btcjpy.cfd.v1",
       "source": "approved",
-      "risk_weight": 0.48577363144803143,
-      "size_fraction": 0.1360325094371267,
+      "risk_weight": 0.3845829116486551,
+      "size_fraction": 0.2322349302561186,
       "configured": 0.2
+    },
+    "v2_ethusd_long": {
+      "id": "WEEKLY_MOM.ethusd.cfd.v1",
+      "source": "development",
+      "risk_weight": 0.2854048509794635,
+      "size_fraction": 0.03313418149374682,
+      "configured": 0.05
     }
   },
-  "L_hard_limit": 0.549302540048302,
+  "L_hard_limit": 0.8645839805467403,
   "binding_caps": [],
   "tilt_identified": true,
   "blend": 0.5,
@@ -46,19 +53,43 @@
       "section": "2. Data",
       "name": "common window >= 2 years",
       "status": "PASS",
-      "detail": "8.58"
+      "detail": "3.61"
     },
     {
       "section": "4. Correlation",
-      "name": "v1_axi_usdjpy/v1_btcusd: weekly corr estimable (>= 30 co-active weeks)",
+      "name": "v1_axi_usdjpy/v1_btcjpy: weekly corr estimable (>= 30 co-active weeks)",
       "status": "PASS",
-      "detail": "115 co-active weeks"
+      "detail": "52 co-active weeks"
     },
     {
       "section": "4. Correlation",
-      "name": "v1_axi_usdjpy/v1_btcusd: weekly corr < 0.5",
+      "name": "v1_axi_usdjpy/v1_btcjpy: weekly corr < 0.5",
       "status": "PASS",
-      "detail": "+0.01 (CI90 -0.07..+0.09)"
+      "detail": "+0.07 (CI90 -0.07..+0.19)"
+    },
+    {
+      "section": "4. Correlation",
+      "name": "v1_axi_usdjpy/v2_ethusd_long: weekly corr estimable (>= 30 co-active weeks)",
+      "status": "PASS",
+      "detail": "133 co-active weeks"
+    },
+    {
+      "section": "4. Correlation",
+      "name": "v1_axi_usdjpy/v2_ethusd_long: weekly corr < 0.5",
+      "status": "PASS",
+      "detail": "-0.09 (CI90 -0.21..+0.04)"
+    },
+    {
+      "section": "4. Correlation",
+      "name": "v1_btcjpy/v2_ethusd_long: weekly corr estimable (>= 30 co-active weeks)",
+      "status": "PASS",
+      "detail": "32 co-active weeks"
+    },
+    {
+      "section": "4. Correlation",
+      "name": "v1_btcjpy/v2_ethusd_long: weekly corr < 0.5",
+      "status": "PASS",
+      "detail": "+0.15 (CI90 +0.03..+0.27)"
     },
     {
       "section": "4. Correlation",
@@ -76,7 +107,7 @@
       "section": "7. Weights",
       "name": "final weights sum to 1 and are >= 0",
       "status": "PASS",
-      "detail": "{'v1_axi_usdjpy': 0.514, 'v1_btcusd': 0.486}"
+      "detail": "{'v1_axi_usdjpy': 0.33, 'v1_btcjpy': 0.385, 'v2_ethusd_long': 0.285}"
     },
     {
       "section": "8. Risk",
@@ -88,13 +119,13 @@
       "section": "8. Risk",
       "name": "historical close DD x intrabar factor inside the hard limit",
       "status": "PASS",
-      "detail": "6.39% vs 8%"
+      "detail": "4.65% vs 8%"
     },
     {
       "section": "8. Risk",
       "name": "p5 of 3-year return > 0",
       "status": "PASS",
-      "detail": "6.2%"
+      "detail": "15.9%"
     },
     {
       "section": "8. Risk",
@@ -106,19 +137,19 @@
       "section": "9. Compounding",
       "name": "portfolio Sharpe >= mean Sharpe of its edges (diversification adds)",
       "status": "PASS",
-      "detail": "1.48 vs 1.03 (best edge 1.12)"
+      "detail": "1.85 vs 1.11 (best edge 1.62)"
     },
     {
       "section": "10. Stress",
       "name": "simultaneous worst day (intrabar) inside the hard limit",
       "status": "PASS",
-      "detail": "-4.71% vs -8%"
+      "detail": "-4.17% vs -8%"
     },
     {
       "section": "11. Walk-forward",
       "name": "OOS Sharpe of ERC (weights without looking ahead) > 0",
       "status": "PASS",
-      "detail": "1.36 over 7 fold(s)"
+      "detail": "1.57 over 2 fold(s)"
     }
   ],
   "params_hash": "1c682f1f"
