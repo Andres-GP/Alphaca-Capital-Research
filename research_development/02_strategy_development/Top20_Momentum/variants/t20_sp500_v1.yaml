@@ -1,0 +1,50 @@
+id: T20M.sp500.stocks.v1
+edge: top20_momentum
+status: in_development # in_development | validated | rejected | demo | approved
+
+# VEHICLE: US large-cap stocks (S&P 500 point-in-time universe), long only, equal weight, monthly rotation (TIS Strategy #4, Top 20 version).
+# TIS rules, NOT fitted here: 3-month momentum (63 trading days), Top N, price > SMA200 & SMA50, SPY > SMA200 else cash,
+# stock < own SMA200 -> sell. Top 20 is one of the variants TIS itself documents (Top 5 / 10 / 20).
+# Proxy for "NYSE, market cap > $10B": S&P 500 membership at each date (+ min average volume in shares).
+
+instrument:
+  benchmark: SPY
+  start: "2003-01-01" # panel start (warm-up for the 252-day grid values included)
+
+split:
+  oos_start: "2019-01-01" # IS 2004-2018 / OOS 2019+ (edit before seeing results, never after)
+
+params:
+  lookback_days: 63 # trading days (Finviz "Perf Quarter" ~ 63)
+  top_n: 20
+  rebalance: first_wednesday # first_trading_day | first_wednesday | second_wednesday | ...
+  exec_mode: next_open # next_open: signal at close, trade at next open | close: same-close (TIS manual, slight look-ahead)
+  spy_ma: 200
+  stock_ma: 200
+  fast_ma: 50
+  min_adv_shares: 2000000 # TIS Large Cap filter (500000 = Mega Cap)
+  slip_bps_per_side: 5.0 # slippage + spread, no commission (fractional-share brokers)
+  weekly_checks: true # Monday check of SPY and per-stock SMA200 stops
+  cash_yield_annual: 0.0
+
+grid:
+  lookback_days_values: [21, 42, 63, 84, 105, 126, 189, 252]
+  top_n_values: [5, 10, 15, 20, 25, 30, 40]
+
+data: # free sources, handled by t20_data.py (pip install yfinance lxml requests)
+  source: yfinance
+  universe: sp500_wikipedia # sp500_wikipedia (point-in-time approx.) | tickers_file (e.g. your Darwinex list; then no membership: survivor-biased)
+  tickers_file: "" # txt, one ticker per line, used when universe: tickers_file
+  auto_download: true # false = fail if the data is missing
+  min_history_days: 252
+  max_age_days: 45 # only warns when SPY's last bar is older
+
+risk:
+  capital: 10000.0
+  hard_limit: 0.30 # max tolerated drawdown of the allocated capital (edit to your account rule)
+
+engine_defaults:
+  prices_dir: "../../data/t20/prices" # one CSV per ticker (+ SPY.csv): Date,Open,High,Low,Close,Volume
+  membership_csv: "../../data/t20/sp500_membership.csv" # ticker,start,end (end empty = still member)
+  benchmark: SPY
+  data_start: "2003-01-01"

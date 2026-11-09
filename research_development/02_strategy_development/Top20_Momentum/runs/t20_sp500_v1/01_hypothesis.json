@@ -1,0 +1,256 @@
+{
+  "variant": "T20M.sp500.stocks.v1",
+  "go": false,
+  "table": {
+    "IS": {
+      "CAGR": 0.0968,
+      "Sharpe": 0.687,
+      "MaxDD": -0.1946,
+      "Vol": 0.1512,
+      "SPY_CAGR": 0.0808,
+      "SPY_Sharpe": 0.5182,
+      "SPY_MaxDD": -0.5519,
+      "Trades": 1859.0,
+      "PF": 1.658,
+      "Win": 49.7041,
+      "Payoff": 1.6777,
+      "t_month": 2.9546,
+      "AvgDays": 31.1087
+    },
+    "OOS": {
+      "CAGR": 0.1203,
+      "Sharpe": 0.6256,
+      "MaxDD": -0.2994,
+      "Vol": 0.2205,
+      "SPY_CAGR": 0.1679,
+      "SPY_Sharpe": 0.9037,
+      "SPY_MaxDD": -0.3372,
+      "Trades": 989.0,
+      "PF": 1.5863,
+      "Win": 48.8372,
+      "Payoff": 1.6619,
+      "t_month": 1.7809,
+      "AvgDays": 30.1092
+    },
+    "All": {
+      "CAGR": 0.1048,
+      "Sharpe": 0.6494,
+      "MaxDD": -0.2994,
+      "Vol": 0.1779,
+      "SPY_CAGR": 0.1097,
+      "SPY_Sharpe": 0.6541,
+      "SPY_MaxDD": -0.5519,
+      "Trades": 2848.0,
+      "PF": 1.626,
+      "Win": 49.4031,
+      "Payoff": 1.6652,
+      "t_month": 3.2919,
+      "AvgDays": 30.7616
+    }
+  },
+  "filters": {
+    "Configured": {
+      "cagr": 0.1048,
+      "sharpe": 0.6494,
+      "max_dd": -0.2994,
+      "calmar": 0.3499,
+      "PF": 1.626,
+      "trades": 2848.0
+    },
+    "No market filter (SPY)": {
+      "cagr": 0.1249,
+      "sharpe": 0.6472,
+      "max_dd": -0.5334,
+      "calmar": 0.2342,
+      "PF": 1.6493,
+      "trades": 3116.0
+    },
+    "No stock SMA200 stop": {
+      "cagr": 0.1041,
+      "sharpe": 0.6416,
+      "max_dd": -0.3143,
+      "calmar": 0.3313,
+      "PF": 1.618,
+      "trades": 2845.0
+    },
+    "No trend entry filter": {
+      "cagr": 0.1086,
+      "sharpe": 0.6681,
+      "max_dd": -0.2748,
+      "calmar": 0.3953,
+      "PF": 1.6637,
+      "trades": 2812.0
+    },
+    "Pure Top N (no filters)": {
+      "cagr": 0.1447,
+      "sharpe": 0.6625,
+      "max_dd": -0.6566,
+      "calmar": 0.2204,
+      "PF": 1.7394,
+      "trades": 3048.0
+    },
+    "Same-close execution (TIS manual)": {
+      "cagr": 0.1112,
+      "sharpe": 0.6874,
+      "max_dd": -0.266,
+      "calmar": 0.418,
+      "PF": 1.6748,
+      "trades": 2848.0
+    }
+  },
+  "fraction_for_limit": 1.0,
+  "checks": [
+    {
+      "section": "3.1 Signal",
+      "name": "Top 20 beats the eligible universe (t of monthly excess >= 2)",
+      "status": "FAIL",
+      "detail": "excess +0.28% / month, t 1.70"
+    },
+    {
+      "section": "3.1 Signal",
+      "name": "Information coefficient > 0 (t >= 2)",
+      "status": "FAIL",
+      "detail": "IC -0.008, t -0.72"
+    },
+    {
+      "section": "3.2 Benchmarks",
+      "name": "Sharpe above SPY buy & hold (full period)",
+      "status": "FAIL",
+      "detail": "0.65 vs 0.65"
+    },
+    {
+      "section": "3.2 Benchmarks",
+      "name": "Max drawdown shallower than SPY buy & hold",
+      "status": "PASS",
+      "detail": "-29.9% vs -55.2%"
+    },
+    {
+      "section": "3.3 Filters",
+      "name": "Configured rules beat pure Top N on Sharpe",
+      "status": "FAIL",
+      "detail": "0.65 vs 0.66"
+    },
+    {
+      "section": "3.3 Filters",
+      "name": "Market filter reduces max drawdown",
+      "status": "PASS",
+      "detail": "-29.9% vs -53.3%"
+    },
+    {
+      "section": "3.3 Filters",
+      "name": "Next-open execution loses < 0.2 Sharpe vs same-close (look-ahead in the manual TIS rule is small)",
+      "status": "PASS",
+      "detail": "same-close 0.69 vs next-open 0.65"
+    },
+    {
+      "section": "3.4 Years",
+      "name": "Share of profitable calendar years >= 70%",
+      "status": "PASS",
+      "detail": "73% of 22 years"
+    },
+    {
+      "section": "3.4 Years",
+      "name": "Monthly t-stat survives without the best year (>= 1.5)",
+      "status": "PASS",
+      "detail": "best year 2013, t without it 2.86"
+    },
+    {
+      "section": "4. Baseline",
+      "name": "Trades, full period >= 100",
+      "status": "PASS",
+      "detail": "2848"
+    },
+    {
+      "section": "4. Baseline",
+      "name": "Trades, OOS >= 30",
+      "status": "PASS",
+      "detail": "989"
+    },
+    {
+      "section": "4. Baseline",
+      "name": "Sharpe, IS >= 0.5",
+      "status": "PASS",
+      "detail": "0.69"
+    },
+    {
+      "section": "4. Baseline",
+      "name": "Sharpe, OOS >= 0.4",
+      "status": "PASS",
+      "detail": "0.63"
+    },
+    {
+      "section": "4. Baseline",
+      "name": "Profit Factor, IS >= 1.3",
+      "status": "PASS",
+      "detail": "1.66"
+    },
+    {
+      "section": "4. Baseline",
+      "name": "Profit Factor, OOS >= 1.3",
+      "status": "PASS",
+      "detail": "1.59"
+    },
+    {
+      "section": "4. Baseline",
+      "name": "t-stat of monthly returns >= 2 (full)",
+      "status": "PASS",
+      "detail": "3.29 (IS 2.95 / OOS 1.78)"
+    },
+    {
+      "section": "4. Baseline",
+      "name": "OOS Sharpe keeps at least half of the IS Sharpe",
+      "status": "PASS",
+      "detail": "0.63 vs 0.69"
+    },
+    {
+      "section": "4.1 Hard limit",
+      "name": "Full allocation respects the hard limit",
+      "status": "PASS",
+      "detail": "-29.9% vs -30%"
+    },
+    {
+      "section": "4.1 Hard limit",
+      "name": "Position size >= 250 at the declared capital and the limit-fitted fraction",
+      "status": "PASS",
+      "detail": "500 per position"
+    },
+    {
+      "section": "4.1 Hard limit",
+      "name": "No full calendar year breaches the limit (full allocation)",
+      "status": "PASS",
+      "detail": "breaches: []"
+    },
+    {
+      "section": "5. Sanity",
+      "name": "No lookahead: entries follow a rebalance close, market filter ON",
+      "status": "PASS",
+      "detail": "0 violations in 231 entry days"
+    },
+    {
+      "section": "5. Sanity",
+      "name": "Never more than 20 positions",
+      "status": "PASS",
+      "detail": "max 20"
+    },
+    {
+      "section": "5. Sanity",
+      "name": "Point-in-time universe: every entry was an S&P 500 member on the signal date",
+      "status": "PASS",
+      "detail": "2848 trades"
+    },
+    {
+      "section": "5. Sanity",
+      "name": "Data include delisted names (survivorship): >= 5% of tickers stop trading",
+      "status": "FAIL",
+      "detail": "0.0% of 500 tickers"
+    },
+    {
+      "section": "5. Sanity",
+      "name": "Eligible names >= 2 x Top N in every year",
+      "status": "PASS",
+      "detail": "min median 67"
+    }
+  ],
+  "n_pass": 20,
+  "n_fail": 5
+}

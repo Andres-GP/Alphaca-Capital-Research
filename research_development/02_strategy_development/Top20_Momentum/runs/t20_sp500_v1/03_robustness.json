@@ -1,0 +1,150 @@
+{
+  "variant": "T20M.sp500.stocks.v1",
+  "validated": false,
+  "oos": {
+    "cagr": 0.12028684584149674,
+    "vol": 0.22051661349683516,
+    "sharpe": 0.6256015807691343,
+    "max_dd": -0.29938331640780513,
+    "calmar": 0.4017820608201425,
+    "total": 1.4356119960669211,
+    "years": 7.837301587301587
+  },
+  "monkey_p_full": 0.22259136212624583,
+  "monkey_p_oos": 0.19601328903654486,
+  "fraction_for_limit": 1.0,
+  "checks": [
+    {
+      "section": "2. OOS",
+      "name": "Sharpe >= 0.4",
+      "status": "PASS",
+      "detail": "0.63"
+    },
+    {
+      "section": "2. OOS",
+      "name": "Profit Factor >= 1.3",
+      "status": "PASS",
+      "detail": "1.59"
+    },
+    {
+      "section": "2. OOS",
+      "name": "Monthly t-stat >= 2",
+      "status": "FAIL",
+      "detail": "1.78"
+    },
+    {
+      "section": "2. OOS",
+      "name": "OOS Sharpe >= SPY OOS Sharpe",
+      "status": "FAIL",
+      "detail": "0.63 vs 0.90"
+    },
+    {
+      "section": "2. OOS",
+      "name": "OOS max drawdown respects the hard limit (full allocation)",
+      "status": "PASS",
+      "detail": "-29.9% vs -30%; fraction that fits 100%"
+    },
+    {
+      "section": "3. Walk-forward",
+      "name": "Share of positive OOS years >= 70%",
+      "status": "PASS",
+      "detail": "71% of 21"
+    },
+    {
+      "section": "3. Walk-forward",
+      "name": "Median OOS-year Sharpe >= 0.4",
+      "status": "PASS",
+      "detail": "0.57"
+    },
+    {
+      "section": "3. Walk-forward",
+      "name": "No OOS year loses more than the hard limit",
+      "status": "PASS",
+      "detail": "worst -29.9%"
+    },
+    {
+      "section": "4. Monte Carlo",
+      "name": "5th percentile CAGR > 0",
+      "status": "PASS",
+      "detail": "4.7%"
+    },
+    {
+      "section": "4. Monte Carlo",
+      "name": "95th percentile max drawdown within 1.5 x the hard limit",
+      "status": "FAIL",
+      "detail": "-53.7%"
+    },
+    {
+      "section": "4. Monte Carlo",
+      "name": "5th percentile Sharpe > 0.2",
+      "status": "PASS",
+      "detail": "0.35"
+    },
+    {
+      "section": "5. Monkey",
+      "name": "Full-period Sharpe beats random Top N (p < 0.05)",
+      "status": "FAIL",
+      "detail": "p 0.223"
+    },
+    {
+      "section": "5. Monkey",
+      "name": "OOS Sharpe beats random Top N (p < 0.05)",
+      "status": "FAIL",
+      "detail": "p 0.196"
+    },
+    {
+      "section": "6. Stress",
+      "name": "Sharpe >= 0.4 at 20 bps per side",
+      "status": "PASS",
+      "detail": "0.55"
+    },
+    {
+      "section": "6. Stress",
+      "name": "Sharpe >= 0.4 without the best year",
+      "status": "PASS",
+      "detail": "best 2013 (45%), Sharpe 0.58"
+    },
+    {
+      "section": "6. Stress",
+      "name": "Sharpe >= 0.4 excluding the 5 most profitable tickers (windfall)",
+      "status": "PASS",
+      "detail": "excluded ['WDC', 'STX', 'MU', 'SNDK', 'NVDA']: Sharpe 0.51"
+    },
+    {
+      "section": "6. Stress",
+      "name": "Beats SPY in every crisis window present in the data",
+      "status": "FAIL",
+      "detail": "{'2008': 0.0, '2020 Feb-Apr': -0.185, '2022': -0.076}"
+    },
+    {
+      "section": "6. Stress",
+      "name": "Worst month better than -15%",
+      "status": "FAIL",
+      "detail": "-18.2% (2026-07)"
+    },
+    {
+      "section": "6. Stress",
+      "name": "CVaR 5% of the daily returns better than -3%",
+      "status": "PASS",
+      "detail": "-2.83%"
+    },
+    {
+      "section": "7. Decay",
+      "name": "Second-half Sharpe >= 50% of the first half",
+      "status": "PASS",
+      "detail": "0.58 vs 0.75"
+    },
+    {
+      "section": "7. Decay",
+      "name": "Last rolling 3y Sharpe > 0",
+      "status": "PASS",
+      "detail": "0.76"
+    },
+    {
+      "section": "7. Decay",
+      "name": "Rolling-Sharpe slope per year > -0.15",
+      "status": "PASS",
+      "detail": "-0.01 / year"
+    }
+  ]
+}
