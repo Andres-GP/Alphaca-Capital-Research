@@ -2,12 +2,13 @@
 
 ## Probado y no probado
 
-- En esta fase solo se creó la estructura. No se ejecutó investigación ni backtest para esta familia.
+- Se completó revisión bibliográfica inicial y crítica metodológica en `literature_review.md`, `evidence_and_data.md` y `red_team.md`.
+- Se creó una ficha de descomposición nocturna/intradía para ETF de acciones de EE. UU. como `data_pending`; no se verificó cobertura ni se ejecutaron backtests/gates.
 - No hay edges declarados, resultados propios ni casos casi-pasa registrados.
 
 ## Pruebas pendientes y datos
 
-- Definir gap y horarios de referencia por instrumento, incluida la sesión del broker y cambios DST.
+- Separar prima overnight incondicional de gap-fill condicional; definir horarios, precios de apertura/cierre y reglas de ejecución por instrumento, incluida la sesión del broker y DST.
 - Usar ticks/barras del broker específico para validar apertura y fills; cotejar la fuente de referencia y no mezclar feeds sin anotarlo.
 - Incluir spread de apertura, slippage, huecos sin cotización y reglas de ejecución.
 

@@ -1,0 +1,48 @@
+schema_version: 1
+id: "overnight_gaps.overnight_index_premium.us_equity_etf.qqq"
+title: "Descomposición de retornos nocturnos e intradía de un ETF amplio de EE. UU."
+family: "overnight_gaps"
+pattern: "overnight_index_premium"
+market: "ETF amplio de acciones de EE. UU. (QQQ candidato; broker por verificar)"
+status: "data_pending"
+as_of: "2026-11-20"
+
+mechanism:
+  economic_or_structural: "La información que llega cuando el mercado regular está cerrado y la dinámica de apertura podrían concentrar retornos/riesgo en el tramo close-to-open; esto puede ser prima de riesgo y no necesariamente un gap explotable."
+  causal_chain: "mercado regular cerrado + noticias/órdenes -> revaloración en apertura -> distribución del retorno close-to-open distinta de open-to-close"
+  falsifiable_prediction: "Para QQQ u otro ETF definido antes del análisis, el retorno total y ajustado por riesgo close-to-open difiere de open-to-close y mantiene expectativa neta positiva en un holdout cronológico bajo una regla ejecutable que especifique cuándo entrar/salir; probarlo por separado del gap-fill condicional."
+
+prior_evidence:
+  cutoff: "2017-12-31"
+  sources:
+    - citation: "Kelly & Clark (2011), Returns in Trading versus Non-Trading Hours: The Difference Is Day and Night, Journal of Asset Management 12, 132-145"
+      url: "https://doi.org/10.1057/jam.2011.2"
+      verified: true
+      supports: "Diferencias de retornos close-to-open y open-to-close en ETFs estudiados, incluido QQQQ en 1999-2006; no prueba fill realizable actual."
+    - citation: "Berkman, Koch, Tuttle & Zhang (2012), Paying Attention: Overnight Returns and the Hidden Cost of Buying at the Open, Journal of Financial and Quantitative Analysis 47(4), 715-741"
+      url: "https://doi.org/10.1017/S0022109012000270"
+      verified: true
+      supports: "En su muestra de acciones, retornos positivos overnight se siguen de reversión intradía y el costo de comprar al open puede exceder el half-spread; motiva separar prima de ejecución."
+
+markets_applicable:
+  - "ETF amplio de acciones de EE. UU.; QQQ es candidato de estudio, no se presume que replica QQQQ ni el universo de los artículos."
+risks_and_biases:
+  - "Prima overnight incondicional no implica que gaps grandes reviertan ni identifica señal condicional."
+  - "Apertura/subasta, bid-ask, spread, slippage y precio de fill pueden consumir el efecto."
+  - "Riesgo overnight, cambios de horario, corporate actions y supervivencia de la muestra histórica."
+  - "Selección de horarios, ventanas y ETFs puede producir data snooping."
+data_requirements:
+  required_fields: ["timestamp_exchange", "regular_session_calendar", "unadjusted_open_close", "adjusted_total_returns", "bid_ask", "commission", "slippage", "corporate_actions"]
+  preferred_source: "broker/venue de ejecución para fills; fuente primaria de mercado para validar retornos del ETF"
+  fallback: "serie gratuita ajustada solo como comparación, con origen, ajustes y cobertura documentados"
+  coverage: "unknown"
+  gaps: ["La EDA QQQ descarga yfinance desde 1999-01-01 con auto_adjust=True; no se verificó cobertura efectiva ni historia de fills del broker."]
+  expected_feed_differences: ["ajustes por dividendos/splits", "horario oficial vs proveedor", "precios de apertura ejecutables", "bid-ask y costos"]
+
+gates:
+  statistical: {status: pending, evidence: null}
+  robustness: {status: pending, evidence: null}
+  costs: {status: pending, evidence: null}
+
+verdict: "not_tested"
+next_action: "Verificar fuente primaria y datos ejecutables del broker, calendario oficial y cobertura antes de calcular retornos nocturnos."
