@@ -60,7 +60,7 @@ def hypothesis_paths(family_dir: Path) -> list[Path]:
     return sorted(family_dir.glob("**/hypothesis.md"))
 
 
-def report_markdown(family: str, run_date: str, outputs: dict[str, str], engines: dict[str, str], hypotheses: list[Path]) -> str:
+def report_markdown(family: str, run_date: str, outputs: dict[str, str], engines: dict[str, str], family_dir: Path, hypotheses: list[Path]) -> str:
     status = "revisión cualitativa completa" if all(engines.values()) and all(x != "failed" for x in engines.values()) else "revisión parcial; uno o más roles fallaron"
     sections = [
         f"# Informe inicial · {family.replace('_', ' ').title()} · {run_date}",
@@ -186,7 +186,7 @@ def main() -> None:
     args.report_dir.mkdir(parents=True, exist_ok=True)
     outputs, engines = load_roles(args.report_dir)
     hypotheses = hypothesis_paths(args.family_dir)
-    md = report_markdown(args.family, args.run_date, outputs, engines, hypotheses)
+    md = report_markdown(args.family, args.run_date, outputs, engines, args.family_dir, hypotheses)
     (args.report_dir / "report.md").write_text(md, encoding="utf-8")
     (args.report_dir / "tree.svg").write_text(tree_svg(args.family, args.family_dir, hypotheses), encoding="utf-8")
     structured = {
