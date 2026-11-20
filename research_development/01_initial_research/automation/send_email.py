@@ -58,7 +58,7 @@ def main() -> int:
       <h1 style="margin:12px 0 0;font-size:24px;line-height:1.25">{html.escape(subject)}</h1>
     </td></tr>
     <tr><td style="padding:24px 32px">
-      <p style="margin:0 0 10px;line-height:1.55">Corrida cualitativa de Initial Research para el {html.escape(run_date)}. Modelo principal: <strong>GPT-6 Luna</strong>, esfuerzo <strong>high</strong>. Fallback configurado: <strong>Gemini 3.8 Flash High</strong> vía Antigravity.</p>
+      <p style="margin:0 0 10px;line-height:1.55">Corrida cualitativa de Initial Research para el {html.escape(run_date)}. Modelo principal: <strong>GPT-6 Luna</strong>, esfuerzo <strong>high</strong>. Fallback configurado: <strong>Gemini 3.8 Flash</strong> (thinking high) vía Gemini API.</p>
       <p style="margin:0 0 20px;line-height:1.55">Rama prevista: <code>{html.escape(branch)}</code>. Publicación: {pr_link}.</p>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse">
         <thead><tr style="background:#f1f5f1"><th align="left" style="padding:12px;color:#1f3d36">Familia</th><th align="left" style="padding:12px;color:#1f3d36">Estado</th><th align="left" style="padding:12px;color:#1f3d36">Motor por rol</th><th align="left" style="padding:12px;color:#1f3d36">Fallos</th><th align="left" style="padding:12px;color:#1f3d36">Reporte</th></tr></thead>
@@ -77,7 +77,7 @@ def main() -> int:
     plain_body = "\n".join([
         subject,
         f"Corrida cualitativa de Initial Research · {run_date}",
-        "Modelo principal: gpt-6-luna; esfuerzo high. Fallback: gemini-3.8-flash-high.",
+        "Modelo principal: gpt-6-luna; esfuerzo high. Fallback: gemini-3.8-flash (thinking high) vía Gemini API.",
         f"Rama: {branch}",
         f"PR: {pr_url or 'no disponible'}",
         *plain_rows,

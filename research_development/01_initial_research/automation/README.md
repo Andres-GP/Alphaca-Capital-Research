@@ -9,12 +9,12 @@ Cada familia produce tres revisiones de rol (literatura/mecanismo, datos/evidenc
 ## Autenticación y fallback
 
 - `CODEX_AUTH_JSON`: secreto con `auth.json` completo de Codex ChatGPT. Solo se escribe en el runner, con permisos privados, y nunca se registra.
-- `GEMINI_API_KEY`: clave de Google AI Studio para el fallback. Antigravity requiere también `modelProvider: gemini` en `~/.gemini/antigravity-cli/settings.json`; el workflow lo establece de forma temporal.
-- Si una revisión falla con Codex, el script intenta esa revisión con `gemini-3.8-flash-high` y esfuerzo `high`. Si ambos motores fallan, el error queda en el reporte y la corrida se marca fallida.
+- `GEMINI_API_KEY`: clave de Google AI Studio para el fallback mediante Gemini API (`gemini-3.8-flash`, nivel de pensamiento `high`).
+- Si una revisión falla con Codex, el script intenta esa revisión con Gemini API `gemini-3.8-flash` y nivel de pensamiento `high`. Si ambos motores fallan, el error queda en el reporte y la corrida se marca fallida.
 
-El smoke test de Codex usa CLI directamente. La documentación actual de [`openai/codex-action`](https://github.com/openai/codex-action) requiere una API key (`OPENAI_API_KEY`) y no ofrece un input `CODEX_AUTH_JSON`; por ello no se usa el action para la autenticación de ChatGPT que sí pasó el smoke test. Modelo: [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna). Fallback: [Antigravity headless](https://antigravity.google/docs/cli/headless/) y [autenticación por API key](https://antigravity.google/docs/install).
+El smoke test de Codex usa CLI directamente. La documentación actual de [`openai/codex-action`](https://github.com/openai/codex-action) requiere una API key (`OPENAI_API_KEY`) y no ofrece un input `CODEX_AUTH_JSON`; por ello no se usa el action para la autenticación de ChatGPT que sí pasó el smoke test. Modelo: [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna). Fallback: la [Gemini API](https://ai.google.dev/gemini-api/docs/text-generation) con `GEMINI_API_KEY`.
 
-No se rota ni comparte cuentas con `ccswap`. Los [términos de Antigravity](https://antigravity.google/terms) restringen el acceso por software de terceros y herramientas OAuth de automatización. El fallback usa una clave API propia, su cuota y facturación.
+El fallback utiliza directamente la Gemini API con la clave propia, su cuota y facturación; no usa Antigravity ni autenticación OAuth de Google.
 
 ## Reportes, rama y PR
 
@@ -30,5 +30,5 @@ Al final de cada corrida se envía un resumen HTML con CSS en línea y tablas a 
 
 - Smoke test de Codex: aprobado el 2026-11-20.
 - Frecuencia, matriz, aislamiento, fallback, informes, PR y correo: implementados en el workflow de producción.
-- Antigravity/Gemini y SMTP se ejecutan solo si el fallback se activa o al enviar el correo; no se han validado por una corrida real.
+- Gemini API y SMTP se ejecutan solo si el fallback se activa o al enviar el correo; no se han validado por una corrida real.
 - Resultados de investigación: no son backtests ni una aprobación para `02_strategy_development`; siguen requiriendo datos, cobertura y gates.

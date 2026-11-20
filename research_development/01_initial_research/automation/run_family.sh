@@ -47,21 +47,6 @@ build_prompt() {
   } > "$agent_dir/${roles[$index]}_prompt.txt"
 }
 
-ensure_antigravity() {
-  if ! command -v agy >/dev/null 2>&1; then
-    curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --skip-aliases --skip-path
-    export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
-  fi
-  if ! command -v agy >/dev/null 2>&1; then
-    echo "Antigravity CLI installation completed without an agy executable on PATH" >&2
-    return 1
-  fi
-  mkdir -p "$HOME/.gemini/antigravity-cli"
-  chmod 700 "$HOME/.gemini/antigravity-cli"
-  printf '{"modelProvider":"gemini"}\n' > "$HOME/.gemini/antigravity-cli/settings.json"
-  chmod 600 "$HOME/.gemini/antigravity-cli/settings.json"
-}
-
 for i in 0 1 2; do
   role="${roles[$i]}"
   output_file="$agent_dir/$role.md"
@@ -70,7 +55,7 @@ for i in 0 1 2; do
   prompt="$(cat "$prompt_file")"
   printf 'Running Codex role: %s\n' "$role"
   if codex exec --skip-git-repo-check --ephemeral --sandbox read-only \
-    --search --model gpt-6-luna -c model_reasoning_effort=high \
+    --model gpt-6-luna -c model_reasoning_effort=high -c web_search=live \
     --output-last-message "$output_file" "$prompt"; then
     if [[ ! -s "$output_file" ]]; then
       echo "Codex returned success but produced an empty output for $role" >&2
@@ -82,22 +67,22 @@ for i in 0 1 2; do
   fi
 
   echo "Codex failed for $role; trying the authorized Gemini API fallback" >&2
-  if [[ -z "${GEMINI_API_KEY:-}" ]] || ! ensure_antigravity; then
+  if [[ -z "${GEMINI_API_KEY:-}" ]]; then
     printf 'FALLO: Codex y fallback no disponibles para el rol %s.\n' "$role" > "$output_file"
     printf 'failed\n' > "$agent_dir/${role}_engine.txt"
     failed=1
     continue
   fi
-  if agy -p "$prompt" --model gemini-3.8-flash-high --effort high > "$output_file"; then
+  if python "$base_dir/automation/gemini_fallback.py" --prompt-file "$prompt_file" > "$output_file"; then
     if [[ ! -s "$output_file" ]]; then
       printf 'FALLO: Gemini no produjo salida para el rol %s.\n' "$role" > "$output_file"
       failed=1
     else
-      printf '\n\n> Fallback utilizado: Antigravity Gemini 3.8 Flash High.\n' >> "$output_file"
-      printf 'fallback/gemini-3.8-flash-high/high\n' > "$agent_dir/${role}_engine.txt"
+      printf '\n\n> Fallback utilizado: Gemini API, gemini-3.8-flash, thinking high.\n' >> "$output_file"
+      printf 'fallback/gemini-3.8-flash/high\n' > "$agent_dir/${role}_engine.txt"
     fi
   else
-    printf 'FALLO: Codex y Antigravity fallaron para el rol %s.\n' "$role" > "$output_file"
+    printf 'FALLO: Codex y Gemini API fallaron para el rol %s.\n' "$role" > "$output_file"
     printf 'failed\n' > "$agent_dir/${role}_engine.txt"
     failed=1
   fi

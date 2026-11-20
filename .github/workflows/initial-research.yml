@@ -229,7 +229,7 @@ jobs:
               engines = "; ".join(f"{k}: {v}" for k, v in f.get("engines", {}).items()) or "sin artefacto"
               link = f"[Markdown](https://github.com/{repo}/blob/{branch}/{f['report_path']})" if f.get("report_path") else "sin reporte"
               lines.append(f"| {f['family']} | {f['status']} | {engines} | {link} |")
-          lines.extend(["", "Cobertura y huecos de datos: desconocidos hasta medirlos contra calendarios verificados. Gates estadísticos, robustez y costos: pendientes.", "Fallback: Antigravity Gemini 3.8 Flash High si falla Codex."])
+          lines.extend(["", "Cobertura y huecos de datos: desconocidos hasta medirlos contra calendarios verificados. Gates estadísticos, robustez y costos: pendientes.", "Fallback: Gemini 3.8 Flash vía Gemini API (thinking high) si falla Codex."])
           open(os.environ["RUNNER_TEMP"] + "/pr-body.md", "w", encoding="utf-8").write("\n".join(lines) + "\n")
           PY
           existing="$(gh pr list --state open --head "$branch" --base "$BASE_BRANCH" --json url --jq '.[0].url // empty')"
