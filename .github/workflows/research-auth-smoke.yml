@@ -1,0 +1,48 @@
+name: Research Codex auth smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  codex-auth-smoke:
+    name: Verify Codex ChatGPT auth
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Codex CLI
+        run: npm install --global @openai/codex
+
+      - name: Install temporary ChatGPT auth
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          if [ -z "$CODEX_AUTH_JSON" ]; then
+            echo "Missing required repository secret CODEX_AUTH_JSON" >&2
+            exit 1
+          fi
+          export CODEX_HOME="$RUNNER_TEMP/alphaca-codex-home"
+          mkdir -p "$CODEX_HOME"
+          umask 077
+          printf '%s' "$CODEX_AUTH_JSON" > "$CODEX_HOME/auth.json"
+          echo "CODEX_HOME=$CODEX_HOME" >> "$GITHUB_ENV"
+
+      - name: Run a trivial non-writing prompt
+        run: >-
+          codex exec --skip-git-repo-check --ephemeral
+          --model gpt-6-luna
+          -c model_reasoning_effort=high
+          "Reply with exactly: AUTH_OK"
+
