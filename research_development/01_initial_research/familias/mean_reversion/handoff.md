@@ -2,12 +2,13 @@
 
 ## Probado y no probado
 
-- En esta fase solo se creó la estructura. No se ejecutó investigación ni backtest para esta familia.
+- Se completó revisión bibliográfica inicial y crítica metodológica en `literature_review.md`, `evidence_and_data.md` y `red_team.md`.
+- Se creó una ficha contrarian semanal para acciones de EE. UU. como `data_pending`; no se inspeccionaron datasets ni se ejecutaron backtests/gates.
 - No hay edges declarados, resultados propios ni casos casi-pasa registrados.
 
 ## Pruebas pendientes y datos
 
-- Definir el ancla económica/estadística, horizonte de reversión, condiciones de entrada y control falsable.
+- Verificar universo point-in-time, delistings, costos de short y si la predicción se refiere a reversión propia o a autocovarianza cruzada.
 - Usar datos del broker del instrumento, incluyendo bid/ask si la frecuencia lo requiere; conservar huecos y extremos, sin rellenarlos silenciosamente.
 - Comprobar exposición a tendencia, liquidez, costos y cambios de régimen.
 

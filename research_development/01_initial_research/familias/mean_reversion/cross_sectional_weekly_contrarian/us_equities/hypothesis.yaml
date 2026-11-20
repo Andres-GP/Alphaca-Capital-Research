@@ -1,0 +1,48 @@
+schema_version: 1
+id: "mean_reversion.cross_sectional_weekly_contrarian.us_equities.weekly_loser_winner"
+title: "Reversión semanal en portafolios contrarian de acciones de EE. UU."
+family: "mean_reversion"
+pattern: "cross_sectional_weekly_contrarian"
+market: "acciones ordinarias de EE. UU.; universo point-in-time pendiente"
+status: "data_pending"
+as_of: "2026-11-20"
+
+mechanism:
+  economic_or_structural: "Presión transitoria de liquidez/negociación podría revertir parte del movimiento semanal; alternativamente, autocovarianzas cruzadas entre títulos pueden producir beneficio de cartera sin reversión propia."
+  causal_chain: "movimiento semanal relativo + presión temporal o liderazgo rezagado -> reversión relativa de cartera en la semana siguiente"
+  falsifiable_prediction: "En un universo point-in-time predefinido de acciones ordinarias de EE. UU., un portafolio long-losers/short-winners formado por retorno de la semana previa obtiene retorno neto positivo en la semana posterior frente a un control previamente fijado; separar componente de autocovarianza propia y cruzada."
+
+prior_evidence:
+  cutoff: "2017-12-31"
+  sources:
+    - citation: "Lehmann (1990), Fads, Martingales, and Market Efficiency, Quarterly Journal of Economics 105(1), 1-28"
+      url: "https://doi.org/10.2307/2937816"
+      verified: true
+      supports: "Evidencia publicada de reversiones semanales de carteras de ganadores/perdedores en la muestra de acciones estudiada; no confirma costos/feed actuales."
+    - citation: "Lo & MacKinlay (1990), When Are Contrarian Profits Due to Stock Market Overreaction?, Review of Financial Studies 3(2), 175-205"
+      url: "https://doi.org/10.1093/rfs/3.2.175"
+      verified: true
+      supports: "Los beneficios contrarian de cartera pueden surgir de autocovarianzas cruzadas; la cartera por sí sola no prueba reversión temporal individual."
+
+markets_applicable:
+  - "Acciones ordinarias de EE. UU.; las condiciones de mercado, universo y periodo de los papers deben cotejarse antes de extender la hipótesis a ETF u otros activos."
+risks_and_biases:
+  - "Sesgo de supervivencia/delistings y universo T20 actual sin composición histórica verificada."
+  - "Bid-ask bounce, spreads altos en títulos extremos, costos y restricciones de venta corta."
+  - "Autocovarianza cruzada podría explicar el resultado de cartera sin reversal de cada acción."
+  - "Selección múltiple de horizontes, universo, filtros y fechas de rebalanceo."
+data_requirements:
+  required_fields: ["point_in_time_universe", "adjusted_returns", "unadjusted_prices", "bid_ask_or_spread", "volume", "delistings", "corporate_actions", "short_costs"]
+  preferred_source: "broker/venue de ejecución para fills y una fuente gratuita fiable con historia point-in-time para universo/retornos"
+  fallback: "fuente gratuita documentada solo como sensibilidad; no sustituye fills del broker"
+  coverage: "unknown"
+  gaps: ["La carpeta T20 contiene precios por ticker, pero no se verificó composición histórica, delistings, origen ni cobertura."]
+  expected_feed_differences: ["adjustes por splits/dividendos", "bid-ask", "horario de cierre", "liquidez y borrow"]
+
+gates:
+  statistical: {status: pending, evidence: null}
+  robustness: {status: pending, evidence: null}
+  costs: {status: pending, evidence: null}
+
+verdict: "not_tested"
+next_action: "Determinar si existe universo point-in-time con acciones retiradas, costos de ejecución y préstamo histórico antes de diseñar la prueba."
