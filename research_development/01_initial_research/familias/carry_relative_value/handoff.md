@@ -2,12 +2,13 @@
 
 ## Probado y no probado
 
-- En esta fase solo se creó la estructura. No se ejecutó investigación ni backtest para esta familia.
+- Se completó revisión bibliográfica inicial y crítica metodológica en `literature_review.md`, `evidence_and_data.md` y `red_team.md`.
+- Se creó una ficha de carry transversal FX G10 como `data_pending`; no se localizaron forward points del repo, ni se ejecutaron backtests/gates.
 - No hay edges declarados, resultados propios ni casos casi-pasa registrados.
 
 ## Pruebas pendientes y datos
 
-- Definir el mecanismo (financiación, futuros, cesta o relación relativa), fórmula, sincronización y exposición.
+- Decidir pauta por separado (FX carry, basis de futuros o pares). Para la ficha FX actual, obtener universo G10 y forward points/tasas point-in-time; USDJPY spot/CFD no es sustituto.
 - Obtener precios del broker/venue de ejecución y series del instrumento de referencia; añadir swaps, rollovers, dividendos, borrow y costes aplicables.
 - Comparar distintas fuentes con metadatos de cobertura y feed; marcar `NO CONFIRMADO` si una señal pasa solo con datos sustitutos.
 

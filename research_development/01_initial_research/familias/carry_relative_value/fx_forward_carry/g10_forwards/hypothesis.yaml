@@ -1,0 +1,48 @@
+schema_version: 1
+id: "carry_relative_value.fx_forward_carry.g10_forwards.high_minus_low"
+title: "Retorno neto de cartera FX long-high/short-low forward discount"
+family: "carry_relative_value"
+pattern: "fx_forward_carry"
+market: "FX forwards G10; universo, venue y proveedor por definir"
+status: "data_pending"
+as_of: "2026-11-20"
+
+mechanism:
+  economic_or_structural: "El diferencial de tasas/forward puede compensar riesgo de depreciación, liquidez y shocks globales de monedas de alto rendimiento. Es prima de riesgo potencial, no arbitraje ni retorno garantizado."
+  causal_chain: "forward discount/tasas relativas -> exposición a moneda de alto carry -> retorno excedente relacionado con riesgo global y movimientos spot"
+  falsifiable_prediction: "En un universo G10 definido point-in-time, una cartera long de monedas con mayor forward discount y short de monedas con menor discount produce retorno excedente neto positivo fuera de muestra, incluyendo spot, forward/funding y costos; evaluar sensibilidad a volatilidad global sin filtrar resultados retrospectivamente."
+
+prior_evidence:
+  cutoff: "2017-12-31"
+  sources:
+    - citation: "Lustig, Roussanov & Verdelhan (2011), Common Risk Factors in Currency Markets, Review of Financial Studies 24(11), 3731-3777"
+      url: "https://doi.org/10.1093/rfs/hhr068"
+      verified: true
+      supports: "Carteras transversales por forward discount y factor de spread en la muestra de monedas estudiada; no valida un CFD de par único."
+    - citation: "Menkhoff, Sarno, Schmeling & Schrimpf (2012), Carry Trades and Global Foreign Exchange Volatility, Journal of Finance 67(2), 681-718"
+      url: "https://doi.org/10.1111/j.1540-6261.2012.01728.x"
+      verified: true
+      supports: "Relación de retornos de carry con volatilidad global de FX y estados de alto riesgo en carteras estudiadas; no da el swap del broker local."
+
+markets_applicable:
+  - "Cartera diversificada de FX forwards G10; no es equivalente a un solo par spot o CFD."
+risks_and_biases:
+  - "Crash risk, iliquidez de financiación y asimetría de retornos en unwind."
+  - "Selección retrospectiva de países/monedas y supervivencia del universo."
+  - "Tasas/forward points point-in-time, fechas de fixing y liquidación no alineadas."
+  - "Funding institucional no equivale a swaps/rollover de un CFD retail."
+data_requirements:
+  required_fields: ["point_in_time_currency_universe", "spot_bid_ask", "forward_points_or_rates", "fixing_timestamp", "funding_costs", "roll_calendar", "commission", "slippage"]
+  preferred_source: "broker/venue de FX forwards negociables; términos de financiación históricos del producto/cuenta"
+  fallback: "fuente académica o gratuita para diagnóstico, no como fill del broker; etiquetar sensibilidad"
+  coverage: "unknown"
+  gaps: ["El repo contiene precio USDJPY tipo FX/CFD, pero no se identificó una serie histórica de forward points/rates o universo point-in-time G10."]
+  expected_feed_differences: ["convención de puntos forward", "fixing/settlement", "financiación por broker", "bid-ask y calendario de rollover"]
+
+gates:
+  statistical: {status: pending, evidence: null}
+  robustness: {status: pending, evidence: null}
+  costs: {status: pending, evidence: null}
+
+verdict: "not_tested"
+next_action: "Localizar forward points/tasas point-in-time para un universo G10 y costos negociables; la serie USDJPY CFD aislada no alcanza para este test."
