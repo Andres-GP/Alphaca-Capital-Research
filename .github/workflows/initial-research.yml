@@ -13,8 +13,35 @@ permissions:
   contents: read
 
 jobs:
+  preflight:
+    name: Check required research credentials
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      SMTP_FROM: ${{ secrets.SMTP_FROM }}
+    steps:
+      - name: Validate presence without printing secret values
+        shell: bash
+        run: |
+          missing=()
+          for name in CODEX_AUTH_JSON GEMINI_API_KEY SMTP_HOST SMTP_PORT SMTP_USERNAME SMTP_PASSWORD SMTP_FROM; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Missing required repository secrets: ${missing[*]}" >&2
+            exit 1
+          fi
+
   research:
     name: Research ${{ matrix.family }}
+    needs: [preflight]
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -97,7 +124,7 @@ jobs:
   publish-and-notify:
     name: Publish reports and notify
     if: always()
-    needs: [research]
+    needs: [preflight, research]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
