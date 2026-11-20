@@ -1,0 +1,238 @@
+name: Initial Research
+
+on:
+  schedule:
+    - cron: "0 11 * * 1,3,5"
+  workflow_dispatch:
+
+concurrency:
+  group: alphaca-initial-research-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    name: Research ${{ matrix.family }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        family:
+          - momentum_trend
+          - mean_reversion
+          - calendar_seasonality
+          - overnight_gaps
+          - carry_relative_value
+    env:
+      FAMILY: ${{ matrix.family }}
+      CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PDF renderer
+        run: python -m pip install --disable-pip-version-check reportlab
+
+      - name: Install Codex CLI
+        run: npm install --global @openai/codex
+
+      - name: Prepare isolated Codex ChatGPT authentication
+        run: |
+          if [ -z "$CODEX_AUTH_JSON" ]; then
+            echo "Missing required secret CODEX_AUTH_JSON" >&2
+            exit 1
+          fi
+          export CODEX_HOME="$RUNNER_TEMP/alphaca-codex-${FAMILY}"
+          mkdir -p "$CODEX_HOME"
+          umask 077
+          printf '%s' "$CODEX_AUTH_JSON" > "$CODEX_HOME/auth.json"
+          echo "CODEX_HOME=$CODEX_HOME" >> "$GITHUB_ENV"
+          chmod 700 "$CODEX_HOME"
+          chmod 600 "$CODEX_HOME/auth.json"
+
+      - name: Set report date
+        id: date
+        env:
+          RUN_STARTED_AT: ${{ github.run_started_at }}
+        run: echo "value=$(date -u -d "$RUN_STARTED_AT" +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Run the family research panel
+        id: agents
+        continue-on-error: true
+        run: bash research_development/01_initial_research/automation/run_family.sh "$FAMILY" "${{ steps.date.outputs.value }}"
+
+      - name: Upload family report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-${{ matrix.family }}
+          path: research_development/01_initial_research/reportes/${{ steps.date.outputs.value }}_${{ matrix.family }}/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Mark family job failed when a role failed
+        if: always()
+        env:
+          AGENT_OUTCOME: ${{ steps.agents.outcome }}
+        run: |
+          if [ "$AGENT_OUTCOME" != "success" ]; then
+            echo "Research panel failed for $FAMILY; any generated report artifact is preserved."
+            exit 1
+          fi
+
+  publish-and-notify:
+    name: Publish reports and notify
+    if: always()
+    needs: [research]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      SMTP_FROM: ${{ secrets.SMTP_FROM }}
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          token: ${{ github.token }}
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PDF renderer
+        run: python -m pip install --disable-pip-version-check reportlab
+
+      - name: Set report date
+        id: date
+        env:
+          RUN_STARTED_AT: ${{ github.run_started_at }}
+        run: echo "value=$(date -u -d "$RUN_STARTED_AT" +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Download family artifacts
+        id: download
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: research-*
+          path: ${{ runner.temp }}/research-artifacts
+
+      - name: Collect reports and build summary
+        id: collect
+        if: always()
+        continue-on-error: true
+        env:
+          RUN_DATE: ${{ steps.date.outputs.value }}
+          ARTIFACT_DIR: ${{ runner.temp }}/research-artifacts
+          SUMMARY_JSON: ${{ runner.temp }}/research-summary.json
+        run: >-
+          python research_development/01_initial_research/automation/publish_reports.py
+          --date "$RUN_DATE" --artifact-dir "$ARTIFACT_DIR"
+          --repo-root "$GITHUB_WORKSPACE" --summary-json "$SUMMARY_JSON"
+
+      - name: Prepare branch and pull request
+        id: publish
+        if: always()
+        continue-on-error: true
+        env:
+          RUN_DATE: ${{ steps.date.outputs.value }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          SUMMARY_JSON: ${{ runner.temp }}/research-summary.json
+        run: |
+          set -euo pipefail
+          branch="research/$RUN_DATE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"
+            git checkout -B "$branch" "origin/$branch"
+          else
+            git checkout -b "$branch" "origin/$BASE_BRANCH"
+          fi
+          python research_development/01_initial_research/automation/publish_reports.py \
+            --date "$RUN_DATE" --artifact-dir "$RUNNER_TEMP/research-artifacts" \
+            --repo-root "$GITHUB_WORKSPACE" --summary-json "$SUMMARY_JSON" --copy-artifacts
+          report_count="$(python -c 'import json,os; d=json.load(open(os.environ["SUMMARY_JSON"])); print(sum(bool(x.get("report_path")) for x in d["families"]))')"
+          if [ "$report_count" -eq 0 ]; then
+            echo "No family report artifacts were available; no branch or PR was created."
+            echo "pr_url=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          for family in momentum_trend mean_reversion calendar_seasonality overnight_gaps carry_relative_value; do
+            report_path="research_development/01_initial_research/reportes/${RUN_DATE}_${family}"
+            if [ -d "$report_path" ]; then git add "$report_path"; fi
+          done
+          if ! git diff --cached --quiet; then
+            git commit -m "Add initial research reports for $RUN_DATE"
+            git push origin "HEAD:refs/heads/$branch"
+          fi
+          python - <<'PY'
+          import json, os
+          p = os.environ["SUMMARY_JSON"]
+          d = json.load(open(p, encoding="utf-8"))
+          lines = [f"## Initial Research · {d['date']}", "", "Investigación cualitativa por familia. Sin backtests ni aprobación de edges.", "", "| Familia | Estado | Roles/motores | Reporte |", "|---|---|---|---|"]
+          repo = os.environ["GITHUB_REPOSITORY"]
+          branch = f"research/{d['date']}"
+          for f in d["families"]:
+              engines = "; ".join(f"{k}: {v}" for k, v in f.get("engines", {}).items()) or "sin artefacto"
+              link = f"[Markdown](https://github.com/{repo}/blob/{branch}/{f['report_path']})" if f.get("report_path") else "sin reporte"
+              lines.append(f"| {f['family']} | {f['status']} | {engines} | {link} |")
+          lines.extend(["", "Cobertura y huecos de datos: desconocidos hasta medirlos contra calendarios verificados. Gates estadísticos, robustez y costos: pendientes.", "Fallback: Antigravity Gemini 3.8 Flash High si falla Codex."])
+          open(os.environ["RUNNER_TEMP"] + "/pr-body.md", "w", encoding="utf-8").write("\n".join(lines) + "\n")
+          PY
+          existing="$(gh pr list --state open --head "$branch" --base "$BASE_BRANCH" --json url --jq '.[0].url // empty')"
+          if [ -n "$existing" ]; then
+            gh pr edit "$branch" --body-file "$RUNNER_TEMP/pr-body.md"
+            pr_url="$existing"
+          else
+            pr_url="$(gh pr create --head "$branch" --base "$BASE_BRANCH" --title "Initial Research · $RUN_DATE" --body-file "$RUNNER_TEMP/pr-body.md")"
+          fi
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Send run summary email
+        id: email
+        if: always()
+        continue-on-error: true
+        env:
+          RUN_SUMMARY_JSON: ${{ runner.temp }}/research-summary.json
+          PULL_REQUEST_URL: ${{ steps.publish.outputs.pr_url }}
+          PUBLISH_STATUS: ${{ steps.publish.outcome }}
+        run: python research_development/01_initial_research/automation/send_email.py
+
+      - name: Report final workflow status
+        if: always()
+        env:
+          MATRIX_OUTCOME: ${{ needs.research.result }}
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          EMAIL_OUTCOME: ${{ steps.email.outcome }}
+        run: |
+          if [ "$MATRIX_OUTCOME" != "success" ] || [ "$COLLECT_OUTCOME" != "success" ] || [ "$PUBLISH_OUTCOME" != "success" ] || [ "$EMAIL_OUTCOME" != "success" ]; then
+            echo "One or more research, publishing, or notification steps failed."
+            exit 1
+          fi
