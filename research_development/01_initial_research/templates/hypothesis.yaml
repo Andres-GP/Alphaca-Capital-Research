@@ -1,0 +1,39 @@
+schema_version: 1
+id: "<family>.<pattern>.<market>.<slug>"
+title: "<short, falsifiable hypothesis>"
+family: "<family>"
+pattern: "<pattern>"
+market: "<instrument, venue, and product type>"
+status: "draft" # draft | evidence_review | data_pending | eda | test_pending | rejected | no_confirmado | handoff_ready
+as_of: "YYYY-MM-DD"
+
+mechanism:
+  economic_or_structural: "<why the effect could exist>"
+  causal_chain: "<observable mechanism -> price/return prediction>"
+  falsifiable_prediction: "<direction, horizon, conditions, and comparison>"
+
+prior_evidence:
+  cutoff: "2017-12-31"
+  sources:
+    - citation: "<authors, title, venue, year>"
+      url: "<stable DOI or publisher URL>"
+      verified: false
+      supports: "<what this source supports; distinguish from our hypothesis>"
+
+markets_applicable: []
+risks_and_biases: []
+data_requirements:
+  required_fields: []
+  preferred_source: "instrument broker"
+  fallback: null
+  coverage: "unknown"
+  gaps: []
+  expected_feed_differences: []
+
+gates:
+  statistical: {status: pending, evidence: null}
+  robustness: {status: pending, evidence: null}
+  costs: {status: pending, evidence: null}
+
+verdict: "not_tested"
+next_action: "<specific next step>"
