@@ -1,0 +1,47 @@
+schema_version: 1
+id: "momentum_trend.time_series_momentum.listed_futures.12m_direction"
+title: "Persistencia direccional de retornos en futuros listados líquidos"
+family: "momentum_trend"
+pattern: "time_series_momentum"
+market: "listed_futures (contratos e instrumentos aún por especificar)"
+status: "data_pending"
+as_of: "2026-11-20"
+
+mechanism:
+  economic_or_structural: "El ajuste gradual de posiciones ante información nueva o límites de riesgo/capital podría producir continuación de retornos a horizonte intermedio; reversión a horizonte largo es una explicación alternativa."
+  causal_chain: "ajuste escalonado de participantes -> persistencia temporal del precio -> retorno futuro con el mismo signo del retorno pasado"
+  falsifiable_prediction: "En un universo de futuros y regla de rollover fijados ex ante, el signo del retorno total de los 12 meses previos predice retorno neto positivo durante los siguientes 1-12 meses frente a un benchmark especificado antes de evaluar."
+
+prior_evidence:
+  cutoff: "2017-12-31"
+  sources:
+    - citation: "Moskowitz, Ooi & Pedersen (2012), Time Series Momentum, Journal of Financial Economics 104(2), 228-250"
+      url: "https://doi.org/10.1016/j.jfineco.2011.11.003"
+      verified: true
+      supports: "Persistencia de retornos de 1-12 meses y reversión parcial posterior en el universo de futuros líquidos estudiado; no confirma símbolos ni feed del broker local."
+    - citation: "Hurst, Ooi & Pedersen (2017), A Century of Evidence on Trend-Following Investing, Journal of Portfolio Management 44(1), 15-29"
+      url: "https://doi.org/10.3905/jpm.2017.44.1.015"
+      verified: true
+      supports: "Motivación histórica multi-mercado y mensual; la construcción de series históricas y sus costos deben auditarse antes de extrapolar."
+
+markets_applicable:
+  - "Futuros listados líquidos; contrato, venue, periodo y fuente del broker por seleccionar y verificar."
+risks_and_biases:
+  - "La evidencia citada no verifica el proveedor, feed ni los instrumentos específicos del repositorio."
+  - "Rollover retrospectivo, selección de mercados supervivientes, look-ahead, ventanas solapadas y búsqueda múltiple."
+  - "Reversión en horizontes largos y pérdidas agrupadas tras cambios de régimen."
+data_requirements:
+  required_fields: ["timestamp", "contract", "settlement_or_bid_ask", "volume", "roll_rule", "commission", "spread", "slippage"]
+  preferred_source: "broker/venue del contrato específico"
+  fallback: "Dukascopy solo donde el instrumento esté cubierto y como sensibilidad; no sustituye el feed de futuros del broker"
+  coverage: "unknown"
+  gaps: ["No se verificó la cobertura histórica de ES/NQ/6E/6J en las colecciones Mongo del repo."]
+  expected_feed_differences: ["regla de rollover", "sesión/settlement", "zona horaria", "bid-ask", "costos y slippage"]
+
+gates:
+  statistical: {status: pending, evidence: null}
+  robustness: {status: pending, evidence: null}
+  costs: {status: pending, evidence: null}
+
+verdict: "not_tested"
+next_action: "Identificar contratos, proveedor, feed y cobertura de datos del broker antes de construir un dataset reproducible."

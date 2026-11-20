@@ -2,12 +2,13 @@
 
 ## Probado y no probado
 
-- En esta fase solo se creó la estructura. No se ejecutó investigación ni backtest para esta familia.
+- Se completó revisión bibliográfica y red-team inicial en `literature_review.md`, `evidence_and_data.md` y `red_team.md`.
+- Se creó una ficha de TSMOM para futuros listados como `data_pending`; no se inspeccionaron datasets ni se ejecutaron backtests/gates.
 - No hay edges declarados, resultados propios ni casos casi-pasa registrados.
 
 ## Pruebas pendientes y datos
 
-- Definir una predicción falsable por pauta, mercado y horizonte; revisar literatura publicada hasta 2017-12-31.
+- Verificar instrumento/contrato, venue y predicción por mercado antes de proponer cualquier otra ficha; revisar literatura publicada hasta 2017-12-31.
 - Usar primero históricos del broker específico del instrumento. Documentar retorno total/ajustes, sesiones, huecos y cobertura antes de medir la pauta.
 - Separar descubrimiento de validación temporal; medir costos ejecutables y evitar selección retrospectiva de activos.
 
