@@ -2,12 +2,13 @@
 
 ## Probado y no probado
 
-- En esta fase solo se creó la estructura. No se ejecutó investigación ni backtest para esta familia.
+- Se completó revisión bibliográfica inicial y crítica metodológica en `literature_review.md`, `evidence_and_data.md` y `red_team.md`.
+- Se creó una ficha de día de semana para índice de acciones de EE. UU. como `data_pending`; no se verificó cobertura ni se ejecutaron backtests/gates.
 - No hay edges declarados, resultados propios ni casos casi-pasa registrados.
 
 ## Pruebas pendientes y datos
 
-- Definir calendario, timezone, sesión, DST, días festivos y predicción antes de consultar resultados.
+- Fijar benchmark, instrumento, definición del retorno y calendario/timezone/DST/sesión antes de consultar resultados.
 - Priorizar históricos del broker del instrumento; contrastar horario/feed si se usa otra fuente. Medir cobertura de cada sesión/fecha esperada.
 - Controlar pruebas múltiples y cambios de calendario/regulación a lo largo del tiempo.
 

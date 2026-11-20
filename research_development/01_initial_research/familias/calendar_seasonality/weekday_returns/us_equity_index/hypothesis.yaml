@@ -1,0 +1,48 @@
+schema_version: 1
+id: "calendar_seasonality.weekday_returns.us_equity_index.monday"
+title: "Diferencia de retorno del lunes en acciones amplias de EE. UU."
+family: "calendar_seasonality"
+pattern: "weekday_returns"
+market: "índice amplio de acciones de EE. UU.; instrumento y fuente por definir"
+status: "data_pending"
+as_of: "2026-11-20"
+
+mechanism:
+  economic_or_structural: "La acumulación de noticias y la negociación no continua durante el fin de semana podrían diferenciar el retorno calendario del lunes del retorno de otros días. El mecanismo causal no está identificado; la hipótesis debe contrastar tiempo calendario y de negociación."
+  causal_chain: "cierre semanal -> intervalo sin negociación/noticias -> posible distribución distinta del retorno entre sesiones calendario y de trading"
+  falsifiable_prediction: "En un instrumento amplio de acciones de EE. UU. y una convención de sesión fijados ex ante, la distribución/expectativa de retorno de lunes difiere de martes-viernes en un periodo OOS, tras ajustar por pruebas múltiples y costos ejecutables; especificar también si el retorno es cierre-a-cierre o viernes-cierre-a-lunes-apertura."
+
+prior_evidence:
+  cutoff: "2017-12-31"
+  sources:
+    - citation: "French (1980), Stock Returns and the Weekend Effect, Journal of Financial Economics 8(1), 55-69"
+      url: "https://doi.org/10.1016/0304-405X(80)90021-5"
+      verified: true
+      supports: "Retornos medios de lunes históricamente inferiores en el portafolio S&P estudiado (1953-1977); el estudio no identifica claramente el mecanismo con sus dos explicaciones simples."
+    - citation: "Sullivan, Timmermann & White (1999), Data-Snooping, Technical Trading Rule Performance, and the Bootstrap, Journal of Finance 54(5), 1647-1691"
+      url: "https://doi.org/10.1111/0022-1082.00163"
+      verified: true
+      supports: "Motiva ajustar el análisis por el universo completo de pautas/variantes examinadas; no aporta validación de esta anomalía particular."
+
+markets_applicable:
+  - "Índice amplio de acciones de EE. UU.; fuente de benchmark e instrumento ejecutable se deben especificar por separado."
+risks_and_biases:
+  - "Resultado histórico de acciones no implica persistencia actual ni transferibilidad a futuros, FX, CFD o cripto."
+  - "Selección múltiple de días, meses, ventanas, índices, zonas horarias y subperiodos."
+  - "El bucket del lunes puede cambiar con timezone, DST, sesión del broker, festivos y cierres extraordinarios."
+  - "Diferencia estadística puede no ser económicamente relevante después de spread, costos y fills."
+data_requirements:
+  required_fields: ["timestamp_original", "session_calendar", "timezone", "daily_or_intraday_ohlc", "bid_ask_or_spread", "corporate_actions"]
+  preferred_source: "broker/venue del instrumento ejecutable, con calendario oficial del índice/venue para interpretación"
+  fallback: "serie gratuita de índice solo para contraste descriptivo; verificar proveedor, ajustes y continuidad"
+  coverage: "unknown"
+  gaps: ["El archivo EDA de QQQ usa yfinance con inicio nominal 1999-01-01 y auto_adjust, pero no se verificó la cobertura observada ni la fuente ejecutable del broker."]
+  expected_feed_differences: ["horario de cierre y timezone", "ajustes por corporate actions", "bid-ask y fills", "feriados y sesiones cortas"]
+
+gates:
+  statistical: {status: pending, evidence: null}
+  robustness: {status: pending, evidence: null}
+  costs: {status: pending, evidence: null}
+
+verdict: "not_tested"
+next_action: "Elegir benchmark e instrumento, fijar convención de sesión y comprobar fuente/cobertura antes de definir la comparación primaria."
