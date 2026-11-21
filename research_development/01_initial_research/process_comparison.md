@@ -14,13 +14,12 @@ No se añadió un motor común que trate momentum, carry, estacionalidad y gaps 
 
 ## Estado de automatización de datos
 
-El conector MT5 y el workflow ya contemplan una descarga incremental de una lista allow-listed a un VPS Windows persistente, sin subir los CSV al repositorio. La activación depende de registrar ese VPS como runner, configurar las variables/secrets indicados en `data_pipeline/README.md` y rellenar `data_pipeline/market_data_universe.yaml` con los símbolos exactos de ambas cuentas.
+El conector MT5 y el workflow descubren automáticamente los símbolos negociables de Axi y Darwinex y refrescan las nueve temporalidades MT5 habilitadas (M1, M5, M15, M30, H1, H4, D1, W1 y MN1), hasta 16 series por corrida, en el VPS Windows persistente. Los CSV quedan fuera del repositorio. La activación depende de registrar ese VPS como runner y configurar las variables/secrets indicados en `data_pipeline/README.md`; el YAML define marcos y rango inicial, no exige transcribir símbolos.
 
-Dukascopy permite una fuente adicional, pero su ruta automática de archivos S3 usa Requester Pays y factura transferencia al descargador. El usuario indicó preferir fuentes gratuitas, así que no se activó ni se descargó. Para ETFs, el feed gratuito IEX de una API como Alpaca no representa el mercado estadounidense consolidado; Darwinex debe confirmar que sirve los ETFs concretos en MT5. No afirmar que hay una segunda fuente ETF gratuita de calidad de ejecución hasta comprobarla.
+Dukascopy se consulta automáticamente mediante el mismo paquete y método ya usado por `utils/download_dukascopy.py`, solo para coincidencias de símbolo únicas; su feed BID queda separado y sus resultados se confirman con el broker. Yahoo Finance explora series D1 de los ETFs que el catálogo MT5 de Darwinex clasifique como tales. La asignación de ticker es tentativa y Darwinex valida los candidatos. Ninguna de esas fuentes cambia los límites de spread, swaps, fills o ejecución que tienen los históricos de barras del broker.
 
 ## Pendiente para completar la corrida automática
 
-1. El usuario debe indicar símbolos exactos de Axi/Darwinex y marcos temporales que quiere cubrir; no conviene bajar todos los símbolos de la cuenta.
-2. Deben configurarse el runner Windows, sus terminales MT5 y credenciales de solo lectura en GitHub.
-3. Hay que decidir si se acepta el pequeño costo de transferencia de Dukascopy S3 o se omite ese feed. Ninguna compra/proveedor de datos pagado queda aprobado.
-4. El runner todavía solo ejecuta hipótesis con preregistro `frozen`; generar y congelar automáticamente nuevas fichas debe respetar el orden preregistro→lectura del dataset→resultado para reducir data snooping.
+1. Configurar y registrar el runner Windows, sus terminales MT5, rutas, directorio de datos persistente y credenciales de lectura en GitHub.
+2. Revisar el backlog y los fallos de descarga en los resúmenes de `RESEARCH_DATA_DIR`; la cobertura completa se construye por lotes.
+3. Las fuentes no amplían los motores: el runner todavía solo ejecuta hipótesis con preregistro `frozen` y motores implementados. Nuevas fichas deben congelarse antes de usar datos para reducir data snooping.

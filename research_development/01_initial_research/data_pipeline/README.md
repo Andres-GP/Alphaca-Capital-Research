@@ -1,6 +1,8 @@
-# Descarga privada de históricos MT5
+# Descarga privada de históricos y fuentes exploratorias
 
-El conector mantiene barras de Axi y Darwinex fuera de Git, en el disco persistente del VPS Windows. GitHub Actions se conecta al terminal MT5 instalado allí, descarga de forma incremental los símbolos permitidos en `market_data_universe.yaml`, y actualiza CSV más metadatos JSON. Los CSV contienen OHLC, volumen y spread reportado por barra; **no son ticks históricos ni reconstruyen bid/ask ejecutable**.
+El pipeline mantiene datos fuera de Git, en el disco persistente del VPS Windows. GitHub Actions se conecta a los terminales MT5 de Axi y Darwinex, descubre los símbolos negociables y actualiza CSV con metadatos JSON. El screening cubre todas las temporalidades MT5 habilitadas por el adaptador: M1, M5, M15, M30, H1, H4, D1, W1 y MN1. El límite de 16 series MT5 por corrida evita sobrecargar el runner; el resumen informa qué series quedan pendientes.
+
+Los CSV de MT5 contienen OHLC, volumen y spread reportado por barra; **no son ticks históricos ni reconstruyen bid/ask ejecutable**. Cada broker, fuente, símbolo y marco queda en una serie separada.
 
 ## Activación
 
@@ -14,8 +16,10 @@ El conector mantiene barras de Axi y Darwinex fuera de Git, en el disco persiste
 4. Configura estos GitHub **Secrets**:
    - `AXI_MT5_LOGIN`, `AXI_MT5_PASSWORD`, `AXI_MT5_SERVER`
    - `DARWINEX_MT5_LOGIN`, `DARWINEX_MT5_PASSWORD`, `DARWINEX_MT5_SERVER`
-5. En `market_data_universe.yaml`, anota solo los símbolos exactos de MetaTrader, las temporalidades necesarias y la fecha de inicio del backfill. El proceso no descarga todos los instrumentos automáticamente.
-6. Ejecuta `Initial Research` manualmente para la primera descarga y confirma que los metadatos y cobertura reflejan tu cuenta. Después, los runs programados actualizarán el histórico antes del panel de research.
+5. `market_data_universe.yaml` está configurado para descubrir todos los símbolos negociables de ambas cuentas y cubrir las nueve temporalidades habilitadas desde la fecha indicada. MT5-disabled y símbolos personalizados quedan excluidos. Revisa los catálogos JSON y el resumen de descarga en `RESEARCH_DATA_DIR` después de la primera corrida.
+6. En cada corrida, el proceso actualiza las series de broker y busca símbolos ETF de Darwinex para explorarlos con Yahoo Finance en D1. La coincidencia del ticker Yahoo es heurística y queda marcada como no verificada; Darwinex sigue siendo el feed requerido para validar una hipótesis ETF.
+7. El proceso usa `dukascopy-python` con el mismo mecanismo que `research_development/utils/download_dukascopy.py` para los instrumentos CFD/FX que tengan una coincidencia exacta y no ambigua. Mantiene BID separado del broker y registra los símbolos sin coincidencia.
+8. Ejecuta `Initial Research` manualmente para la primera descarga. Los runs programados lunes, miércoles y viernes actualizan datos antes del panel de research.
 
 Las rutas y logins se usan como configuración de Actions; las contraseñas solo como secrets. Si MT5 ofrece una contraseña de inversor/solo lectura, úsala para la extracción. No pongas credenciales en YAML, CSV, notebooks, logs ni en el brief. Las credenciales no se guardan en los metadatos descargados. Limita el runner a los workflows de este repositorio y deja el VPS conectado; si está fuera de línea, la corrida queda en cola.
 
@@ -25,4 +29,7 @@ Las rutas y logins se usan como configuración de Actions; las contraseñas solo
 - MetaTrader reporta barras y spread en puntos por barra; no son cotizaciones históricas tick a tick. Estrategias intrabarra, de gaps de apertura o sensibles al spread necesitan ticks/quotes y un motor compatible antes de backtest.
 - Solo los motores implementados y preregistrados pueden ejecutarse. Descargar más datos no convierte por sí solo un resultado exploratorio en un edge.
 - El primer backfill depende del rango que el servidor MT5 entregue y de la configuración de historial del terminal. La cobertura contra el calendario esperado seguirá siendo una gate obligatoria.
-- Dukascopy publica un archivo histórico automatizable con política AWS Requester Pays. La transferencia se factura al descargador; no se habilita en Actions hasta definir instrumentos y aceptar ese costo. Darwinex FTP no se asume como feed de ETFs: hay que confirmar el símbolo en la oferta de la cuenta.
+- Dukascopy es una fuente BID secundaria de exploración; no aporta spreads del broker, swaps, rollover ni fills de Axi/Darwinex. La disponibilidad de símbolos y cobertura depende de su catálogo público.
+- Yahoo solo aporta contexto histórico exploratorio para ETFs. Los ajustes corporativos y la sesión pueden diferir del CFD/listado de Darwinex; no mezclar ni presentar esa serie como precio ejecutable.
+- El descubrimiento cubre todos los símbolos que MT5 marque como negociables, pero la descarga avanza por lotes de 16 series MT5 por corrida. `catalog/latest_refresh_summary.json`, `catalog/dukascopy_refresh_summary.json` y `catalog/yahoo_etf_refresh_summary.json` guardan backlog, fallos y cobertura de cada corrida. La cantidad de datos disponibles varía por cuenta, símbolo y marco.
+- El panel no backtestea automáticamente todas las familias/símbolos/temporalidades. Solo ejecuta motores implementados y experimentos con preregistro congelado que superen las gates deterministas.

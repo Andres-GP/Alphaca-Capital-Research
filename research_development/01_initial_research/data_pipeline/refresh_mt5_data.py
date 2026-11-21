@@ -78,6 +78,102 @@ def load_universe(path: Path) -> list[dict[str, Any]]:
     return instruments
 
 
+def classify_instrument(symbol_info: Any) -> str:
+    description = " ".join(
+        str(getattr(symbol_info, key, "") or "")
+        for key in ("name", "path", "description", "category", "exchange")
+    ).lower()
+    if any(term in description for term in ("etf", "exchange traded fund")):
+        return "etf"
+    if any(term in description for term in ("forex", "fx major", "currency pair")):
+        return "fx"
+    if any(term in description for term in ("crypto", "bitcoin", "ethereum")):
+        return "crypto"
+    if any(term in description for term in ("index", "indices")):
+        return "index"
+    if any(term in description for term in ("stock", "share", "equity")):
+        return "equity_or_stock_cfd"
+    if any(term in description for term in ("metal", "commodity", "energy")):
+        return "commodity"
+    return "unclassified"
+
+
+def discover_broker_symbols(broker: str, data_root: Path) -> list[dict[str, Any]]:
+    credentials = get_credentials(broker)
+    if not mt5.initialize(
+        path=credentials["MT5_PATH"],
+        login=int(credentials["MT5_LOGIN"]),
+        password=credentials["MT5_PASSWORD"],
+        server=credentials["MT5_SERVER"],
+    ):
+        raise RuntimeError(f"MT5 initialize failed for {broker}: {mt5.last_error()}")
+    try:
+        symbols = mt5.symbols_get()
+        if symbols is None:
+            raise RuntimeError(f"MT5 symbol discovery failed for {broker}: {mt5.last_error()}")
+        disabled_mode = getattr(mt5, "SYMBOL_TRADE_MODE_DISABLED", 0)
+        catalog = []
+        for info in symbols:
+            if getattr(info, "custom", False) or getattr(info, "trade_mode", disabled_mode) == disabled_mode:
+                continue
+            catalog.append({
+                "broker": broker,
+                "symbol": info.name,
+                "instrument_type": classify_instrument(info),
+                "path": getattr(info, "path", "") or "",
+                "description": getattr(info, "description", "") or "",
+                "exchange": getattr(info, "exchange", "") or "",
+                "currency_base": getattr(info, "currency_base", "") or "",
+                "currency_profit": getattr(info, "currency_profit", "") or "",
+                "trade_mode": int(getattr(info, "trade_mode", 0)),
+                "contract_size": float(getattr(info, "trade_contract_size", 0) or 0),
+                "digits": int(getattr(info, "digits", 0) or 0),
+            })
+        catalog.sort(key=lambda item: item["symbol"].casefold())
+        catalog_dir = data_root / "catalog"
+        catalog_dir.mkdir(parents=True, exist_ok=True)
+        catalog_file = catalog_dir / f"{broker}_symbols.json"
+        catalog_file.write_text(
+            json.dumps({
+                "schema_version": 1,
+                "provider": broker,
+                "discovered_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "tradable_symbol_count": len(catalog),
+                "symbols": catalog,
+            }, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        print(f"Discovered {len(catalog)} tradable symbols on {broker}.")
+        return catalog
+    finally:
+        mt5.shutdown()
+
+
+def attempt_marker(data_root: Path, broker: str, symbol: str, timeframe: str) -> Path:
+    return data_root / broker / safe_part(symbol) / f"{timeframe}.error.json"
+
+
+def series_priority(data_root: Path, entry: dict[str, Any], timeframe: str) -> tuple[str, str, str, str]:
+    output = data_root / entry["broker"] / safe_part(entry["symbol"]) / f"{timeframe}.csv"
+    metadata_path = output.with_suffix(".metadata.json")
+    error_path = attempt_marker(data_root, entry["broker"], entry["symbol"], timeframe)
+    if metadata_path.is_file():
+        try:
+            updated = json.loads(metadata_path.read_text(encoding="utf-8")).get("last_refresh_utc", "")
+        except (OSError, json.JSONDecodeError):
+            updated = ""
+        priority = f"2-{updated}"
+    elif error_path.is_file():
+        try:
+            attempted = json.loads(error_path.read_text(encoding="utf-8")).get("attempted_at_utc", "")
+        except (OSError, json.JSONDecodeError):
+            attempted = ""
+        priority = f"1-{attempted}"
+    else:
+        priority = "0-"
+    return priority, entry["broker"], entry["symbol"].casefold(), timeframe
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -144,7 +240,7 @@ def export_series(entry: dict[str, Any], timeframe: str, data_root: Path) -> Non
             writer.writeheader()
             cursor = start
             while cursor < end:
-                chunk_end = min(cursor + timedelta(days=30), end)
+                chunk_end = min(cursor + timedelta(days=365), end)
                 rates = mt5.copy_rates_range(symbol, mt5_timeframe, cursor, chunk_end)
                 if rates is None:
                     raise RuntimeError(f"MT5 history request failed for {broker}/{symbol}/{timeframe}: {mt5.last_error()}")
@@ -219,6 +315,9 @@ def export_series(entry: dict[str, Any], timeframe: str, data_root: Path) -> Non
             "provider": broker,
             "feed": f"{broker} MT5 broker history",
             "symbol": symbol,
+            "instrument_type": entry.get("instrument_type", "unclassified"),
+            "broker_symbol_path": entry.get("broker_symbol_path", ""),
+            "broker_description": entry.get("broker_description", ""),
             "timeframe": timeframe,
             "price_basis": "broker_chart_ohlc; MT5 spread_points exported separately",
             "timestamp_timezone": "UTC (MetaTrader epoch timestamps)",
@@ -251,10 +350,108 @@ def main() -> int:
     data_root = Path(data_root_text).resolve()
     data_root.mkdir(parents=True, exist_ok=True)
     try:
-        instruments = load_universe(config_path)
-        for entry in instruments:
-            for timeframe in entry["timeframes"]:
+        settings = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        if not isinstance(settings, dict) or settings.get("schema_version") != 1:
+            raise ValueError("market_data_universe.yaml must use schema_version: 1")
+        if settings.get("mode") != "discover_all_tradable":
+            instruments = load_universe(config_path)
+            for entry in instruments:
+                for timeframe in entry["timeframes"]:
+                    export_series(entry, timeframe, data_root)
+            return 0
+
+        brokers = settings.get("brokers", [])
+        timeframes = settings.get("screen_timeframes", [])
+        if not brokers or any(broker not in {"axi", "darwinex"} for broker in brokers):
+            raise ValueError("brokers must include axi and/or darwinex.")
+        if not timeframes or any(timeframe not in TIMEFRAMES for timeframe in timeframes):
+            raise ValueError(f"screen_timeframes must be chosen from: {', '.join(TIMEFRAMES)}")
+        start_utc = settings.get("start_utc")
+        if not isinstance(start_utc, str):
+            raise ValueError("start_utc is required for initial history discovery.")
+        start = parse_utc(start_utc)
+        limit = int(settings.get("max_series_per_run", 80))
+        if limit <= 0:
+            raise ValueError("max_series_per_run must be positive.")
+
+        catalogs: dict[str, list[dict[str, Any]]] = {}
+        discovery_errors: dict[str, str] = {}
+        for broker in brokers:
+            try:
+                catalogs[broker] = discover_broker_symbols(broker, data_root)
+            except Exception as exc:
+                discovery_errors[broker] = f"{type(exc).__name__}: {exc}"
+                print(f"Could not discover {broker}: {discovery_errors[broker]}", file=sys.stderr)
+        if not catalogs:
+            raise RuntimeError("No broker symbol catalog could be read; check MT5 terminals and credentials.")
+
+        entries = [
+            {
+                "broker": broker,
+                "symbol": info["symbol"],
+                "instrument_type": info["instrument_type"],
+                "broker_symbol_path": info["path"],
+                "broker_description": info["description"],
+                "timeframes": timeframes,
+                "_start": start,
+            }
+            for broker, items in catalogs.items()
+            for info in items
+        ]
+        tasks = [
+            (entry, timeframe)
+            for entry in entries
+            for timeframe in timeframes
+        ]
+        tasks.sort(key=lambda task: series_priority(data_root, task[0], task[1]))
+        selected = tasks[:limit]
+        succeeded: list[str] = []
+        errors: list[dict[str, str]] = []
+        for entry, timeframe in selected:
+            series_id = f"{entry['broker']}/{entry['symbol']}/{timeframe}"
+            marker = attempt_marker(data_root, entry["broker"], entry["symbol"], timeframe)
+            try:
                 export_series(entry, timeframe, data_root)
+                marker.unlink(missing_ok=True)
+                succeeded.append(series_id)
+            except Exception as exc:
+                message = f"{type(exc).__name__}: {exc}"
+                marker.parent.mkdir(parents=True, exist_ok=True)
+                marker.write_text(json.dumps({
+                    "attempted_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    "error": message,
+                }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                errors.append({"series": series_id, "error": message})
+                print(f"Could not refresh {series_id}: {message}", file=sys.stderr)
+
+        summary = {
+            "schema_version": 1,
+            "refreshed_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "mode": settings["mode"],
+            "discovered_symbols": {broker: len(items) for broker, items in catalogs.items()},
+            "timeframes": timeframes,
+            "series_per_run_limit": limit,
+            "series_pending": max(0, len(tasks) - len(selected)),
+            "series_attempted": len(selected),
+            "series_succeeded": succeeded,
+            "series_errors": errors,
+            "discovery_errors": discovery_errors,
+            "catalogs": {broker: f"catalog/{broker}_symbols.json" for broker in catalogs},
+        }
+        summary_dir = data_root / "catalog"
+        summary_dir.mkdir(parents=True, exist_ok=True)
+        (summary_dir / "latest_refresh_summary.json").write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        print(
+            f"Refresh summary: {summary['series_attempted']} attempted, "
+            f"{len(succeeded)} succeeded, {len(errors)} errors, "
+            f"{summary['series_pending']} series remain in initial backlog."
+        )
+        if not selected:
+            raise RuntimeError("No market-data series were selected for refresh.")
+        if not succeeded:
+            raise RuntimeError("All selected series failed to refresh; inspect catalog/latest_refresh_summary.json.")
     except Exception as exc:
         print(f"Market data refresh failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1

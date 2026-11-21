@@ -1,16 +1,9 @@
 schema_version: 1
-# Add only instruments approved for research. Broker symbols must match MT5 exactly.
-# start_utc controls the initial backfill; later runs fetch only the latest bars
-# with a small overlap, then deduplicate by timestamp.
-instruments: []
-
-# Example (replace symbols/dates with those visible in your own MT5 accounts):
-# instruments:
-#   - broker: axi
-#     symbol: EURUSD
-#     timeframes: [H1, D1]
-#     start_utc: "2016-01-01T00:00:00Z"
-#   - broker: darwinex
-#     symbol: QQQ
-#     timeframes: [D1]
-#     start_utc: "2005-01-01T00:00:00Z"
+mode: discover_all_tradable
+brokers: [axi, darwinex]
+# All MT5 timeframes supported by refresh_mt5_data.py.
+screen_timeframes: [M1, M5, M15, M30, H1, H4, D1, W1, MN1]
+start_utc: "2000-01-01T00:00:00Z"
+max_series_per_run: 16
+# The full broker symbol catalogs are recorded each run. MT5-disabled and custom
+# symbols are omitted; all remaining tradable instruments enter this screen.
