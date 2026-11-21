@@ -48,6 +48,14 @@ build_prompt() {
       printf '\n--- FIN %s ---\n' "$hypothesis"
     done < <(find "$family_dir" -mindepth 3 -maxdepth 5 -type f -name 'hypothesis.md' -print0 | sort -z)
     if [[ "$role" == "backtest_gate" ]]; then
+      prereg_dir="$base_dir/backtests_exploratorios/preregistrations/$family"
+      if [[ -d "$prereg_dir" ]]; then
+        while IFS= read -r -d '' prereg; do
+          printf '\n--- INICIO PREREGISTRO %s ---\n' "$prereg"
+          cat "$prereg"
+          printf '\n--- FIN PREREGISTRO ---\n'
+        done < <(find "$prereg_dir" -maxdepth 1 -type f -name '*.yaml' -print0 | sort -z)
+      fi
       for prior_role in literatura datos red_team; do
         prior_output="$agent_dir/$prior_role.md"
         if [[ -f "$prior_output" ]]; then
@@ -70,7 +78,7 @@ build_prompt() {
   } > "$agent_dir/${roles[$index]}_prompt.txt"
 }
 
-for i in 0 1 2; do
+for i in 0 1 2 3; do
   role="${roles[$i]}"
   output_file="$agent_dir/$role.md"
   prompt_file="$agent_dir/${role}_prompt.txt"
@@ -112,6 +120,12 @@ for i in 0 1 2; do
 done
 
 rm -f "$agent_dir"/*_prompt.txt
+if ! python "$base_dir/backtests_exploratorios/run_backtests.py" \
+  --repo-root "$repo_root" --family "$family" --run-date "$run_date" \
+  --gate-report "$agent_dir/backtest_gate.md" --output-dir "$report_dir/backtests"; then
+  failed=1
+fi
+
 python "$base_dir/automation/build_report.py" \
   --family "$family" --run-date "$run_date" --report-dir "$report_dir" \
   --family-dir "$family_dir"

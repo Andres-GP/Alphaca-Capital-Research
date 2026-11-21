@@ -50,6 +50,9 @@ def main() -> None:
                 "status": metadata.get("status", "unknown"),
                 "engines": metadata.get("engines", {}),
                 "hypotheses": metadata.get("hypotheses", []),
+                "exploratory_backtest_gate": metadata.get("exploratory_backtest_gate", {}).get("status", "unknown"),
+                "backtests_run": metadata.get("backtests_run", False),
+                "backtest_status": metadata.get("backtest_result", {}).get("status", "unknown"),
                 "failures": failures,
                 "report_path": f"research_development/01_initial_research/reportes/{args.date}_{family}/report.md",
             })

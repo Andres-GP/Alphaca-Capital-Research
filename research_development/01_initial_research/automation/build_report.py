@@ -75,19 +75,25 @@ def backtest_gate_status(output: str) -> str:
     return match.group(1)
 
 
-def report_markdown(family: str, run_date: str, outputs: dict[str, str], engines: dict[str, str], family_dir: Path, hypotheses: list[Path]) -> str:
+def report_markdown(family: str, run_date: str, outputs: dict[str, str], engines: dict[str, str], family_dir: Path, hypotheses: list[Path], backtest_result: dict) -> str:
     status = "revisión cualitativa completa" if all(engines.values()) and all(x != "failed" for x in engines.values()) else "revisión parcial; uno o más roles fallaron"
     gate_status = backtest_gate_status(outputs["backtest_gate"])
+    backtests_run = bool(backtest_result.get("backtests_run"))
+    scope = (
+        "revisión documental y backtest exploratorio determinista sobre datos preregistrados; el resultado no es confirmatorio."
+        if backtests_run else
+        "investigación cualitativa y revisión documental; esta corrida no leyó precios ni ejecutó backtests."
+    )
     sections = [
         f"# Informe inicial · {family.replace('_', ' ').title()} · {run_date}",
         "",
         f"**Estado de la corrida:** {status}.  ",
         f"**Motores por rol:** {', '.join(f'{role}: {engines[role]}' for role in ROLE_TITLES)}.  ",
-        "**Alcance:** investigación cualitativa y revisión documental; esta corrida no leyó precios ni ejecutó backtests. El gate de viabilidad no ejecuta ni aprueba automáticamente una prueba.",
+        f"**Alcance:** {scope} El gate de viabilidad no confirma ni aprueba automáticamente un edge.",
         "",
         "## Resumen ejecutivo",
         "",
-        "Este informe organiza revisión de literatura, diagnóstico de datos, crítica independiente y viabilidad del backtest exploratorio. La necesidad actual del usuario orienta qué preguntas son pertinentes. No presenta rentabilidades medidas ni declara un edge validado. La cobertura y los huecos siguen desconocidos hasta calcularlos contra un calendario de sesiones verificado; las gates estadísticas, de robustez y costos siguen pendientes.",
+        "Este informe organiza revisión de literatura, diagnóstico de datos, crítica independiente y viabilidad del backtest exploratorio. La necesidad actual del usuario orienta qué preguntas son pertinentes. No declara un edge validado. La cobertura solo se considera calculada cuando el ejecutor la compara con el calendario de timestamps preregistrado; las gates confirmatorias de estadística, robustez y costos siguen pendientes.",
         "",
         "## Árbol de investigación",
         "",
@@ -106,13 +112,16 @@ def report_markdown(family: str, run_date: str, outputs: dict[str, str], engines
     sections.extend([
         "## Datos, cobertura y pendientes",
         "",
-        "No se leyeron CSV de mercado en esta corrida. El origen, la cobertura porcentual y los huecos deben verificarse por dataset usando la prioridad broker → Dukascopy para CFDs y una fuente licenciada/apropiada para ETFs. No interpolar ni empalmar series sin registrarlo. Si una conclusión requiere datos rellenados o feeds empalmados, marcarla `NO CONFIRMADO`.",
+        ("El ejecutor leyó únicamente el dataset preregistrado indicado en el resultado del backtest; su cobertura calculada se reporta allí, contra el calendario local declarado. " if backtests_run else "No se leyeron CSV de mercado en esta corrida; origen, cobertura y huecos siguen sin verificar. ") + "La procedencia del feed y sus condiciones de ejecución deben tener evidencia independiente. No interpolar ni empalmar series sin registrarlo. Si una conclusión requiere datos rellenados o feeds empalmados, marcarla `NO CONFIRMADO`.",
         "",
         "## Control de calidad",
         "",
         "Cualquier fuente citada debe ser anterior a 2018 y contener DOI o URL estable. Las referencias que no pudieron verificarse deben aparecer explícitamente como `no verificada`; no son evidencia de apoyo hasta revisión humana.",
         "",
     ])
+    backtest_report = backtest_result.get("report_markdown")
+    if isinstance(backtest_report, str) and backtest_report.strip():
+        sections.extend(["## Ejecución del backtest exploratorio", "", backtest_report.strip(), ""])
     return "\n".join(sections)
 
 
@@ -157,7 +166,7 @@ def tree_svg(family: str, family_dir: Path, hypotheses: list[Path]) -> str:
     return "\n".join(chunks)
 
 
-def pdf_report(path: Path, family: str, run_date: str, markdown: str, outputs: dict[str, str], engines: dict[str, str]) -> None:
+def pdf_report(path: Path, family: str, run_date: str, markdown: str, outputs: dict[str, str], engines: dict[str, str], backtest_result: dict) -> None:
     def pdf_safe(text: str) -> str:
         # The built-in Helvetica font supports Windows-1252; replace uncommon
         # glyphs so agent prose cannot make PDF generation fail.
@@ -177,7 +186,26 @@ def pdf_report(path: Path, family: str, run_date: str, markdown: str, outputs: d
     summary_data = [[Paragraph(escape(pdf_safe(str(cell))), header_style if idx == 0 else styles["BrandBody"]) for cell in row] for idx, row in enumerate(rows)]
     summary = Table(summary_data, colWidths=[3.3*inch, 2.5*inch, 1.2*inch], repeatRows=1)
     summary.setStyle(TableStyle([("BACKGROUND", (0,0), (-1,0), PALETTE["forest"]), ("TEXTCOLOR", (0,0), (-1,0), colors.white), ("BACKGROUND", (0,1), (-1,-1), PALETTE["paper"]), ("GRID", (0,0), (-1,-1), 0.4, PALETTE["line"]), ("VALIGN", (0,0), (-1,-1), "TOP"), ("LEFTPADDING", (0,0), (-1,-1), 7), ("RIGHTPADDING", (0,0), (-1,-1), 7)]))
-    story.extend([summary, Spacer(1, 10), Paragraph("Alcance: revisión cualitativa; no se leyeron precios, no se ejecutaron backtests y no se validó ningún edge.", styles["BrandBody"])])
+    backtest_scope = (
+        "Alcance: revisión cualitativa y backtest exploratorio preregistrado; no se validó ningún edge."
+        if backtest_result.get("backtests_run") else
+        "Alcance: revisión cualitativa; no se leyeron precios, no se ejecutaron backtests y no se validó ningún edge."
+    )
+    story.extend([summary, Spacer(1, 10), Paragraph(escape(pdf_safe(backtest_scope)), styles["BrandBody"])])
+    story.append(Paragraph("Estado del backtest exploratorio", styles["BrandHeading"]))
+    story.append(Paragraph(escape(pdf_safe(str(backtest_result.get("status", "NOT_RUN")))), styles["BrandBody"]))
+    if backtest_result.get("data_quality"):
+        data = backtest_result["data_quality"]
+        story.append(Paragraph(escape(pdf_safe(
+            f"Dataset: {data['dataset_path']} · cobertura contra calendario preregistrado: {data['coverage_pct']:.3f}% · "
+            f"filas: {data['valid_rows']}/{data['expected_observations']}"
+        )), styles["BrandBody"]))
+    for period, metrics in backtest_result.get("periods", {}).items():
+        stressed = backtest_result.get("periods_2x_cost", {}).get(period, {})
+        story.append(Paragraph(escape(pdf_safe(
+            f"{period}: {metrics['trades']} operaciones; media neta {metrics['mean_net_pct']:.4f}%; "
+            f"media neta a 2x costo {stressed.get('mean_net_pct', 0):.4f}%"
+        )), styles["BrandBody"]))
     for role, title in ROLE_TITLES.items():
         story.append(Paragraph(escape(title), styles["BrandHeading"]))
         text = outputs[role]
@@ -193,7 +221,7 @@ def pdf_report(path: Path, family: str, run_date: str, markdown: str, outputs: d
                 story.append(Paragraph("- " + escape(pdf_safe(line[2:])), styles["BrandBody"]))
             else:
                 story.append(Paragraph(escape(pdf_safe(line)), styles["BrandBody"]))
-    story.extend([Spacer(1, 10), Paragraph("Gates: calidad/cobertura, estadística fuera de muestra, robustez y costos siguen pendientes. Ver Markdown y YAML/JSON adjuntos para fuentes completas y trazabilidad.", styles["BrandBody"])])
+    story.extend([Spacer(1, 10), Paragraph("El backtest exploratorio sirve para comprobar la implementación y descartar; no constituye evidencia confirmatoria. Gates confirmatorias de estadística, robustez y costos siguen pendientes. Ver Markdown y JSON adjunto para fuentes completas y trazabilidad.", styles["BrandBody"])])
     doc.build(story)
 
 
@@ -202,7 +230,15 @@ def main() -> None:
     args.report_dir.mkdir(parents=True, exist_ok=True)
     outputs, engines = load_roles(args.report_dir)
     hypotheses = hypothesis_paths(args.family_dir)
-    md = report_markdown(args.family, args.run_date, outputs, engines, args.family_dir, hypotheses)
+    backtest_summary_path = args.report_dir / "backtests" / "summary.json"
+    backtest_result = json.loads(backtest_summary_path.read_text(encoding="utf-8")) if backtest_summary_path.is_file() else {
+        "status": "NOT_RUN", "backtests_run": False,
+        "report_markdown": "No se recibió artefacto de ejecución del backtest.",
+    }
+    backtest_markdown_path = args.report_dir / "backtests" / "summary.md"
+    if backtest_markdown_path.is_file():
+        backtest_result["report_markdown"] = backtest_markdown_path.read_text(encoding="utf-8")
+    md = report_markdown(args.family, args.run_date, outputs, engines, args.family_dir, hypotheses, backtest_result)
     (args.report_dir / "report.md").write_text(md, encoding="utf-8")
     (args.report_dir / "tree.svg").write_text(tree_svg(args.family, args.family_dir, hypotheses), encoding="utf-8")
     structured = {
@@ -213,18 +249,24 @@ def main() -> None:
         "model_primary": "gpt-6-luna",
         "reasoning_effort": "high",
         "hypotheses": [str(path.relative_to(args.family_dir)) for path in hypotheses],
-        "data": {"market_data_read": False, "coverage_pct": "unknown", "gaps": "not measured", "feed_comparison": "pending"},
-        "backtests_run": False,
+        "data": {
+            "market_data_read": bool(backtest_result.get("backtests_run")),
+            "coverage_pct": backtest_result.get("data_quality", {}).get("coverage_pct", "unknown"),
+            "gaps": "see backtest artifact" if backtest_result.get("backtests_run") else "not measured",
+            "feed_comparison": "see preregistration" if backtest_result.get("backtests_run") else "pending",
+        },
+        "backtests_run": bool(backtest_result.get("backtests_run")),
+        "backtest_result": backtest_result,
         "exploratory_backtest_gate": {
             "status": backtest_gate_status(outputs["backtest_gate"]),
             "report_role": "agentes/backtest_gate.md",
-            "executes_backtest": False,
+            "executes_backtest": backtests_run,
         },
         "gates": {"data_quality": "pending", "statistics_oos": "pending", "robustness": "pending", "costs": "pending", "edge_verdict": "not confirmed"},
         "source_policy": "Evidence sources must predate 2018; unverifiable citations remain explicitly marked.",
     }
     (args.report_dir / "report.yaml").write_text(json.dumps(structured, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    pdf_report(args.report_dir / "report.pdf", args.family, args.run_date, md, outputs, engines)
+    pdf_report(args.report_dir / "report.pdf", args.family, args.run_date, md, outputs, engines, backtest_result)
     print(f"Built report bundle: {args.report_dir}")
 
 

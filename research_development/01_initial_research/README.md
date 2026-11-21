@@ -32,7 +32,7 @@ La taxonomía inicial de `familias/` es provisional: organiza preguntas para inv
 
 Antes de cada corrida, actualiza [`research_brief.md`](research_brief.md) con la necesidad que quieres resolver. El workflow incluye ese brief en los cuatro roles de revisión de cada familia y les pide priorizar la relevancia, sin rebajar los requisitos de evidencia.
 
-El workflow automático de Initial Research realiza análisis documental y califica la preparación; no ejecuta backtests. La carpeta `backtests_exploratorios/` recibe artefactos solo cuando una hipótesis pasa el gate y tiene datos y reglas verificados. Las fichas existentes no se consideran aprobadas por defecto.
+El workflow automático de Initial Research realiza análisis documental y califica la preparación. También ejecuta el backtest inicial cuando un preregistro congelado pasa el gate de IA y las validaciones deterministas de datos, especificación y costos. La carpeta `backtests_exploratorios/` contiene el ejecutor y sus preregistros; las fichas existentes no se consideran aprobadas por defecto.
 
 Las citas se enlazan a la fuente primaria siempre que sea posible. Una fuente no localizada se etiqueta `no verificada`; no se inventan resultados, cobertura ni citas.
 

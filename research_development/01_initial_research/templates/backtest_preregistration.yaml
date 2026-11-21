@@ -22,31 +22,40 @@ instrument:
 data:
   path_or_dataset_id: "<repo-relative path or manifest ID>"
   provenance_verified: false
+  expected_calendar_verified: false
+  verification_evidence: null
+  timestamp_column: "<CSV timestamp column>"
+  open_column: "<CSV open column>"
+  close_column: "<CSV close column>"
+  expected_calendar_csv: "<repo-relative CSV containing one timestamp_utc per expected bar>"
   start_utc: null
   end_utc: null
-  expected_observations: null
-  observed_observations: null
-  coverage_pct: null
   gap_policy: "<preserve and document; no silent fill>"
   adjustments_and_feed_notes: "<splits/dividends/rollover/feed stitching etc.>"
   gate_evidence: null
 
 strategy_rules:
-  signal: "<formula, fields, lookback, decision timestamp>"
-  entry: "<order type and executable timing/price>"
-  exit: "<rule and timing>"
-  sizing: "<fixed rule; no ex-post optimization>"
-  position_constraints: "<overlap, leverage, shorting, limits>"
+  engine: "ohlc_directional_v1" # supported: ohlc_directional_v1
+  signal_type: "<time_series_momentum | time_series_mean_reversion>"
+  lookback_bars: null
+  holding_bars: null
+  signal: "<close_return_sign | inverse_close_return_sign>"
+  entry: "next_bar_open"
+  exit: "close_after_holding_bars"
+  sizing: "one_unit_no_leverage"
+  position_constraints: "non_overlapping"
 
 execution_costs:
+  round_trip_cost_bps: null
+  cost_evidence: null
   spread_source_and_method: null
   commission: null
   slippage_method: null
   financing_swap_borrow_or_roll: null
-  stress_scenario: "<for example, 2x spread and commission>"
+  stress_scenario: "2x_round_trip_cost"
 
 evaluation:
-  primary_metric: "<single predeclared metric, net of costs>"
+  primary_metric: "mean_net_return_per_trade" # supported primary metric in current executor
   secondary_metrics: []
   discovery_period_utc: [null, null]
   validation_period_utc: [null, null]

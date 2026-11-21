@@ -37,12 +37,16 @@ def main() -> int:
         engines = row.get("engines", {})
         engine_text = "; ".join(f"{role}: {engine}" for role, engine in engines.items()) or "sin datos de motor"
         failures = ", ".join(row.get("failures", [])) or "ninguno"
+        gate = row.get("exploratory_backtest_gate", "unknown")
+        backtest = row.get("backtest_status", "unknown")
         report_url = f"https://github.com/{REPO}/blob/{branch}/{row['report_path']}" if row.get("report_path") else "sin reporte disponible"
-        plain_rows.append(f"- {family}: {status}; motores: {engine_text}; fallos: {failures}; reporte: {report_url}")
+        plain_rows.append(f"- {family}: {status}; gate backtest: {gate}; backtest: {backtest}; motores: {engine_text}; fallos: {failures}; reporte: {report_url}")
         html_rows.append(
             "<tr>"
             f"<td style=\"padding:12px;border-bottom:1px solid #dce4de;color:#202725\">{html.escape(family.replace('_', ' ').title())}</td>"
             f"<td style=\"padding:12px;border-bottom:1px solid #dce4de;color:#202725\">{html.escape(status)}</td>"
+            f"<td style=\"padding:12px;border-bottom:1px solid #dce4de;color:#202725\">{html.escape(gate)}</td>"
+            f"<td style=\"padding:12px;border-bottom:1px solid #dce4de;color:#202725\">{html.escape(backtest)}</td>"
             f"<td style=\"padding:12px;border-bottom:1px solid #dce4de;color:#202725\">{html.escape(engine_text)}</td>"
             f"<td style=\"padding:12px;border-bottom:1px solid #dce4de;color:#202725\">{html.escape(failures)}</td>"
             f"<td style=\"padding:12px;border-bottom:1px solid #dce4de\"><a style=\"color:#1f3d36\" href=\"{html.escape(report_url, quote=True)}\">Abrir reporte</a></td>"
@@ -61,12 +65,12 @@ def main() -> int:
       <p style="margin:0 0 10px;line-height:1.55">Corrida cualitativa de Initial Research para el {html.escape(run_date)}. Modelo principal: <strong>GPT-6 Luna</strong>, esfuerzo <strong>high</strong>. Fallback configurado: <strong>Gemini 3.8 Flash</strong> (thinking high) vía Gemini API.</p>
       <p style="margin:0 0 20px;line-height:1.55">Rama prevista: <code>{html.escape(branch)}</code>. Publicación: {pr_link}.</p>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse">
-        <thead><tr style="background:#f1f5f1"><th align="left" style="padding:12px;color:#1f3d36">Familia</th><th align="left" style="padding:12px;color:#1f3d36">Estado</th><th align="left" style="padding:12px;color:#1f3d36">Motor por rol</th><th align="left" style="padding:12px;color:#1f3d36">Fallos</th><th align="left" style="padding:12px;color:#1f3d36">Reporte</th></tr></thead>
+        <thead><tr style="background:#f1f5f1"><th align="left" style="padding:12px;color:#1f3d36">Familia</th><th align="left" style="padding:12px;color:#1f3d36">Estado</th><th align="left" style="padding:12px;color:#1f3d36">Gate backtest</th><th align="left" style="padding:12px;color:#1f3d36">Backtest</th><th align="left" style="padding:12px;color:#1f3d36">Motor por rol</th><th align="left" style="padding:12px;color:#1f3d36">Fallos</th><th align="left" style="padding:12px;color:#1f3d36">Reporte</th></tr></thead>
         <tbody>{''.join(html_rows)}</tbody>
       </table>
       <div style="margin-top:22px;padding:16px;background:#f7f8f5;border-left:4px solid #c8f5a8;line-height:1.55">
-        <strong>Edges nuevos:</strong> ninguno validado en esta corrida; no se leyeron precios ni se ejecutaron backtests.<br>
-        <strong>Casi-pasa:</strong> no aplica; gates estadísticas, robustez, costos y cobertura permanecen pendientes.<br>
+        <strong>Edges nuevos:</strong> ninguno validado. Un backtest exploratorio solo comprueba la especificación; no es evidencia confirmatoria.<br>
+        <strong>Validación confirmatoria:</strong> pendiente; un backtest exploratorio no supera los gates de estadística, robustez, costos ni confirma cobertura general.<br>
         <strong>Publicación:</strong> {html.escape(publish_status)}.
       </div>
     </td></tr>
@@ -81,8 +85,8 @@ def main() -> int:
         f"Rama: {branch}",
         f"PR: {pr_url or 'no disponible'}",
         *plain_rows,
-        "Edges nuevos: ninguno validado; no se ejecutaron backtests.",
-        "Casi-pasa: no aplica; gates pendientes.",
+        "Edges nuevos: ninguno validado. Un backtest exploratorio no es evidencia confirmatoria.",
+        "Validación confirmatoria pendiente; el backtest exploratorio no confirma un edge.",
         f"Publicación: {publish_status}",
     ])
     message = EmailMessage()
