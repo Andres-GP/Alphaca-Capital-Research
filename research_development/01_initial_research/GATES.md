@@ -2,7 +2,28 @@
 
 Estos son criterios operativos iniciales para seleccionar hipótesis que merecen pruebas de estrategia. No son resultados empíricos, no validan un edge y no sustituyen controles más estrictos que requiera el mercado. Registrar cualquier excepción y justificarla en la ficha.
 
-## Para pasar de investigación inicial a notebook de estrategia
+## Gate A · Investigación inicial → backtest exploratorio
+
+Una corrida inicial no ejecuta ni prueba automáticamente cada idea. Solo se propone backtestear una hipótesis concreta cuando la revisión de viabilidad la marca `READY_FOR_EXPLORATORY_BACKTEST` y existe un preregistro completado en [`templates/backtest_preregistration.yaml`](templates/backtest_preregistration.yaml). Un `HOLD_DATA` o `HOLD_SPECIFICATION` significa que no se ejecuta el backtest; `REFORMULATE` exige corregir la ficha; `REJECT` cierra la hipótesis con su motivo.
+
+Requisitos para `READY_FOR_EXPLORATORY_BACKTEST`:
+
+- Hipótesis falsable y una sola pregunta primaria; instrumento, venue, universo, frecuencia y horizonte definidos.
+- Reglas de señal, entrada, salida, sizing y manejo de posiciones especificadas sin ambigüedad y antes de mirar resultados.
+- Dataset seleccionado con origen, instrumento, frecuencia, zona horaria, sesiones/calendario, ajustes, intervalo, huecos y método de cobertura documentados. Cobertura medida contra el calendario esperado >=98%; no rellenar huecos para superar el umbral.
+- Costos y condiciones de ejecución incluidos (spread, comisión, slippage y swaps/financiación si aplica); si no pueden estimarse, se mantiene `HOLD_DATA`.
+- Período y división cronológica de descubrimiento/validación definidos, métrica primaria fijada y número de variantes/pruebas planeado registrado.
+- Sin dependencia de feed sustituto o tramos empalmados para pasar el gate. Cualquier dependencia no confirmada bloquea el paso.
+
+El backtest que sigue es **exploratorio**: comprueba que la especificación se puede implementar y puede descartar una hipótesis, pero no la confirma ni autoriza llamarla edge. No se cambian reglas tras ver resultados; cualquier cambio crea una nueva versión preregistrada.
+
+## Gate B · Backtest exploratorio → validación confirmatoria
+
+- Registrar el artefacto reproducible, versión de código, datos, configuración y resultados, incluidos errores y variantes probadas.
+- Si la definición, los datos, la cobertura o los costos resultan incorrectos, detener y reformular; no interpretar el PnL como evidencia.
+- Para proponer validación confirmatoria, congelar la especificación y el universo de pruebas, y usar datos fuera de muestra aún no consultados.
+
+## Gate C · Para declarar evidencia empírica confirmatoria
 
 - Mecanismo económico/estructural y predicción falsable definidos antes de mirar el resultado.
 - Al menos una fuente anterior a 2018 verificada y pertinente al mecanismo; citar límites de aplicabilidad. La falta de literatura no demuestra que no exista efecto, pero obliga a marcar la motivación como exploratoria.

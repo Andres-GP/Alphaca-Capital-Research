@@ -1,0 +1,64 @@
+schema_version: 1
+status: draft # draft | frozen | executed | invalidated
+version: 1
+hypothesis_id: "<family.pattern.market.slug>"
+date_frozen_utc: null
+research_report: null
+
+claim:
+  falsifiable_prediction: "<direction, horizon, conditions, and comparison>"
+  null_or_comparator: "<what result would count against the claim>"
+  mechanism: "<economic/structural reason>"
+
+instrument:
+  symbol: "<exact symbol>"
+  product: "<spot | CFD | future | ETF | equity | other>"
+  venue_or_broker: "<source used for execution/research>"
+  timeframe: "<bar size or event frequency>"
+  session_timezone: "<IANA timezone>"
+  session_calendar: "<calendar/version or stable reference>"
+  universe_rule: "<point-in-time inclusion/exclusion rule>"
+
+data:
+  path_or_dataset_id: "<repo-relative path or manifest ID>"
+  provenance_verified: false
+  start_utc: null
+  end_utc: null
+  expected_observations: null
+  observed_observations: null
+  coverage_pct: null
+  gap_policy: "<preserve and document; no silent fill>"
+  adjustments_and_feed_notes: "<splits/dividends/rollover/feed stitching etc.>"
+  gate_evidence: null
+
+strategy_rules:
+  signal: "<formula, fields, lookback, decision timestamp>"
+  entry: "<order type and executable timing/price>"
+  exit: "<rule and timing>"
+  sizing: "<fixed rule; no ex-post optimization>"
+  position_constraints: "<overlap, leverage, shorting, limits>"
+
+execution_costs:
+  spread_source_and_method: null
+  commission: null
+  slippage_method: null
+  financing_swap_borrow_or_roll: null
+  stress_scenario: "<for example, 2x spread and commission>"
+
+evaluation:
+  primary_metric: "<single predeclared metric, net of costs>"
+  secondary_metrics: []
+  discovery_period_utc: [null, null]
+  validation_period_utc: [null, null]
+  independent_events_or_trades_target: 100
+  parameter_variants: []
+  total_planned_tests: null
+  multiple_testing_method: "<if more than one hypothesis/variant is tested>"
+  block_or_resampling_method: "<preserve temporal dependence>"
+
+decision:
+  exploratory_only: true
+  exploratory_discard_conditions: []
+  confirmatory_claim_allowed: false
+  deviations_after_freeze: []
+  reviewer: null

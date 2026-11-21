@@ -10,6 +10,7 @@ Etapa para identificar mecanismos económicos o estructurales, registrar evidenc
 │   ├── hypothesis.yaml
 │   └── hypothesis.md
 ├── familias/<familia>/handoff.md
+├── backtests_exploratorios/    # Pruebas iniciales solo tras pasar el Gate A
 ├── eda/
 │   ├── notebooks_legacy/       # Copias de las EDA existentes, con rutas adaptadas
 │   └── templates/
@@ -24,8 +25,11 @@ La taxonomía inicial de `familias/` es provisional: organiza preguntas para inv
 1. Registrar mecanismo, predicción falsable y evidencia anterior a 2018 en la ficha.
 2. Documentar fuente, cobertura, huecos, feed y diferencias de sesión en los metadatos del dataset.
 3. Hacer EDA para entender calidad y estructura de datos; no usarla para declarar validez.
-4. Aplicar [`GATES.md`](GATES.md); mantener cada gate estadístico, de robustez y de costos como pendiente hasta que exista una ejecución reproducible.
-5. Pasar a `02_strategy_development` solo con evidencia trazable y gates aprobados. Si una prueba depende de datos rellenados, marcar `NO CONFIRMADO`.
+4. Aplicar Gate A de [`GATES.md`](GATES.md). Solo una hipótesis con estado `READY_FOR_EXPLORATORY_BACKTEST` y preregistro congelado puede pasar a `backtests_exploratorios/`.
+5. El backtest inicial sirve como filtro de implementación y descarte, no como confirmación. Aplicar Gate B antes de proponer validación confirmatoria; aplicar Gate C antes de afirmar que hay evidencia empírica.
+6. Pasar a `02_strategy_development` solo con handoff trazable y autorización del flujo de desarrollo correspondiente. Si una prueba depende de datos rellenados, marcar `NO CONFIRMADO`.
+
+El workflow automático de Initial Research realiza análisis documental y califica la preparación; no ejecuta backtests. La carpeta `backtests_exploratorios/` recibe artefactos solo cuando una hipótesis pasa el gate y tiene datos y reglas verificados. Las fichas existentes no se consideran aprobadas por defecto.
 
 Las citas se enlazan a la fuente primaria siempre que sea posible. Una fuente no localizada se etiqueta `no verificada`; no se inventan resultados, cobertura ni citas.
 
