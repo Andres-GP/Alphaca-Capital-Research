@@ -5,10 +5,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
+import os
+import platform
 import re
 import statistics
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -82,6 +86,30 @@ def write_result(output_dir: Path, result: dict[str, Any]) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "summary.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    manifest = {
+        "manifest_schema": 1,
+        "status": result.get("status"),
+        "family": result.get("family"),
+        "hypothesis_id": result.get("hypothesis_id"),
+        "run_date_utc": result.get("run_date_utc"),
+        "gate_verdict": result.get("gate_verdict"),
+        "engine": result.get("engine"),
+        "backtests_run": result.get("backtests_run", False),
+        "reason": result.get("reason"),
+        "provenance": result.get("provenance", {}),
+        "strategy": result.get("strategy"),
+        "data_contract": result.get("data_contract"),
+        "data_quality": result.get("data_quality"),
+        "execution_costs": result.get("execution_costs"),
+        "research_need": result.get("research_need"),
+        "cost_bps": result.get("cost_bps"),
+        "periods": result.get("periods"),
+        "periods_2x_cost": result.get("periods_2x_cost"),
+        "trade_log": result.get("trade_log"),
+    }
+    (output_dir / "experiment_manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     lines = [
         "# Backtest exploratorio",
@@ -165,7 +193,9 @@ def period_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def check_preregistration(config: dict[str, Any], family: str, gate_id: str | None) -> None:
+def check_preregistration(config: dict[str, Any], family: str, gate_id: str | None, repo_root: Path) -> None:
+    if config.get("schema_version") != 2:
+        raise Blocked("El preregistro debe usar schema_version: 2 para el contrato reproducible actual.")
     if config.get("status") != "frozen":
         raise Blocked("El preregistro no está congelado (status debe ser frozen).")
     hyp_id = config.get("hypothesis_id")
@@ -177,6 +207,20 @@ def check_preregistration(config: dict[str, Any], family: str, gate_id: str | No
         raise Blocked("El preregistro debe marcar decision.exploratory_only: true.")
     if config.get("decision", {}).get("confirmatory_claim_allowed") is not False:
         raise Blocked("El preregistro debe prohibir claims confirmatorios.")
+
+    need = config.get("research_need", {})
+    for key in ("question", "decision_use"):
+        value = need.get(key)
+        if not isinstance(value, str) or not value.strip() or value.startswith("<"):
+            raise Blocked(f"Falta research_need.{key}; vincula la prueba a tu necesidad actual.")
+    if not isinstance(need.get("brief_path"), str):
+        raise Blocked("Falta research_need.brief_path.")
+    brief_file = repo_file(repo_root, need["brief_path"], "el brief de necesidad")
+    expected_brief_hash = need.get("brief_sha256")
+    if not isinstance(expected_brief_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_brief_hash):
+        raise Blocked("research_need.brief_sha256 debe fijar el SHA-256 del brief al congelar.")
+    if sha256_file(brief_file) != expected_brief_hash:
+        raise Blocked("El brief cambió desde que se congeló el preregistro; actualiza la referencia y vuelve a congelar.")
 
     claim = config.get("claim", {})
     for key in ("falsifiable_prediction", "null_or_comparator"):
@@ -190,6 +234,14 @@ def check_preregistration(config: dict[str, Any], family: str, gate_id: str | No
             raise Blocked(f"data.{key} debe verificarse explícitamente.")
     if not isinstance(data.get("verification_evidence"), str) or not data["verification_evidence"].strip():
         raise Blocked("Falta evidencia de verificación de procedencia/calendario.")
+    for key in ("provider", "feed", "price_basis", "source_timezone", "source_license_status"):
+        value = data.get(key)
+        if not isinstance(value, str) or not value.strip() or value.startswith("<"):
+            raise Blocked(f"Falta data.{key}; se requiere el contrato común de datos.")
+    for key in ("sha256", "expected_calendar_sha256"):
+        value = data.get(key)
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise Blocked(f"data.{key} debe contener el SHA-256 congelado.")
     if not isinstance(data.get("adjustments_and_feed_notes"), str) or not data["adjustments_and_feed_notes"].strip() or data["adjustments_and_feed_notes"].startswith("<"):
         raise Blocked("Faltan ajustes, convención de precios y notas de feed.")
     if not isinstance(data.get("path_or_dataset_id"), str) or data["path_or_dataset_id"].startswith("<"):
@@ -262,10 +314,35 @@ def check_preregistration(config: dict[str, Any], family: str, gate_id: str | No
         raise Blocked("parameter_variants debe ser una lista preregistrada.")
 
 
-def repo_file(repo_root: Path, relative_value: str, description: str) -> Path:
+def input_file(repo_root: Path, relative_value: str, description: str) -> Path:
     relative = Path(relative_value)
     if relative.is_absolute() or ".." in relative.parts:
         raise Blocked(f"La ruta para {description} debe ser relativa al repo y no puede salir del repositorio.")
+    resolved_repo = repo_root.resolve()
+    repo_candidate = (resolved_repo / relative).resolve()
+    try:
+        repo_candidate.relative_to(resolved_repo)
+    except ValueError as exc:
+        raise Blocked(f"La ruta para {description} sale del repositorio.") from exc
+    candidates = [repo_candidate]
+    data_root = os.environ.get("RESEARCH_DATA_DIR")
+    if data_root:
+        candidate = (Path(data_root).resolve() / relative).resolve()
+        try:
+            candidate.relative_to(Path(data_root).resolve())
+        except ValueError as exc:
+            raise Blocked(f"La ruta para {description} sale de RESEARCH_DATA_DIR.") from exc
+        candidates.append(candidate)
+    for file_path in candidates:
+        if file_path.is_file():
+            return file_path
+    raise Blocked(f"No existe {description}: {relative} (repo ni RESEARCH_DATA_DIR).")
+
+
+def repo_file(repo_root: Path, relative_value: str, description: str) -> Path:
+    relative = Path(relative_value)
+    if relative.is_absolute() or ".." in relative.parts:
+        raise Blocked(f"La ruta para {description} debe permanecer dentro del repo.")
     file_path = (repo_root / relative).resolve()
     try:
         file_path.relative_to(repo_root.resolve())
@@ -276,8 +353,27 @@ def repo_file(repo_root: Path, relative_value: str, description: str) -> Path:
     return file_path
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def current_commit(repo_root: Path) -> str | None:
+    if os.environ.get("GITHUB_SHA"):
+        return os.environ["GITHUB_SHA"]
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=repo_root, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
 def load_expected_timestamps(data: dict[str, Any], repo_root: Path) -> set[datetime]:
-    calendar_path = repo_file(repo_root, data["expected_calendar_csv"], "el calendario esperado")
+    calendar_path = input_file(repo_root, data["expected_calendar_csv"], "el calendario esperado")
     expected: set[datetime] = set()
     try:
         with calendar_path.open(newline="", encoding="utf-8-sig") as stream:
@@ -299,15 +395,7 @@ def load_expected_timestamps(data: dict[str, Any], repo_root: Path) -> set[datet
 
 def load_bars(data: dict[str, Any], repo_root: Path) -> tuple[list[dict[str, Any]], float, int]:
     relative = Path(data["path_or_dataset_id"])
-    if relative.is_absolute() or ".." in relative.parts:
-        raise Blocked("La ruta del dataset debe ser relativa al repo y no puede salir del repositorio.")
-    csv_path = (repo_root / relative).resolve()
-    try:
-        csv_path.relative_to(repo_root.resolve())
-    except ValueError as exc:
-        raise Blocked("La ruta del dataset sale del repositorio.") from exc
-    if not csv_path.is_file():
-        raise Blocked(f"No existe el dataset preregistrado: {relative}.")
+    csv_path = input_file(repo_root, str(relative), "el dataset preregistrado")
     cols = [data[key] for key in ("timestamp_column", "open_column", "close_column")]
     bars: list[dict[str, Any]] = []
     seen: set[datetime] = set()
@@ -396,6 +484,19 @@ def main() -> int:
         "backtests_run": False,
         "periods": {},
         "reason": f"No se ejecutó: el gate devolvió {verdict}; se requiere READY_FOR_EXPLORATORY_BACKTEST.",
+        "provenance": {
+            "repository_commit": current_commit(args.repo_root),
+            "python_version": platform.python_version(),
+            "gate_report_sha256": sha256_file(args.gate_report) if args.gate_report.is_file() else None,
+            "research_brief_sha256": (
+                sha256_file(args.repo_root / "research_development/01_initial_research/research_brief.md")
+                if (args.repo_root / "research_development/01_initial_research/research_brief.md").is_file()
+                else None
+            ),
+            "input_sha256": {},
+            "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+            "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+        },
     }
     prereg_root = args.repo_root / "research_development" / "01_initial_research" / "backtests_exploratorios" / "preregistrations" / args.family
     preregistrations = sorted(prereg_root.glob("*.yaml")) if prereg_root.is_dir() else []
@@ -418,8 +519,20 @@ def main() -> int:
 
     prereg_path, config = matching[0]
     result["preregistration"] = str(prereg_path.relative_to(args.repo_root))
+    result["provenance"]["input_sha256"]["preregistration"] = sha256_file(prereg_path)
     try:
-        check_preregistration(config, args.family, gate_id)
+        check_preregistration(config, args.family, gate_id, args.repo_root)
+        data_config = config["data"]
+        dataset_path = input_file(args.repo_root, data_config["path_or_dataset_id"], "el dataset")
+        calendar_path = input_file(args.repo_root, data_config["expected_calendar_csv"], "el calendario esperado")
+        if sha256_file(dataset_path) != data_config["sha256"]:
+            raise Blocked("El SHA-256 del dataset no coincide con el preregistro congelado.")
+        if sha256_file(calendar_path) != data_config["expected_calendar_sha256"]:
+            raise Blocked("El SHA-256 del calendario no coincide con el preregistro congelado.")
+        result["provenance"]["input_sha256"].update({
+            "dataset": sha256_file(dataset_path),
+            "expected_calendar": sha256_file(calendar_path),
+        })
         bars, coverage, expected_rows = load_bars(config["data"], args.repo_root)
         minimum_rows = config["strategy_rules"]["lookback_bars"] + config["strategy_rules"]["holding_bars"] + 1
         if len(bars) < minimum_rows:
@@ -446,12 +559,19 @@ def main() -> int:
             for name, rows in periods.items()
         }
         data = config["data"]
+        result["data_contract"] = {
+            key: data.get(key) for key in (
+                "provider", "feed", "price_basis", "source_timezone", "source_license_status"
+            )
+        }
         result.update({
             "status": "EXECUTED_EXPLORATORY",
             "engine": SUPPORTED_ENGINE,
             "backtests_run": True,
             "reason": "Preregistro congelado y gate aprobados; resultado descriptivo, exploratorio y no confirmatorio.",
             "strategy": {"signal_type": config["strategy_rules"]["signal_type"], "lookback_bars": config["strategy_rules"]["lookback_bars"], "holding_bars": config["strategy_rules"]["holding_bars"]},
+            "research_need": config["research_need"],
+            "execution_costs": config["execution_costs"],
             "data_quality": {
                 "valid_rows": len(bars),
                 "expected_observations": expected_rows,
@@ -470,6 +590,7 @@ def main() -> int:
             writer = csv.DictWriter(stream, fieldnames=list(trades[0]) if trades else ["signal_timestamp_utc", "entry_timestamp_utc", "exit_timestamp_utc", "direction", "gross_return", "net_return"])
             writer.writeheader()
             writer.writerows(trades)
+        result["provenance"]["input_sha256"]["trade_log"] = sha256_file(args.output_dir / "trades.csv")
     except Exception as exc:  # Preserve a visible failure artifact while failing the family job.
         result.update({"status": "EXECUTION_ERROR", "reason": f"Fallo inesperado durante la simulación: {type(exc).__name__}: {exc}"})
         write_result(args.output_dir, result)

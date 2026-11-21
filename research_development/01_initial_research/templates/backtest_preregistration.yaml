@@ -1,9 +1,15 @@
-schema_version: 1
+schema_version: 2
 status: draft # draft | frozen | executed | invalidated
 version: 1
 hypothesis_id: "<family.pattern.market.slug>"
 date_frozen_utc: null
 research_report: null
+
+research_need:
+  brief_path: "research_development/01_initial_research/research_brief.md"
+  brief_sha256: null # SHA-256 del brief al congelar este preregistro
+  question: "<pregunta concreta del brief que responde esta hipótesis>"
+  decision_use: "<cómo cambiaría una decisión si el resultado fuera positivo o negativo>"
 
 claim:
   falsifiable_prediction: "<direction, horizon, conditions, and comparison>"
@@ -21,6 +27,13 @@ instrument:
 
 data:
   path_or_dataset_id: "<repo-relative path or manifest ID>"
+  provider: "<Axi | Darwinex | Dukascopy | named licensed provider>"
+  feed: "<exact feed/account/server and venue, no generic provider label>"
+  price_basis: "<bid_ohlc | ask_ohlc | mid_ohlc | last_trade_ohlc>"
+  source_timezone: "<timezone used in the downloaded source before UTC normalization>"
+  source_license_status: "<personal_only | licensed | public_terms_reviewed | unknown>"
+  sha256: null # hash del archivo congelado
+  expected_calendar_sha256: null # hash del calendario congelado
   provenance_verified: false
   expected_calendar_verified: false
   verification_evidence: null

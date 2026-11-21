@@ -21,3 +21,5 @@ Después de la línea de veredicto, incluye una línea `HIPOTESIS_ID: <id exacto
 5. Aviso: el backtest exploratorio es solo para revisar implementación/descartar; el resultado no constituye validación ni aprobación de un edge.
 
 No alteres archivos. Distingue claramente entre lo descrito en el repo y lo verificado en esta corrida. No afirmes que la cobertura se calculó en esta corrida. Si no hay exactamente un preregistro congelado coincidente con la hipótesis, no uses READY. El ejecutor solo admite `ohlc_directional_v1` con `time_series_momentum` o `time_series_mean_reversion`; cualquier otra clase de pauta debe quedar en HOLD_SPECIFICATION hasta que tenga una implementación explícita.
+
+El ejecutor también requiere un preregistro v2: pregunta/uso de decisión vinculados a `research_brief.md` y su hash congelado; proveedor/feed exactos; base de precio y zona horaria de origen; estado explícito de licencia; SHA-256 congelado del CSV y del calendario. El veredicto de IA es una recomendación: el ejecutor recalcula y decide estos gates. No declares READY si faltan esos campos.
