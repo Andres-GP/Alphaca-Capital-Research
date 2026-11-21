@@ -20,7 +20,7 @@ Dukascopy se actualiza con `dukascopy-python` usando el mismo método `dp.fetch`
 
 Axi documenta descarga de históricos desde MetaTrader 4/5. [Histórico Axi](https://help.axi.com/en-US/axiv2--axicorp-prod/article/k_1LMcCI-how-do-i-download-historical-trade-data). La automatización propuesta se conecta al terminal MT5 autenticado en un runner Windows persistente y registra la cobertura realmente devuelta por cuenta y símbolo.
 
-No se aprueba aquí otro proveedor gratuito adicional: el inventario no demuestra que cubra los instrumentos, granularidades y años requeridos ni que permita una comparación consistente. La selección queda pendiente de la ficha de datos por instrumento y de la verificación de cobertura. Nunca empalmar feeds sin identificar el corte y repetir las gates en cada feed.
+La descarga de Yahoo y Dukascopy ya está integrada como exploración secundaria; la cobertura real y los términos aplicables deben verificarse por instrumento y período. No empalmar feeds sin identificar el corte y repetir las gates en cada feed.
 
 ## Qué falta para cerrar la auditoría
 
