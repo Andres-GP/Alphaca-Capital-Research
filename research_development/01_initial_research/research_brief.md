@@ -4,21 +4,19 @@ Edita este archivo antes de una corrida cuando cambie la necesidad. El workflow 
 
 ## Lo que necesito resolver
 
-- Necesidad o decisión actual:
-- ¿Qué resultado me sería útil?:
-- Preguntas que quiero contestar:
+- Estrategias para poder pasar a axi select lo antes posible
 
 ## Alcance
 
-- Mercados/instrumentos de interés:
-- Horizonte temporal:
-- Capital/cuenta o restricciones relevantes (opcional):
-- Riesgo o pérdida máxima tolerable (opcional):
-- Restricciones operativas (horarios, frecuencia, broker, tipo de producto):
-- Familias o enfoques que quiero priorizar:
-- Temas que debo excluir:
+- Mercados/instrumentos de interés: CFDS de axi
+- Horizonte temporal: probar varios para que funcione en axi
+- Capital/cuenta o restricciones relevantes (opcional): las de axi, pero intentar buscar estrategias que no sean caras, es decir, que no requieran demasiado capital para ser ejecutadas y ademas cumplir con las reglas
+- Riesgo o pérdida máxima tolerable (opcional): la de axi select
+- Restricciones operativas (horarios, frecuencia, broker, tipo de producto): axi select por medio de metatrader
+- Familias o enfoques que quiero priorizar: las que sean mas compatibles con axi select
+- Temas que debo excluir: todo lo que no sea al scope de axi select
 
 ## Contexto y fecha
 
 - Información adicional:
-- Fecha de actualización (UTC):
+- Fecha de actualización (UTC): 20 nov de 2026
