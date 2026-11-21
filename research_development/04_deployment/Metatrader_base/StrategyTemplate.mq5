@@ -31,6 +31,7 @@
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include "PerformanceReporter.mqh"
+#include "PerformanceDashboard.mqh"
 
 //+------------------------------------------------------------------+
 //| Inputs                                                            |
@@ -58,7 +59,7 @@ input bool     InpShowDashboard    = true;       // Show dashboard on chart?
 input group "====== PERFORMANCE REPORTER ======"
 input bool     InpEnableReporter   = true;       // Enable backend reporter?
 input string   InpBackendUrl       = "";         // Backend URL (empty = module default)
-input string   InpAuthToken        = "";         // Bearer token (empty = module default)
+input string   InpAuthToken        = "";         // Required backend API key
 input bool     InpVerboseReporter  = false;      // Reporter debug logs
 input int      InpHeartbeatSecs    = 3600;       // Heartbeat interval (seconds)
 input int      InpMaxBarsNoTrade   = 50;         // Inactivity alert threshold
@@ -69,6 +70,7 @@ input int      InpMaxBarsNoTrade   = 50;         // Inactivity alert threshold
 CTrade               g_trade;
 CPositionInfo        g_posInfo;
 PerformanceReporter* g_reporter = NULL;
+PerformanceDashboard g_dashboard;
 
 datetime             g_lastBarTime;
 bool                 g_dailyKillActive;
@@ -94,6 +96,7 @@ double               g_atrBuffer[];     // ATR buffer
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   g_dashboard.SetPrefix("TIS_");
    //--- Parameter validation
    if(InpRiskPercent < 0.1 || InpRiskPercent > 5.0)
    {
@@ -628,124 +631,61 @@ bool HasOpenPosition()
 //+------------------------------------------------------------------+
 void UpdateDashboard()
 {
-   if(ArraySize(g_fastBuffer) < 2 || ArraySize(g_slowBuffer) < 2) return;
-
-   int x = 20, y = 30;
-   int lineH = 18;
-
-   DashLabel("TIS_H1", "Strategy Template v1.00", x, y, clrDodgerBlue, 11);
-   y += lineH + 2;
-   DashLabel("TIS_H2", _Symbol + " D1", x, y, clrDarkGray, 9);
-   y += lineH + 6;
-
-   //--- Kill switch banner
-   if(g_dailyKillActive || g_totalKillActive)
+   string state = (g_dailyKillActive || g_totalKillActive) ? "KILL SWITCH ACTIVE" : "STRATEGY ACTIVE";
+   color stateColor = (g_dailyKillActive || g_totalKillActive) ? clrOrangeRed : clrLime;
+   string reporterState = !InpEnableReporter ? "Reporter: OFF" : StringLen(InpAuthToken) == 0 ? "Reporter: ON | API key missing" : "Reporter: ON | credentials configured";
+   string context1 = "Indicators: waiting for history";
+   string context2 = "";
+   string context3 = "";
+   if(ArraySize(g_fastBuffer) >= 2 && ArraySize(g_slowBuffer) >= 2 && ArraySize(g_trendBuffer) >= 1)
    {
-      DashLabel("TIS_KILL", "KILL SWITCH ACTIVE - NOT OPERATING", x, y, clrRed, 11);
-      y += lineH + 4;
+      context1 = StringFormat("Fast MA: %.5f | slow MA: %.5f", g_fastBuffer[1], g_slowBuffer[1]);
+      bool aboveTrend = (iClose(_Symbol, PERIOD_D1, 0) > g_trendBuffer[0]);
+      context2 = StringFormat("Trend filter: %s", aboveTrend ? "passed" : "blocked");
+      context3 = StringFormat("ATR sizing: %s", InpUseATRSizing ? "enabled" : "disabled");
    }
-   else
+   int nPos = 0;
+   double lots = 0.0, pnl = 0.0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
-      DashLabel("TIS_KILL", "", x, y, clrBlack, 1);
+      if(!g_posInfo.SelectByIndex(i) || g_posInfo.Symbol() != _Symbol || g_posInfo.Magic() != InpMagicNumber) continue;
+      nPos++;
+      lots += g_posInfo.Volume();
+      pnl += g_posInfo.Profit() + g_posInfo.Swap() + g_posInfo.Commission();
    }
-
-   //--- ==========================================================
-   //--- [STRATEGY-SPECIFIC] Dashboard lines
-   //--- ==========================================================
-   //--- Replace with your strategy's key state.
-   //--- The example below shows fast/slow MA values and trend filter.
-
-   DashLabel("TIS_FAST", StringFormat("Fast MA: %.5f", g_fastBuffer[1]),
-             x, y, clrSilver, 10);
-   y += lineH;
-
-   DashLabel("TIS_SLOW", StringFormat("Slow MA: %.5f", g_slowBuffer[1]),
-             x, y, clrSilver, 10);
-   y += lineH;
-
-   double closeNow = iClose(_Symbol, PERIOD_D1, 0);
-   bool aboveTrend = (closeNow > g_trendBuffer[0]);
-   DashLabel("TIS_TRD", "Trend: " + (aboveTrend ? "ABOVE OK" : "BELOW X"),
-             x, y, aboveTrend ? clrLime : clrOrangeRed, 10);
-   y += lineH;
-
-   //--- ==========================================================
-   //--- Infrastructure: position + stats (do not modify)
-   //--- ==========================================================
-   if(HasOpenPosition())
-   {
-      for(int i = PositionsTotal() - 1; i >= 0; i--)
-      {
-         if(g_posInfo.SelectByIndex(i) && g_posInfo.Symbol() == _Symbol && g_posInfo.Magic() == InpMagicNumber)
-         {
-            double pnl = g_posInfo.Profit() + g_posInfo.Swap() + g_posInfo.Commission();
-            DashLabel("TIS_POS", StringFormat("LONG %.2f lots | P&L: $%.0f", g_posInfo.Volume(), pnl),
-                      x, y, pnl >= 0 ? clrLime : clrOrangeRed, 10);
-            break;
-         }
-      }
-   }
-   else
-   {
-      DashLabel("TIS_POS", "FLAT - Waiting for signal", x, y, clrGray, 9);
-   }
-   y += lineH + 6;
-
+   string position = nPos > 0
+      ? StringFormat("Position: %d open | %.2f lots | P&L %.2f", nPos, lots, pnl)
+      : "Position: flat | waiting for strategy signal";
+   string tradeCount = g_reporter != NULL
+      ? StringFormat("Closed trades: %d | wins %d | losses %d", g_reporter.GetTotalTrades(), g_reporter.GetWins(), g_reporter.GetLosses())
+      : "Closed trades: unavailable | reporter off";
+   string tradeQuality = g_reporter != NULL
+      ? StringFormat("Win rate: %.1f%% | profit factor: %.2f", g_reporter.GetWinRate(), g_reporter.GetProfitFactor())
+      : "";
+   string drawdown = "Drawdown: unavailable | reporter off";
+   string maxDrawdown = "Maximum drawdown observed: unavailable";
+   color ddColor = clrSilver;
    if(g_reporter != NULL)
    {
-      DashLabel("TIS_ST1", StringFormat("Trades: %d | W: %d | L: %d",
-                g_reporter.GetTotalTrades(), g_reporter.GetWins(), g_reporter.GetLosses()),
-                x, y, clrSilver, 9);
-      y += lineH;
-
-      if(g_reporter.GetTotalTrades() > 0)
-      {
-         double wr = g_reporter.GetWinRate();
-         double pf = g_reporter.GetProfitFactor();
-         color wrClr = wr >= 60 ? clrLime : (wr >= 50 ? clrYellow : clrOrangeRed);
-         DashLabel("TIS_ST2", StringFormat("WR: %.1f%% | PF: %.2f", wr, pf), x, y, wrClr, 9);
-         y += lineH;
-      }
-
-      double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-      DashLabel("TIS_EQ", "Equity: $" + DoubleToString(eq, 0), x, y, clrWhite, 9);
-      y += lineH;
-
-      double dailyDD = g_reporter.GetDailyDD();
-      double totalDD = g_reporter.GetTotalDD();
-      color ddClr = clrSilver;
-      if(dailyDD > InpMaxDailyDD * 0.7 || totalDD > InpMaxTotalDD * 0.7) ddClr = clrOrangeRed;
-      else if(dailyDD > InpMaxDailyDD * 0.5 || totalDD > InpMaxTotalDD * 0.5) ddClr = clrYellow;
-
-      DashLabel("TIS_DD", StringFormat("DD: Day=%.1f%%/%.0f%% | Total=%.1f%%/%.0f%%",
-                dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD), x, y, ddClr, 9);
-      y += lineH;
-
-      DashLabel("TIS_MDD", StringFormat("Max DD hit: %.2f%%", g_reporter.GetMaxDrawdownHit()),
-                x, y, clrDarkGray, 8);
+      double dailyDD = g_reporter.GetDailyDD(), totalDD = g_reporter.GetTotalDD();
+      ddColor = (dailyDD >= InpMaxDailyDD * 0.7 || totalDD >= InpMaxTotalDD * 0.7) ? clrOrangeRed
+         : (dailyDD >= InpMaxDailyDD * 0.5 || totalDD >= InpMaxTotalDD * 0.5) ? clrYellow : clrSilver;
+      drawdown = StringFormat("Drawdown: day %.2f%% / %.1f%% | total %.2f%% / %.1f%%", dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD);
+      maxDrawdown = StringFormat("Maximum drawdown observed: %.2f%%", g_reporter.GetMaxDrawdownHit());
    }
+   g_dashboard.Update("ALPHACA | STRATEGY TEMPLATE", _Symbol + " | D1 | strategy-specific rules",
+      state, stateColor, reporterState,
+      context1, clrSilver, context2, clrSilver, context3, clrSilver,
+      position, nPos > 0 && pnl < 0 ? clrOrangeRed : clrWhite,
+      tradeCount, tradeQuality,
+      StringFormat("Equity: %.2f %s", AccountInfoDouble(ACCOUNT_EQUITY), AccountInfoString(ACCOUNT_CURRENCY)),
+      drawdown, ddColor, maxDrawdown);
 }
 
 //+------------------------------------------------------------------+
-//| DashLabel helper (infrastructure, do not modify)                  |
+//| Dashboard update                                                   |
 //+------------------------------------------------------------------+
-void DashLabel(string name, string text, int x, int y, color clr, int fontSize)
-{
-   if(ObjectFind(0, name) < 0)
-   {
-      ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_BACK, false);
-      ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
-   }
-   ObjectSetString(0, name, OBJPROP_TEXT, text);
-   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, fontSize);
-   ObjectSetString(0, name, OBJPROP_FONT, "Consolas");
-}
+
 
 //+------------------------------------------------------------------+
 //| OnTester (infrastructure, do not modify)                          |

@@ -70,6 +70,7 @@
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include "PerformanceReporter.mqh"
+#include "../../Metatrader_base/PerformanceDashboard.mqh"
 
 //+------------------------------------------------------------------+
 //| Enums                                                             |
@@ -136,6 +137,7 @@ string TradesFileName() { return InpFilePrefix + "gotobi_trades.csv"; }
 CTrade               g_trade;
 CPositionInfo        g_posInfo;
 PerformanceReporter* g_reporter = NULL;
+PerformanceDashboard g_dashboard;
 
 datetime             g_lastBarTime;
 bool                 g_dailyKillActive;
@@ -1141,121 +1143,59 @@ bool HasOpenPosition()
 //+------------------------------------------------------------------+
 void UpdateDashboard()
 {
-   int x = 20, y = 30, lineH = 18;
-
-   DashLabel("ALPHACA_H1", "ALPHACA GOTOBI DWX v1.04", x, y, clrDodgerBlue, 11);
-   y += lineH + 2;
-   DashLabel("ALPHACA_H2", _Symbol + " M5 | Long 22:30 -> 00:55 UTC", x, y, clrDarkGray, 9);
-   y += lineH + 6;
-
-   if(g_dailyKillActive || g_totalKillActive)
-   {
-      DashLabel("ALPHACA_KILL", "KILL SWITCH ACTIVE", x, y, clrRed, 11);
-      y += lineH + 4;
-   }
-   else
-   {
-      DashLabel("ALPHACA_KILL", "", x, y, clrBlack, 1);
-   }
-
+   string state = (g_dailyKillActive || g_totalKillActive) ? "KILL SWITCH ACTIVE" : "STRATEGY ACTIVE";
+   color stateColor = (g_dailyKillActive || g_totalKillActive) ? clrOrangeRed : clrLime;
+   string reporterState = !InpEnableReporter ? "Reporter: OFF" : StringLen(InpAuthToken) == 0 ? "Reporter: ON | API key missing" : "Reporter: ON | credentials configured";
    datetime nowUtc = ServerToUTC(TimeCurrent());
-   if(g_calPtr < g_calN)
-   {
-      double hrs = (double)(g_calEntryUtc[g_calPtr] - nowUtc) / 3600.0;
-      DashLabel("ALPHACA_NEXT", StringFormat("Next Gotobi: %s (%s%s) in %.1fh", g_calDate[g_calPtr], g_calLabel[g_calPtr],
-                g_calShifted[g_calPtr] ? ", shifted" : "", MathMax(0.0, hrs)),
-                x, y, clrSilver, 10);
-   }
-   else
-      DashLabel("ALPHACA_NEXT", "Calendar exhausted - re-export it", x, y, clrOrangeRed, 10);
-   y += lineH;
-
-   MqlDateTime t;
-   TimeToStruct(nowUtc, t);
+   MqlDateTime utc;
+   TimeToStruct(nowUtc, utc);
    string dow[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-   DashLabel("ALPHACA_CAL", StringFormat("UTC: %s %02d:%02d | server UTC%+d", dow[t.day_of_week], t.hour, t.min,
-             ServerOffsetHours(TimeCurrent())), x, y, clrSilver, 10);
-   y += lineH + 6;
+   string nextEntry = g_calPtr < g_calN
+      ? StringFormat("Next Gotobi: %s (%s%s) | in %.1fh", g_calDate[g_calPtr], g_calLabel[g_calPtr], g_calShifted[g_calPtr] ? ", shifted" : "", MathMax(0.0, (double)(g_calEntryUtc[g_calPtr] - nowUtc) / 3600.0))
+      : "Calendar exhausted | re-export calendar";
+   string clock = StringFormat("UTC: %s %02d:%02d | server UTC%+d", dow[utc.day_of_week], utc.hour, utc.min, ServerOffsetHours(TimeCurrent()));
 
-   datetime opened = 0;
-   if(GetPositionOpenTime(opened))
+   int nPos = 0;
+   double lots = 0.0, pnl = 0.0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
-      double hoursLeft = (g_posExitUtc > 0) ? MathMax(0.0, (double)(g_posExitUtc - nowUtc) / 3600.0) : 0.0;
-      for(int i = PositionsTotal() - 1; i >= 0; i--)
-      {
-         if(g_posInfo.SelectByIndex(i) && g_posInfo.Symbol() == _Symbol && g_posInfo.Magic() == InpMagicNumber)
-         {
-            double pnl = g_posInfo.Profit() + g_posInfo.Swap() + g_posInfo.Commission();
-            DashLabel("ALPHACA_POS", StringFormat("LONG %.2f lots | P&L: %.0f | exit in %.1fh",
-                      g_posInfo.Volume(), pnl, hoursLeft),
-                      x, y, pnl >= 0 ? clrLime : clrOrangeRed, 10);
-            break;
-         }
-      }
+      if(!g_posInfo.SelectByIndex(i) || g_posInfo.Symbol() != _Symbol || g_posInfo.Magic() != InpMagicNumber) continue;
+      nPos++;
+      lots += g_posInfo.Volume();
+      pnl += g_posInfo.Profit() + g_posInfo.Swap() + g_posInfo.Commission();
    }
-   else
-   {
-      DashLabel("ALPHACA_POS", "FLAT - Waiting for the next Gotobi entry", x, y, clrGray, 9);
-   }
-   y += lineH + 6;
-
-   if(g_reporter != NULL)
-   {
-      DashLabel("ALPHACA_ST1", StringFormat("Trades: %d | W: %d | L: %d",
-                g_reporter.GetTotalTrades(), g_reporter.GetWins(), g_reporter.GetLosses()),
-                x, y, clrSilver, 9);
-      y += lineH;
-
-      if(g_reporter.GetTotalTrades() > 0)
-      {
-         double wr = g_reporter.GetWinRate();
-         double pf = g_reporter.GetProfitFactor();
-         color wrClr = wr >= 60 ? clrLime : (wr >= 50 ? clrYellow : clrOrangeRed);
-         DashLabel("ALPHACA_ST2", StringFormat("WR: %.1f%% | PF: %.2f", wr, pf), x, y, wrClr, 9);
-         y += lineH;
-      }
-   }
-
-   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-   DashLabel("ALPHACA_EQ", "Equity: " + DoubleToString(eq, 0) + " " + AccountInfoString(ACCOUNT_CURRENCY),
-             x, y, clrWhite, 9);
-   y += lineH;
-
-   double dailyDD = DailyDD();
-   double totalDD = TotalDD();
-   color ddClr = clrSilver;
-   if(dailyDD > InpMaxDailyDD * 0.7 || totalDD > InpMaxTotalDD * 0.7) ddClr = clrOrangeRed;
-   else if(dailyDD > InpMaxDailyDD * 0.5 || totalDD > InpMaxTotalDD * 0.5) ddClr = clrYellow;
-
-   DashLabel("ALPHACA_DD", StringFormat("DD: Day=%.1f%%/%.0f%% | Total=%.1f%%/%.1f%%",
-             dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD), x, y, ddClr, 9);
-   y += lineH;
-
-   DashLabel("ALPHACA_MDD", StringFormat("Max DD hit: %.2f%%", g_maxDDHit),
-             x, y, clrDarkGray, 8);
+   double hoursLeft = g_posExitUtc > 0 ? MathMax(0.0, (double)(g_posExitUtc - nowUtc) / 3600.0) : 0.0;
+   string position = nPos > 0
+      ? StringFormat("Position: %d open | %.2f lots | P&L %.2f | exit in %.1fh", nPos, lots, pnl, hoursLeft)
+      : "Position: flat | waiting for next calendar entry";
+   double spreadPips = 0.0;
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID), ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   if(bid > 0 && ask > bid) spreadPips = (ask - bid) / PipSize();
+   string spread = (bid > 0 && ask > bid)
+      ? StringFormat("Current spread: %.2f pips | cap %.2f", spreadPips, InpMaxSpreadPips)
+      : "Current spread: unavailable";
+   string tradeCount = g_reporter != NULL
+      ? StringFormat("Closed trades: %d | wins %d | losses %d", g_reporter.GetTotalTrades(), g_reporter.GetWins(), g_reporter.GetLosses())
+      : "Closed trades: unavailable | reporter off";
+   string tradeQuality = g_reporter != NULL
+      ? StringFormat("Win rate: %.1f%% | profit factor: %.2f", g_reporter.GetWinRate(), g_reporter.GetProfitFactor())
+      : "";
+   double dailyDD = DailyDD(), totalDD = TotalDD();
+   color ddColor = (dailyDD >= InpMaxDailyDD * 0.7 || totalDD >= InpMaxTotalDD * 0.7) ? clrOrangeRed
+      : (dailyDD >= InpMaxDailyDD * 0.5 || totalDD >= InpMaxTotalDD * 0.5) ? clrYellow : clrSilver;
+   g_dashboard.Update("ALPHACA | GOTOBI DARWINEX", _Symbol + " | M5 | long only",
+      state, stateColor, reporterState,
+      nextEntry, g_calPtr < g_calN ? clrSilver : clrOrangeRed, clock, clrSilver, spread, clrSilver,
+      position, nPos > 0 && pnl < 0 ? clrOrangeRed : clrWhite,
+      tradeCount, tradeQuality,
+      StringFormat("Equity: %.2f %s", AccountInfoDouble(ACCOUNT_EQUITY), AccountInfoString(ACCOUNT_CURRENCY)),
+      StringFormat("Drawdown: day %.2f%% / %.1f%% | total %.2f%% / %.1f%%", dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD), ddColor,
+      StringFormat("Maximum drawdown observed: %.2f%%", g_maxDDHit));
 }
 
 //+------------------------------------------------------------------+
-//| DashLabel helper                                                  |
+//| Dashboard update                                                   |
 //+------------------------------------------------------------------+
-void DashLabel(string name, string text, int x, int y, color clr, int fontSize)
-{
-   if(ObjectFind(0, name) < 0)
-   {
-      ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_BACK, false);
-      ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
-   }
-   ObjectSetString(0, name, OBJPROP_TEXT, text);
-   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, fontSize);
-   ObjectSetString(0, name, OBJPROP_FONT, "Consolas");
-}
-
 //+------------------------------------------------------------------+
 //| OnTester                                                          |
 //+------------------------------------------------------------------+

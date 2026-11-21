@@ -15,6 +15,7 @@
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include "PerformanceReporter.mqh"
+#include "../../Metatrader_base/PerformanceDashboard.mqh"
 
 //+------------------------------------------------------------------+
 //| Inputs                                                            |
@@ -53,6 +54,7 @@ input int      InpMaxBarsNoTrade   = 50;         // Inactivity alert threshold
 CTrade               g_trade;
 CPositionInfo        g_posInfo;
 PerformanceReporter* g_reporter = NULL;
+PerformanceDashboard g_dashboard;
 
 int                  g_handleRSI;
 int                  g_handleSMA;
@@ -72,6 +74,7 @@ string               g_killReason;
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   g_dashboard.SetPrefix("TIS_");
    if(InpRSIThreshold < 5 || InpRSIThreshold > 30)
    {
       Print("RSI Threshold out of reasonable range (5-30)");
@@ -511,125 +514,65 @@ bool HasOpenPosition()
 //+------------------------------------------------------------------+
 void UpdateDashboard()
 {
-   if(ArraySize(g_rsiBuffer) < 2 || ArraySize(g_smaBuffer) < 2) return;
-
-   int x = 20, y = 30, lineH = 18;
-
-   DashLabel("TIS_H1", "TIS RSI(2) v3.11", x, y, clrDodgerBlue, 11);
-   y += lineH + 2;
-   DashLabel("TIS_H2", _Symbol + " D1 | Exit: 2 Green Candles", x, y, clrDarkGray, 9);
-   y += lineH + 6;
-
-   if(g_dailyKillActive || g_totalKillActive)
+   string state = (g_dailyKillActive || g_totalKillActive) ? "KILL SWITCH ACTIVE" : "STRATEGY ACTIVE";
+   color stateColor = (g_dailyKillActive || g_totalKillActive) ? clrOrangeRed : clrLime;
+   string reporterState = !InpEnableReporter ? "Reporter: OFF" : StringLen(InpAuthToken) == 0 ? "Reporter: ON | API key missing" : "Reporter: ON | credentials configured";
+   string context1 = "Indicators: waiting for history";
+   string context2 = "";
+   string context3 = "";
+   if(ArraySize(g_rsiBuffer) >= 2 && ArraySize(g_smaBuffer) >= 2)
    {
-      DashLabel("TIS_KILL", "KILL SWITCH ACTIVE", x, y, clrRed, 11);
-      y += lineH + 4;
+      double rsiVal = g_rsiBuffer[1];
+      context1 = StringFormat("RSI(%d): %.1f | entry threshold %.1f | %s", InpRSIPeriod, rsiVal, (double)InpRSIThreshold, rsiVal < InpRSIThreshold ? "SIGNAL" : "no signal");
+      double closeNow = iClose(_Symbol, PERIOD_D1, 0);
+      bool aboveSMA = (closeNow > g_smaBuffer[0]);
+      context2 = StringFormat("SMA(%d): %s", InpSMATrend, aboveSMA ? "above | trend filter passed" : "below | trend filter blocked");
+      double c1 = iClose(_Symbol, PERIOD_D1, 1), o1 = iOpen(_Symbol, PERIOD_D1, 1);
+      double c0 = iClose(_Symbol, PERIOD_D1, 0), o0 = iOpen(_Symbol, PERIOD_D1, 0);
+      int greens = ((c1 > o1) ? 1 : 0) + ((c0 > o0) ? 1 : 0);
+      context3 = HasOpenPosition() ? StringFormat("Green candles: %d / 2 | %s", greens, greens >= 2 ? "exit condition" : "holding") : "Exit monitor: active when a position opens";
    }
-   else
+   int nPos = 0;
+   double lots = 0.0, pnl = 0.0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
-      DashLabel("TIS_KILL", "", x, y, clrBlack, 1);
+      if(!g_posInfo.SelectByIndex(i) || g_posInfo.Symbol() != _Symbol || g_posInfo.Magic() != InpMagicNumber) continue;
+      nPos++;
+      lots += g_posInfo.Volume();
+      pnl += g_posInfo.Profit() + g_posInfo.Swap() + g_posInfo.Commission();
    }
-
-   double rsiVal = g_rsiBuffer[1];
-   bool rsiSignal = (rsiVal < InpRSIThreshold);
-   DashLabel("TIS_RSI", StringFormat("RSI(2): %.1f %s", rsiVal, rsiSignal ? "<< SIGNAL" : ""),
-             x, y, rsiSignal ? clrLime : clrSilver, 10);
-   y += lineH;
-
-   double closeNow = iClose(_Symbol, PERIOD_D1, 0);
-   bool aboveSMA = (closeNow > g_smaBuffer[0]);
-   DashLabel("TIS_TRD", StringFormat("SMA(%d): ", InpSMATrend) + (aboveSMA ? "ABOVE OK" : "BELOW X"),
-             x, y, aboveSMA ? clrLime : clrOrangeRed, 10);
-   y += lineH;
-
-   double c1 = iClose(_Symbol, PERIOD_D1, 1);
-   double o1 = iOpen (_Symbol, PERIOD_D1, 1);
-   double c0 = iClose(_Symbol, PERIOD_D1, 0);
-   double o0 = iOpen (_Symbol, PERIOD_D1, 0);
-   int greens = ((c1 > o1) ? 1 : 0) + ((c0 > o0) ? 1 : 0);
-
-   if(HasOpenPosition())
-      DashLabel("TIS_GRN", StringFormat("Green candles: %d/2 %s", greens, greens >= 2 ? "-> EXIT" : ""),
-                x, y, greens >= 2 ? clrLime : clrYellow, 10);
-   else
-      DashLabel("TIS_GRN", "No open position", x, y, clrDarkGray, 9);
-   y += lineH + 6;
-
-   if(HasOpenPosition())
-   {
-      for(int i = PositionsTotal() - 1; i >= 0; i--)
-      {
-         if(g_posInfo.SelectByIndex(i) && g_posInfo.Symbol() == _Symbol && g_posInfo.Magic() == InpMagicNumber)
-         {
-            double pnl = g_posInfo.Profit() + g_posInfo.Swap() + g_posInfo.Commission();
-            DashLabel("TIS_POS", StringFormat("LONG %.2f lots | P&L: $%.0f", g_posInfo.Volume(), pnl),
-                      x, y, pnl >= 0 ? clrLime : clrOrangeRed, 10);
-            break;
-         }
-      }
-   }
-   else
-   {
-      DashLabel("TIS_POS", "FLAT - Waiting for signal", x, y, clrGray, 9);
-   }
-   y += lineH + 6;
-
+   string position = nPos > 0
+      ? StringFormat("Position: %d open | %.2f lots | P&L %.2f", nPos, lots, pnl)
+      : "Position: flat | waiting for RSI signal";
+   string tradeCount = g_reporter != NULL
+      ? StringFormat("Closed trades: %d | wins %d | losses %d", g_reporter.GetTotalTrades(), g_reporter.GetWins(), g_reporter.GetLosses())
+      : "Closed trades: unavailable | reporter off";
+   string tradeQuality = g_reporter != NULL
+      ? StringFormat("Win rate: %.1f%% | profit factor: %.2f", g_reporter.GetWinRate(), g_reporter.GetProfitFactor())
+      : "";
+   string drawdown = "Drawdown: unavailable | reporter off";
+   string maxDrawdown = "Maximum drawdown observed: unavailable";
+   color ddColor = clrSilver;
    if(g_reporter != NULL)
    {
-      DashLabel("TIS_ST1", StringFormat("Trades: %d | W: %d | L: %d",
-                g_reporter.GetTotalTrades(), g_reporter.GetWins(), g_reporter.GetLosses()),
-                x, y, clrSilver, 9);
-      y += lineH;
-
-      if(g_reporter.GetTotalTrades() > 0)
-      {
-         double wr = g_reporter.GetWinRate();
-         double pf = g_reporter.GetProfitFactor();
-         color wrClr = wr >= 60 ? clrLime : (wr >= 50 ? clrYellow : clrOrangeRed);
-         DashLabel("TIS_ST2", StringFormat("WR: %.1f%% | PF: %.2f", wr, pf), x, y, wrClr, 9);
-         y += lineH;
-      }
-
-      double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-      DashLabel("TIS_EQ", "Equity: $" + DoubleToString(eq, 0), x, y, clrWhite, 9);
-      y += lineH;
-
-      double dailyDD = g_reporter.GetDailyDD();
-      double totalDD = g_reporter.GetTotalDD();
-      color ddClr = clrSilver;
-      if(dailyDD > InpMaxDailyDD * 0.7 || totalDD > InpMaxTotalDD * 0.7) ddClr = clrOrangeRed;
-      else if(dailyDD > InpMaxDailyDD * 0.5 || totalDD > InpMaxTotalDD * 0.5) ddClr = clrYellow;
-
-      DashLabel("TIS_DD", StringFormat("DD: Day=%.1f%%/%.0f%% | Total=%.1f%%/%.0f%%",
-                dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD), x, y, ddClr, 9);
-      y += lineH;
-
-      DashLabel("TIS_MDD", StringFormat("Max DD hit: %.2f%%", g_reporter.GetMaxDrawdownHit()),
-                x, y, clrDarkGray, 8);
+      double dailyDD = g_reporter.GetDailyDD(), totalDD = g_reporter.GetTotalDD();
+      ddColor = (dailyDD >= InpMaxDailyDD * 0.7 || totalDD >= InpMaxTotalDD * 0.7) ? clrOrangeRed
+         : (dailyDD >= InpMaxDailyDD * 0.5 || totalDD >= InpMaxTotalDD * 0.5) ? clrYellow : clrSilver;
+      drawdown = StringFormat("Drawdown: day %.2f%% / %.1f%% | total %.2f%% / %.1f%%", dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD);
+      maxDrawdown = StringFormat("Maximum drawdown observed: %.2f%%", g_reporter.GetMaxDrawdownHit());
    }
+   g_dashboard.Update("ALPHACA | RSI(2) MEAN REVERSION", _Symbol + " | D1 | SMA trend filter",
+      state, stateColor, reporterState,
+      context1, clrSilver, context2, clrSilver, context3, clrSilver,
+      position, nPos > 0 && pnl < 0 ? clrOrangeRed : clrWhite,
+      tradeCount, tradeQuality,
+      StringFormat("Equity: %.2f %s", AccountInfoDouble(ACCOUNT_EQUITY), AccountInfoString(ACCOUNT_CURRENCY)),
+      drawdown, ddColor, maxDrawdown);
 }
 
 //+------------------------------------------------------------------+
-//| DashLabel helper                                                  |
+//| Dashboard update                                                   |
 //+------------------------------------------------------------------+
-void DashLabel(string name, string text, int x, int y, color clr, int fontSize)
-{
-   if(ObjectFind(0, name) < 0)
-   {
-      ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_BACK, false);
-      ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
-   }
-   ObjectSetString(0, name, OBJPROP_TEXT, text);
-   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, fontSize);
-   ObjectSetString(0, name, OBJPROP_FONT, "Consolas");
-}
-
 //+------------------------------------------------------------------+
 //| OnTester                                                          |
 //+------------------------------------------------------------------+

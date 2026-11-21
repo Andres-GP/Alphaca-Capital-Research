@@ -41,6 +41,7 @@
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include "PerformanceReporter.mqh"
+#include "../../Metatrader_base/PerformanceDashboard.mqh"
 
 //+------------------------------------------------------------------+
 //| Enums                                                             |
@@ -128,6 +129,7 @@ enum WM_EVAL { WM_EVAL_TRADE = 0, WM_EVAL_SKIP = 1, WM_EVAL_RETRY = 2 };
 CTrade               g_trade;
 CPositionInfo        g_posInfo;
 PerformanceReporter* g_reporter = NULL;
+PerformanceDashboard g_dashboard;
 
 datetime             g_lastBarTime;
 bool                 g_dailyKillActive;
@@ -1199,128 +1201,58 @@ bool IsNewBar()
 //+------------------------------------------------------------------+
 void UpdateDashboard()
 {
-   int x = 20, y = 30, lineH = 18;
-
-   DashLabel("ALPHACA_H1", "ALPHACA WEEKLY MOMENTUM v1.03", x, y, clrDodgerBlue, 11);
-   y += lineH + 2;
-   DashLabel("ALPHACA_H2", StringFormat("%s H1 | %d d lookback | %d d hold | %s", _Symbol, InpLookbackDays, InpHoldDays,
-             InpDirection == WM_LONG_ONLY ? "long only" : (InpDirection == WM_BOTH ? "both legs" : "short only")),
-             x, y, clrDarkGray, 9);
-   y += lineH + 6;
-
-   if(g_dailyKillActive || g_totalKillActive)
-   {
-      DashLabel("ALPHACA_KILL", "KILL SWITCH ACTIVE", x, y, clrRed, 11);
-      y += lineH + 4;
-   }
-   else
-   {
-      DashLabel("ALPHACA_KILL", "", x, y, clrBlack, 1);
-   }
-
-   datetime nxt = NextEntrySlot();
-   if(nxt > 0)
-   {
-      double hrs = (double)(nxt - TimeCurrent()) / 3600.0;
-      DashLabel("ALPHACA_NEXT", StringFormat("Next entry slot: %s server (in %.1fh)", TsStr(nxt), MathMax(0.0, hrs)),
-                x, y, clrSilver, 10);
-   }
-   y += lineH;
-
-   MqlDateTime t;
-   TimeToStruct(TimeCurrent(), t);
+   string state = (g_dailyKillActive || g_totalKillActive) ? "KILL SWITCH ACTIVE" : "STRATEGY ACTIVE";
+   color stateColor = (g_dailyKillActive || g_totalKillActive) ? clrOrangeRed : clrLime;
+   string reporterState = !InpEnableReporter ? "Reporter: OFF" : StringLen(InpAuthToken) == 0 ? "Reporter: ON | API key missing" : "Reporter: ON | credentials configured";
+   datetime nextSlot = NextEntrySlot();
+   string nextEntry = nextSlot > 0
+      ? StringFormat("Next entry: %s server | in %.1fh", TsStr(nextSlot), MathMax(0.0, (double)(nextSlot - TimeCurrent()) / 3600.0))
+      : "Next entry: waiting for next weekly slot";
+   MqlDateTime server;
+   TimeToStruct(TimeCurrent(), server);
    string dow[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-   DashLabel("ALPHACA_CAL", StringFormat("Server: %s %02d:%02d | UTC%+d", dow[t.day_of_week], t.hour, t.min,
-             ServerOffsetHours(TimeCurrent())), x, y, clrSilver, 10);
-   y += lineH;
-
-   if(g_lastMom != EMPTY_VALUE)
-      DashLabel("ALPHACA_MOM", StringFormat("Last signal (%s): %+.2f%%", IsoDate(g_lastMomBar), g_lastMom),
-                x, y, g_lastMom > 0 ? clrLime : clrOrangeRed, 10);
-   else
-      DashLabel("ALPHACA_MOM", "Last signal: none yet", x, y, clrGray, 10);
-   y += lineH + 6;
+   string clock = StringFormat("Server: %s %02d:%02d | UTC%+d", dow[server.day_of_week], server.hour, server.min, ServerOffsetHours(TimeCurrent()));
+   string signal = g_lastMom != EMPTY_VALUE
+      ? StringFormat("Last signal: %s | momentum %+.2f%%", IsoDate(g_lastMomBar), g_lastMom)
+      : "Last signal: none yet";
 
    int nPos = 0;
-   double pnl = 0.0, lots = 0.0;
+   double lots = 0.0, pnl = 0.0;
    datetime nextExit = 0;
    for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
-      if(!g_posInfo.SelectByIndex(i)) continue;
-      if(g_posInfo.Symbol() != _Symbol || g_posInfo.Magic() != InpMagicNumber) continue;
+      if(!g_posInfo.SelectByIndex(i) || g_posInfo.Symbol() != _Symbol || g_posInfo.Magic() != InpMagicNumber) continue;
       nPos++;
       lots += g_posInfo.Volume();
-      pnl  += g_posInfo.Profit() + g_posInfo.Swap() + g_posInfo.Commission();
-      datetime ex = ExitTimeOf((datetime)g_posInfo.Time());
-      if(nextExit == 0 || ex < nextExit) nextExit = ex;
+      pnl += g_posInfo.Profit() + g_posInfo.Swap() + g_posInfo.Commission();
+      datetime exitAt = ExitTimeOf((datetime)g_posInfo.Time());
+      if(nextExit == 0 || exitAt < nextExit) nextExit = exitAt;
    }
-   if(nPos > 0)
-   {
-      double hoursLeft = MathMax(0.0, (double)(nextExit - TimeCurrent()) / 3600.0);
-      DashLabel("ALPHACA_POS", StringFormat("%d open | %.2f lots | P&L: %.0f | next exit in %.1fh", nPos, lots, pnl, hoursLeft),
-                x, y, pnl >= 0 ? clrLime : clrOrangeRed, 10);
-   }
-   else
-      DashLabel("ALPHACA_POS", "FLAT - Waiting for the next weekly entry", x, y, clrGray, 9);
-   y += lineH + 6;
-
-   if(g_reporter != NULL)
-   {
-      DashLabel("ALPHACA_ST1", StringFormat("Trades: %d | W: %d | L: %d",
-                g_reporter.GetTotalTrades(), g_reporter.GetWins(), g_reporter.GetLosses()),
-                x, y, clrSilver, 9);
-      y += lineH;
-
-      if(g_reporter.GetTotalTrades() > 0)
-      {
-         double wr = g_reporter.GetWinRate();
-         double pf = g_reporter.GetProfitFactor();
-         color wrClr = wr >= 50 ? clrLime : (wr >= 40 ? clrYellow : clrOrangeRed);
-         DashLabel("ALPHACA_ST2", StringFormat("WR: %.1f%% | PF: %.2f", wr, pf), x, y, wrClr, 9);
-         y += lineH;
-      }
-   }
-
-   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-   DashLabel("ALPHACA_EQ", "Equity: " + DoubleToString(eq, 0) + " " + AccountInfoString(ACCOUNT_CURRENCY),
-             x, y, clrWhite, 9);
-   y += lineH;
-
-   double dailyDD = DailyDD();
-   double totalDD = TotalDD();
-   color ddClr = clrSilver;
-   if(dailyDD > InpMaxDailyDD * 0.7 || totalDD > InpMaxTotalDD * 0.7) ddClr = clrOrangeRed;
-   else if(dailyDD > InpMaxDailyDD * 0.5 || totalDD > InpMaxTotalDD * 0.5) ddClr = clrYellow;
-
-   DashLabel("ALPHACA_DD", StringFormat("DD: Day=%.1f%%/%.0f%% | Total=%.1f%%/%.1f%%",
-             dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD), x, y, ddClr, 9);
-   y += lineH;
-
-   DashLabel("ALPHACA_MDD", StringFormat("Max DD hit: %.2f%%", g_maxDDHit),
-             x, y, clrDarkGray, 8);
+   string position = nPos > 0
+      ? StringFormat("Position: %d open | %.2f lots | P&L %.2f | next exit in %.1fh", nPos, lots, pnl, MathMax(0.0, (double)(nextExit - TimeCurrent()) / 3600.0))
+      : "Position: flat | waiting for weekly entry";
+   string tradeCount = g_reporter != NULL
+      ? StringFormat("Closed trades: %d | wins %d | losses %d", g_reporter.GetTotalTrades(), g_reporter.GetWins(), g_reporter.GetLosses())
+      : "Closed trades: unavailable | reporter off";
+   string tradeQuality = g_reporter != NULL
+      ? StringFormat("Win rate: %.1f%% | profit factor: %.2f", g_reporter.GetWinRate(), g_reporter.GetProfitFactor())
+      : "";
+   double dailyDD = DailyDD(), totalDD = TotalDD();
+   color ddColor = (dailyDD >= InpMaxDailyDD * 0.7 || totalDD >= InpMaxTotalDD * 0.7) ? clrOrangeRed
+      : (dailyDD >= InpMaxDailyDD * 0.5 || totalDD >= InpMaxTotalDD * 0.5) ? clrYellow : clrSilver;
+   g_dashboard.Update("ALPHACA | WEEKLY MOMENTUM", StringFormat("%s | H1 | %d d lookback | %d d hold", _Symbol, InpLookbackDays, InpHoldDays),
+      state, stateColor, reporterState,
+      nextEntry, clrSilver, clock, clrSilver, signal, g_lastMom > 0 ? clrLime : clrOrangeRed,
+      position, nPos > 0 && pnl < 0 ? clrOrangeRed : clrWhite,
+      tradeCount, tradeQuality,
+      StringFormat("Equity: %.2f %s", AccountInfoDouble(ACCOUNT_EQUITY), AccountInfoString(ACCOUNT_CURRENCY)),
+      StringFormat("Drawdown: day %.2f%% / %.1f%% | total %.2f%% / %.1f%%", dailyDD, InpMaxDailyDD, totalDD, InpMaxTotalDD), ddColor,
+      StringFormat("Maximum drawdown observed: %.2f%%", g_maxDDHit));
 }
 
 //+------------------------------------------------------------------+
-//| DashLabel helper                                                  |
+//| Dashboard update                                                   |
 //+------------------------------------------------------------------+
-void DashLabel(string name, string text, int x, int y, color clr, int fontSize)
-{
-   if(ObjectFind(0, name) < 0)
-   {
-      ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_BACK, false);
-      ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
-   }
-   ObjectSetString(0, name, OBJPROP_TEXT, text);
-   ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, fontSize);
-   ObjectSetString(0, name, OBJPROP_FONT, "Consolas");
-}
-
 //+------------------------------------------------------------------+
 //| OnTester                                                          |
 //+------------------------------------------------------------------+
