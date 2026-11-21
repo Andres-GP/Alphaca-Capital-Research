@@ -23,6 +23,14 @@ ROLE_TITLES = {
     "literatura": "Literatura y mecanismo económico",
     "datos": "Evidencia empírica y datos",
     "red_team": "Crítica independiente / red team",
+    "backtest_gate": "Viabilidad del backtest exploratorio",
+}
+BACKTEST_GATE_STATUSES = {
+    "READY_FOR_EXPLORATORY_BACKTEST",
+    "HOLD_DATA",
+    "HOLD_SPECIFICATION",
+    "REFORMULATE",
+    "REJECT",
 }
 PALETTE = {
     "forest": colors.HexColor("#1F3D36"),
@@ -60,18 +68,26 @@ def hypothesis_paths(family_dir: Path) -> list[Path]:
     return sorted(family_dir.glob("**/hypothesis.md"))
 
 
+def backtest_gate_status(output: str) -> str:
+    match = re.search(r"(?im)^VEREDICTO:\s*([A-Z_]+)\s*$", output)
+    if not match or match.group(1) not in BACKTEST_GATE_STATUSES:
+        return "REVIEW_FAILED_OR_UNPARSEABLE"
+    return match.group(1)
+
+
 def report_markdown(family: str, run_date: str, outputs: dict[str, str], engines: dict[str, str], family_dir: Path, hypotheses: list[Path]) -> str:
     status = "revisión cualitativa completa" if all(engines.values()) and all(x != "failed" for x in engines.values()) else "revisión parcial; uno o más roles fallaron"
+    gate_status = backtest_gate_status(outputs["backtest_gate"])
     sections = [
         f"# Informe inicial · {family.replace('_', ' ').title()} · {run_date}",
         "",
         f"**Estado de la corrida:** {status}.  ",
         f"**Motores por rol:** {', '.join(f'{role}: {engines[role]}' for role in ROLE_TITLES)}.  ",
-        "**Alcance:** investigación cualitativa y revisión documental; esta corrida no leyó precios ni ejecutó backtests.",
+        "**Alcance:** investigación cualitativa y revisión documental; esta corrida no leyó precios ni ejecutó backtests. El gate de viabilidad no ejecuta ni aprueba automáticamente una prueba.",
         "",
         "## Resumen ejecutivo",
         "",
-        "Este informe organiza revisión de literatura, diagnóstico de datos y crítica independiente. No presenta rentabilidades medidas ni declara un edge validado. La cobertura y los huecos de datos siguen desconocidos hasta calcularlos contra un calendario de sesiones verificado; las gates estadísticas, de robustez y costos siguen pendientes.",
+        "Este informe organiza revisión de literatura, diagnóstico de datos, crítica independiente y viabilidad del backtest exploratorio. La necesidad actual del usuario orienta qué preguntas son pertinentes. No presenta rentabilidades medidas ni declara un edge validado. La cobertura y los huecos siguen desconocidos hasta calcularlos contra un calendario de sesiones verificado; las gates estadísticas, de robustez y costos siguen pendientes.",
         "",
         "## Árbol de investigación",
         "",
@@ -84,7 +100,7 @@ def report_markdown(family: str, run_date: str, outputs: dict[str, str], engines
         sections.extend(f"- `{path.relative_to(family_dir).as_posix()}` — veredicto: pendiente de datos y gates." for path in hypotheses)
     else:
         sections.append("No se encontró una ficha de hipótesis en el árbol de la familia.")
-    sections.extend(["", "## Gates", "", "| Gate | Estado |", "|---|---|", "| Calidad/cobertura de datos | Pendiente; no recalculada en esta corrida |", "| Estadística fuera de muestra | Pendiente; sin backtest |", "| Robustez | Pendiente; sin backtest |", "| Costos/spreads/swaps | Pendiente; sin backtest |", "| Aprobación de edge | No confirmado |", ""])
+    sections.extend(["", "## Gates", "", "| Gate | Estado |", "|---|---|", f"| Viabilidad del backtest exploratorio | `{gate_status}` |", "| Estadística fuera de muestra | Pendiente; sin backtest |", "| Robustez | Pendiente; sin backtest |", "| Costos/spreads/swaps | Pendiente; sin backtest |", "| Aprobación de edge | No confirmado |", ""])
     for role, title in ROLE_TITLES.items():
         sections.extend([f"## {title}", "", f"*Motor:* `{engines[role]}`", "", outputs[role] or "Sin contenido.", ""])
     sections.extend([
@@ -199,6 +215,11 @@ def main() -> None:
         "hypotheses": [str(path.relative_to(args.family_dir)) for path in hypotheses],
         "data": {"market_data_read": False, "coverage_pct": "unknown", "gaps": "not measured", "feed_comparison": "pending"},
         "backtests_run": False,
+        "exploratory_backtest_gate": {
+            "status": backtest_gate_status(outputs["backtest_gate"]),
+            "report_role": "agentes/backtest_gate.md",
+            "executes_backtest": False,
+        },
         "gates": {"data_quality": "pending", "statistics_oos": "pending", "robustness": "pending", "costs": "pending", "edge_verdict": "not confirmed"},
         "source_policy": "Evidence sources must predate 2018; unverifiable citations remain explicitly marked.",
     }

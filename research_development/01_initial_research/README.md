@@ -10,6 +10,7 @@ Etapa para identificar mecanismos económicos o estructurales, registrar evidenc
 │   ├── hypothesis.yaml
 │   └── hypothesis.md
 ├── familias/<familia>/handoff.md
+├── research_brief.md           # Necesidad actual; contexto para todas las familias
 ├── backtests_exploratorios/    # Pruebas iniciales solo tras pasar el Gate A
 ├── eda/
 │   ├── notebooks_legacy/       # Copias de las EDA existentes, con rutas adaptadas
@@ -28,6 +29,8 @@ La taxonomía inicial de `familias/` es provisional: organiza preguntas para inv
 4. Aplicar Gate A de [`GATES.md`](GATES.md). Solo una hipótesis con estado `READY_FOR_EXPLORATORY_BACKTEST` y preregistro congelado puede pasar a `backtests_exploratorios/`.
 5. El backtest inicial sirve como filtro de implementación y descarte, no como confirmación. Aplicar Gate B antes de proponer validación confirmatoria; aplicar Gate C antes de afirmar que hay evidencia empírica.
 6. Pasar a `02_strategy_development` solo con handoff trazable y autorización del flujo de desarrollo correspondiente. Si una prueba depende de datos rellenados, marcar `NO CONFIRMADO`.
+
+Antes de cada corrida, actualiza [`research_brief.md`](research_brief.md) con la necesidad que quieres resolver. El workflow incluye ese brief en los cuatro roles de revisión de cada familia y les pide priorizar la relevancia, sin rebajar los requisitos de evidencia.
 
 El workflow automático de Initial Research realiza análisis documental y califica la preparación; no ejecuta backtests. La carpeta `backtests_exploratorios/` recibe artefactos solo cuando una hipótesis pasa el gate y tiene datos y reglas verificados. Las fichas existentes no se consideran aprobadas por defecto.
 

@@ -4,7 +4,7 @@
 
 `.github/workflows/initial-research.yml` corre lunes, miércoles y viernes a las 11:00 UTC (`0 11 * * 1,3,5`), además de permitir `workflow_dispatch`. En Colombia equivale a las 6:00 a. m. Los cinco jobs de familia se ejecutan en paralelo; el grupo de concurrencia del workflow impide que dos corridas simultáneas compitan por el estado de autenticación. Cada job mantiene sus propias credenciales temporales.
 
-Cada familia produce tres revisiones de rol (literatura/mecanismo, datos/evidencia disponible y red team) con Codex CLI, una después de otra para evitar que varias sesiones renueven simultáneamente el mismo token OAuth. El modelo principal es `gpt-6-luna` con razonamiento `high`. Esto quedó validado en el smoke test manual, [run 44799888305](https://github.com/Andres-GP/Alphaca-Capital-Research/actions/runs/44799888305), que devolvió `AUTH_OK` y terminó correctamente.
+Cada familia produce cuatro revisiones de rol (literatura/mecanismo, datos/evidencia disponible, red team y viabilidad para backtest exploratorio) con Codex CLI, una después de otra para evitar que varias sesiones renueven simultáneamente el mismo token OAuth. El último rol sintetiza las tres revisiones previas y la auditoría de datos; devuelve un estado explícito del Gate A. El modelo principal es `gpt-6-luna` con razonamiento `high`. Esto quedó validado en el smoke test manual, [run 44799888305](https://github.com/Andres-GP/Alphaca-Capital-Research/actions/runs/44799888305), que devolvió `AUTH_OK` y terminó correctamente.
 
 ## Autenticación y fallback
 
@@ -18,9 +18,9 @@ El fallback utiliza directamente la Gemini API con la clave propia, su cuota y f
 
 ## Reportes, rama y PR
 
-Cada corrida guarda tres informes de rol y genera Markdown, JSON válido como YAML, SVG jerárquico y PDF en `reportes/<fecha>_<familia>/`. El job agregador reúne los artefactos, crea/actualiza una rama `research/<fecha>` y abre/actualiza un PR contra la rama por defecto. Solo añade rutas dentro de `research_development/01_initial_research/reportes/`; nunca escribe a la rama por defecto.
+Cada corrida incorpora `research_brief.md` como contexto del usuario en los cuatro roles, guarda sus informes y genera Markdown, JSON válido como YAML, SVG jerárquico y PDF en `reportes/<fecha>_<familia>/`. El reporte incluye el veredicto del Gate A. Incluso `READY_FOR_EXPLORATORY_BACKTEST` solo autoriza preparar/ejecutar una prueba con preregistro congelado; no se ejecutan backtests en esta automatización. El job agregador reúne los artefactos, crea/actualiza una rama `research/<fecha>` y abre/actualiza un PR contra la rama por defecto. Solo añade rutas dentro de `research_development/01_initial_research/reportes/`; nunca escribe a la rama por defecto.
 
-Las fichas existentes son contexto, no resultados nuevos. Los agentes no leen datos de mercado ni ejecutan backtests: cobertura, huecos y gates permanecen `unknown`/`pending`, y no se puede declarar un edge validado. Las fuentes externas nuevas deben tener URL/DOI comprobable anterior a 2018; si no se pueden verificar, se marcan como no verificadas.
+Las fichas existentes son contexto, no resultados nuevos. Los agentes no leen datos de mercado ni ejecutan backtests: cobertura, huecos y gates empíricas permanecen `unknown`/`pending`, y no se puede declarar un edge validado. Las fuentes externas nuevas deben tener URL/DOI comprobable anterior a 2018; si no se pueden verificar, se marcan como no verificadas.
 
 ## Aviso por correo
 
