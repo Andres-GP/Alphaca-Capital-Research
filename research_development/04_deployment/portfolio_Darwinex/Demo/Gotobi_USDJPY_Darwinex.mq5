@@ -122,7 +122,7 @@ input string          InpFilePrefix      = "dwx_";       // Prefix of the log fi
 input group "====== PERFORMANCE REPORTER ======"
 input bool            InpEnableReporter  = true;         // Enable backend reporter?
 input string          InpBackendUrl      = "";           // Backend URL (empty = module default)
-input string          InpAuthToken       = "";           // Bearer token (empty = module default)
+input string          InpAuthToken       = "";           // Required backend API key
 input bool            InpVerboseReporter = false;        // Reporter debug logs
 input int             InpHeartbeatSecs   = 3600;         // Heartbeat interval (seconds)
 input int             InpMaxBarsNoTrade  = 4608;         // Inactivity alert threshold (M5 bars, ~16 days; Gotobi gaps are <= ~10 days)
@@ -801,7 +801,7 @@ void CloseAllAndReport(string reason)
          {
             g_reporter.ReportTradeClosed(ticket, _Symbol,
                entryPrice, exitPrice, volume, profit,
-               entryTime, exitTime, commission, ptype);
+               entryTime, exitTime, commission, ptype, swap);
 
             PushAlert(StringFormat("%s EXIT %s | %.0f | WR=%.0f%% | PF=%.2f",
                                    result, _Symbol, profit,

@@ -9,8 +9,7 @@
 //+------------------------------------------------------------------+
 //| Centralized defaults — override per strategy if needed            |
 //+------------------------------------------------------------------+
-#define DEFAULT_BACKEND_URL "https://laxative-buckskin-gyration.ngrok-free.dev"
-#define DEFAULT_AUTH_TOKEN  "6d84e658780b073a7a66643135247494094bb63d0474b558c55fe002ce296920"
+#define DEFAULT_BACKEND_URL "https://performance-monitor-backend-prod.onrender.com"
 
 //+------------------------------------------------------------------+
 //| Class that handles monitoring AND communication with the backend  |
@@ -59,7 +58,7 @@ public:
 
    //--- Backend communication
    void              ReportStrategyStarted();
-   void              ReportTradeClosed(ulong ticket, string symbol, double entryPrice, double exitPrice, double volume, double profit, datetime entryTime, datetime exitTime, double commission, ENUM_POSITION_TYPE positionType);
+   void              ReportTradeClosed(ulong ticket, string symbol, double entryPrice, double exitPrice, double volume, double profit, datetime entryTime, datetime exitTime, double commission, ENUM_POSITION_TYPE positionType, double swap = 0.0);
    void              ReportHealthAlert(string problemType, string details, string severity = "high");
    void              ReportCapital(double capital, string currency = "USD");
    void              SendHeartbeat();
@@ -115,7 +114,7 @@ PerformanceReporter::PerformanceReporter(string backendUrl, string authToken, st
      m_lastDayKey(0)
 {
    m_backendUrl = (backendUrl == "") ? DEFAULT_BACKEND_URL : backendUrl;
-   m_authToken  = (authToken  == "") ? DEFAULT_AUTH_TOKEN  : authToken;
+   m_authToken  = authToken;
 
    m_platform   = "MT5";
    m_strategyId = strategyName + "_" + instrument + "_" + timeframe;
@@ -182,6 +181,12 @@ void PerformanceReporter::SendPostRequest(string endpoint, string jsonPayload)
       return;
    }
 
+   if(res < 200 || res >= 300)
+   {
+      if(m_verbose) Print("[ERROR] POST ", endpoint, " -> HTTP ", res, " | ", CharArrayToString(resultData));
+      return;
+   }
+
    if(m_verbose) Print("[OK] POST ", endpoint, " -> HTTP ", res);
 }
 
@@ -220,7 +225,7 @@ void PerformanceReporter::ReportTradeClosed(
    ulong ticket, string symbol,
    double entryPrice, double exitPrice, double volume,
    double profit, datetime entryTime, datetime exitTime,
-   double commission, ENUM_POSITION_TYPE positionType)
+   double commission, ENUM_POSITION_TYPE positionType, double swap)
 {
    m_totalTrades++;
    if(profit >= 0) { m_wins++; m_grossProfit += profit; }
@@ -247,12 +252,16 @@ void PerformanceReporter::ReportTradeClosed(
       "\"exit_price\":%.5f,"
       "\"pnl\":%.8f,"
       "\"direction\":\"%s\","
-      "\"cost\":%.2f"
+      "\"cost\":%.2f,"
+      "\"commission\":%.2f,"
+      "\"swap\":%.2f,"
+      "\"currency\":\"%s\""
       "}",
       m_strategyId, symbol,
       entryTimeStr, exitTimeStr,
       quantity, entryPrice, exitPrice,
-      profit, direction, commission
+      profit, direction, commission, commission, swap,
+      AccountInfoString(ACCOUNT_CURRENCY)
    );
    SendPostRequest("/trades", payload);
 }
@@ -303,6 +312,13 @@ void PerformanceReporter::SendHeartbeat()
    if(!m_startReported) return;
    string payload = StringFormat("{\"strategy_id\":\"%s\"}", m_strategyId);
    SendPostRequest("/heartbeat", payload);
+
+   string equityEvent = StringFormat(
+      "{\"event_type\":\"equity\",\"payload\":{\"strategy_id\":\"%s\",\"equity\":%.2f,\"currency\":\"%s\",\"ts\":\"%s\"}}",
+      m_strategyId, AccountInfoDouble(ACCOUNT_EQUITY),
+      AccountInfoString(ACCOUNT_CURRENCY), FormatISODate(TimeCurrent())
+   );
+   SendPostRequest("/monitor/events", equityEvent);
 }
 
 //+------------------------------------------------------------------+

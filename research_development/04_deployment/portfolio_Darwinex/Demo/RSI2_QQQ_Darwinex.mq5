@@ -42,7 +42,7 @@ input bool     InpShowDashboard    = true;       // Show dashboard on chart?
 input group "====== PERFORMANCE REPORTER ======"
 input bool     InpEnableReporter   = true;       // Enable backend reporter?
 input string   InpBackendUrl       = "";         // Backend URL (empty = module default)
-input string   InpAuthToken        = "";         // Bearer token (empty = module default)
+input string   InpAuthToken        = "";         // Required backend API key
 input bool     InpVerboseReporter  = false;      // Reporter debug logs
 input int      InpHeartbeatSecs    = 3600;       // Heartbeat interval (seconds)
 input int      InpMaxBarsNoTrade   = 50;         // Inactivity alert threshold
@@ -272,7 +272,8 @@ void EmergencyCloseAll(string reason)
       double   exitPrice  = g_posInfo.PriceCurrent();
       double   volume     = g_posInfo.Volume();
       double   commission = g_posInfo.Commission();
-      double   profit     = g_posInfo.Profit() + g_posInfo.Swap() + commission;
+      double   swap       = g_posInfo.Swap();
+      double   profit     = g_posInfo.Profit() + swap + commission;
       datetime entryTime  = (datetime)g_posInfo.Time();
       ENUM_POSITION_TYPE ptype = g_posInfo.PositionType();
 
@@ -282,7 +283,7 @@ void EmergencyCloseAll(string reason)
          if(g_reporter != NULL)
             g_reporter.ReportTradeClosed(ticket, _Symbol,
                entryPrice, exitPrice, volume, profit,
-               entryTime, TimeCurrent(), commission, ptype);
+               entryTime, TimeCurrent(), commission, ptype, swap);
       }
       else
       {
@@ -357,7 +358,8 @@ void CheckExit()
       double   exitPrice  = g_posInfo.PriceCurrent();
       double   volume     = g_posInfo.Volume();
       double   commission = g_posInfo.Commission();
-      double   profit     = g_posInfo.Profit() + g_posInfo.Swap() + commission;
+      double   swap       = g_posInfo.Swap();
+      double   profit     = g_posInfo.Profit() + swap + commission;
       datetime entryTime  = (datetime)g_posInfo.Time();
 
       if(g_trade.PositionClose(ticket))
@@ -366,7 +368,7 @@ void CheckExit()
          {
             g_reporter.ReportTradeClosed(ticket, _Symbol,
                entryPrice, exitPrice, volume, profit,
-               entryTime, TimeCurrent(), commission, POSITION_TYPE_BUY);
+               entryTime, TimeCurrent(), commission, POSITION_TYPE_BUY, swap);
 
             string result = (profit >= 0) ? "WIN" : "LOSS";
             if(InpSendPushAlerts)

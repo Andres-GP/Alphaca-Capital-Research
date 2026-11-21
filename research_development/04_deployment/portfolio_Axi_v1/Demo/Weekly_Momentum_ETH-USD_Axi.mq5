@@ -109,7 +109,7 @@ input bool              InpDiagOpens        = false;           // RECONCILIATION
 input group "====== PERFORMANCE REPORTER ======"
 input bool              InpEnableReporter   = true;            // Enable backend reporter?
 input string            InpBackendUrl       = "";              // Backend URL (empty = module default)
-input string            InpAuthToken        = "";              // Bearer token (empty = module default)
+input string            InpAuthToken        = "";              // Required backend API key
 input bool              InpVerboseReporter  = false;           // Reporter debug logs
 input int               InpHeartbeatSecs    = 3600;            // Heartbeat interval (seconds)
 input int               InpMaxBarsNoTrade   = 840;             // Inactivity alert threshold (H1 bars, 35 days without any open position)
@@ -707,7 +707,7 @@ void ClosePositionAndReport(ulong ticket, string reason)
       {
          g_reporter.ReportTradeClosed(ticket, _Symbol,
             entryPrice, exitPrice, volume, profit,
-            entryTime, exitTime, commission, ptype);
+            entryTime, exitTime, commission, ptype, swap);
 
          PushAlert(StringFormat("%s EXIT %s | %.0f | WR=%.0f%% | PF=%.2f",
                                 result, _Symbol, profit,
