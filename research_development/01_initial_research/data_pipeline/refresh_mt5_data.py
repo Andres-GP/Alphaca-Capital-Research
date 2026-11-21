@@ -130,8 +130,6 @@ def export_series(entry: dict[str, Any], timeframe: str, data_root: Path) -> Non
             raise RuntimeError(f"Could not enable MT5 symbol {symbol}: {mt5.last_error()}")
         rate_name = TIMEFRAMES[timeframe]
         mt5_timeframe = getattr(mt5, rate_name)
-        active_bar = mt5.copy_rates_from_pos(symbol, mt5_timeframe, 0, 1)
-        active_bar_epoch = int(active_bar[0]["time"]) if active_bar is not None and len(active_bar) else None
         overlap = interval_for_timeframe(timeframe) * 2
         if previous_last is not None:
             start = datetime.fromtimestamp(previous_last, tz=timezone.utc) - overlap
@@ -154,7 +152,6 @@ def export_series(entry: dict[str, Any], timeframe: str, data_root: Path) -> Non
                     epoch = int(bar["time"])
                     if (
                         epoch < int(start.timestamp())
-                        or (active_bar_epoch is not None and epoch >= active_bar_epoch)
                         or (downloaded_last is not None and epoch <= downloaded_last)
                     ):
                         continue
@@ -234,8 +231,7 @@ def export_series(entry: dict[str, Any], timeframe: str, data_root: Path) -> Non
                 key: getattr(symbol_info, key, None) for key in info_fields
             },
             "csv_sha256": sha256_file(output),
-            "note": "MT5 bar history; spread is broker-reported points per bar, not historical tick-by-tick executable bid/ask.",
-            "active_bar_excluded": True,
+            "note": "MT5 bar history; spread is broker-reported points per bar, not historical tick-by-tick executable bid/ask. The latest bar may still be forming; frozen expected calendars must include closed bars only.",
         }
         output.with_suffix(".metadata.json").write_text(
             json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
