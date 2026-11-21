@@ -988,9 +988,19 @@ void DecideEntry(int row, datetime barTime, bool riskOK)
    g_trade.SetDeviationInPoints(dev);
 
    string comment = StringFormat("ALPHACA|GOTOBI|%s", lab);
+   string signalId = "";
+   if(g_reporter != NULL)
+      signalId = g_reporter.ReportSignalIntent("entry", _Symbol, "long", ask, lots);
 
    if(g_trade.Buy(lots, _Symbol, 0, 0, 0, comment))
    {
+      if(g_reporter != NULL)
+      {
+         uint rc = g_trade.ResultRetcode();
+         g_reporter.ReportExecutionUpdate(signalId,
+            rc == TRADE_RETCODE_DONE_PARTIAL ? "partial" : rc == TRADE_RETCODE_PLACED ? "submitted" : "filled",
+            g_trade.ResultVolume(), g_trade.ResultPrice());
+      }
       LogDecisionBar(dj, sp, "BUY", "ok", barTime);
       Print("=== ENTRY LONG | ", dj, " (", lab, g_calShifted[row] ? ", shifted" : "", ")",
             " | Lots=", DoubleToString(lots, 2), " @ ", DoubleToString(ask, _Digits),
@@ -1004,7 +1014,10 @@ void DecideEntry(int row, datetime barTime, bool riskOK)
       Print("BUY FAILED: ", g_trade.ResultRetcodeDescription());
       LogDecisionBar(dj, sp, "SKIP", "buy failed", barTime);
       if(g_reporter != NULL)
+      {
+         g_reporter.ReportExecutionUpdate(signalId, "rejected", 0, 0, g_trade.ResultRetcodeDescription());
          g_reporter.OnOrderRejected("EntryBuy", g_trade.ResultRetcode(), g_trade.ResultRetcodeDescription());
+      }
    }
 }
 

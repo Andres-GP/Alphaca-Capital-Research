@@ -1047,12 +1047,19 @@ void ProcessEntry(bool riskOK)
    g_trade.SetDeviationInPoints(dev);
 
    string comment = StringFormat("ALPHACA|WEEKLYMOM|%s", dj);
+   string signalId = "";
+   if(g_reporter != NULL)
+      signalId = g_reporter.ReportSignalIntent("entry", _Symbol, side > 0 ? "long" : "short", px, lots);
    bool ok = (side > 0 ? g_trade.Buy(lots, _Symbol, 0, 0, 0, comment)
                        : g_trade.Sell(lots, _Symbol, 0, 0, 0, comment));
    uint rc = g_trade.ResultRetcode();
 
    if(ok && (rc == TRADE_RETCODE_DONE || rc == TRADE_RETCODE_PLACED || rc == TRADE_RETCODE_DONE_PARTIAL))
    {
+      if(g_reporter != NULL)
+         g_reporter.ReportExecutionUpdate(signalId,
+            rc == TRADE_RETCODE_DONE_PARTIAL ? "partial" : rc == TRADE_RETCODE_PLACED ? "submitted" : "filled",
+            g_trade.ResultVolume(), g_trade.ResultPrice());
       FinishSlot(bar, sp, side > 0 ? "BUY" : "SELL", "ok", mom, lots);
       DiagLog("IN");
       double spPips = sp * _Point;
@@ -1069,7 +1076,10 @@ void ProcessEntry(bool riskOK)
       Print("ORDER FAILED: ", g_trade.ResultRetcodeDescription(), " (retry until the window closes)");
       g_retryBar = bar;  g_retryReason = StringFormat("order failed rc=%u", rc);
       if(g_reporter != NULL)
+      {
+         g_reporter.ReportExecutionUpdate(signalId, "rejected", 0, 0, g_trade.ResultRetcodeDescription());
          g_reporter.OnOrderRejected("EntryOrder", (int)rc, g_trade.ResultRetcodeDescription());
+      }
    }
 }
 

@@ -58,6 +58,8 @@ public:
 
    //--- Backend communication
    void              ReportStrategyStarted();
+   string            ReportSignalIntent(string signalKey, string symbol, string direction, double referencePrice, double volume);
+   void              ReportExecutionUpdate(string signalId, string status, double filledVolume, double fillPrice, string reason = "");
    void              ReportTradeClosed(ulong ticket, string symbol, double entryPrice, double exitPrice, double volume, double profit, datetime entryTime, datetime exitTime, double commission, ENUM_POSITION_TYPE positionType, double swap = 0.0);
    void              ReportHealthAlert(string problemType, string details, string severity = "high");
    void              ReportCapital(double capital, string currency = "USD");
@@ -159,6 +161,12 @@ int PerformanceReporter::BuildDayKey(datetime dt)
 //+------------------------------------------------------------------+
 void PerformanceReporter::SendPostRequest(string endpoint, string jsonPayload)
 {
+   if(StringLen(m_authToken) == 0)
+   {
+      if(m_verbose) Print("[ERROR] Backend API key is required; configure InpAuthToken");
+      return;
+   }
+
    string url = m_backendUrl + endpoint;
    string headers = "Content-Type: application/json\r\nAuthorization: Bearer " + m_authToken + "\r\n";
    char postData[];
@@ -216,6 +224,38 @@ void PerformanceReporter::ReportStrategyStarted()
       m_sizing, FormatISODate(TimeCurrent())
    );
    SendPostRequest("/strategies/start", payload);
+}
+
+//+------------------------------------------------------------------+
+//| Record the reference price and requested size before an entry     |
+//+------------------------------------------------------------------+
+string PerformanceReporter::ReportSignalIntent(string signalKey, string symbol, string direction, double referencePrice, double volume)
+{
+   datetime now = TimeCurrent();
+   string signalId = StringFormat("%s_%d_%s", m_strategyId, (int)now, signalKey);
+   string payload = StringFormat(
+      "{\"event_type\":\"signal_intent\",\"payload\":{\"strategy_id\":\"%s\",\"signal_id\":\"%s\",\"symbol\":\"%s\",\"direction\":\"%s\",\"reference_price\":%.8f,\"volume\":%.4f,\"timestamp\":\"%s\"}}",
+      m_strategyId, signalId, symbol, direction, referencePrice, volume, FormatISODate(now)
+   );
+   SendPostRequest("/monitor/events", payload);
+   return signalId;
+}
+
+//+------------------------------------------------------------------+
+//| Record the broker outcome for a previously reported signal       |
+//+------------------------------------------------------------------+
+void PerformanceReporter::ReportExecutionUpdate(string signalId, string status, double filledVolume, double fillPrice, string reason = "")
+{
+   StringReplace(reason, "\\", "\\\\");
+   StringReplace(reason, "\"", "\\\"");
+   StringReplace(reason, "\r", " ");
+   StringReplace(reason, "\n", " ");
+   string fillPriceJson = (fillPrice > 0) ? DoubleToString(fillPrice, 8) : "null";
+   string payload = StringFormat(
+      "{\"event_type\":\"execution_update\",\"payload\":{\"strategy_id\":\"%s\",\"signal_id\":\"%s\",\"status\":\"%s\",\"filled_volume\":%.4f,\"fill_price\":%s,\"reason\":\"%s\",\"timestamp\":\"%s\"}}",
+      m_strategyId, signalId, status, filledVolume, fillPriceJson, reason, FormatISODate(TimeCurrent())
+   );
+   SendPostRequest("/monitor/events", payload);
 }
 
 //+------------------------------------------------------------------+

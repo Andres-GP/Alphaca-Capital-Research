@@ -668,9 +668,19 @@ void CheckEntry()
    g_trade.SetDeviationInPoints(dev);
 
    string comment = StringFormat("ALPHACA|MON|ATR=%.3f|P=%.0f", g_atrPct, g_atrRank * 100.0);
+   string signalId = "";
+   if(g_reporter != NULL)
+      signalId = g_reporter.ReportSignalIntent("entry", _Symbol, "long", ask, lots);
 
    if(g_trade.Buy(lots, _Symbol, 0, 0, 0, comment))
    {
+      if(g_reporter != NULL)
+      {
+         uint rc = g_trade.ResultRetcode();
+         g_reporter.ReportExecutionUpdate(signalId,
+            rc == TRADE_RETCODE_DONE_PARTIAL ? "partial" : rc == TRADE_RETCODE_PLACED ? "submitted" : "filled",
+            g_trade.ResultVolume(), g_trade.ResultPrice());
+      }
       LogMonday("BUY", "ok");
       Print("=== ENTRY LONG | ATR%=", DoubleToString(g_atrPct, 3),
             " | P=", DoubleToString(g_atrRank * 100.0, 1),
@@ -685,7 +695,10 @@ void CheckEntry()
       Print("BUY FAILED: ", g_trade.ResultRetcodeDescription());
       LogMonday("SKIP", "buy failed");
       if(g_reporter != NULL)
+      {
+         g_reporter.ReportExecutionUpdate(signalId, "rejected", 0, 0, g_trade.ResultRetcodeDescription());
          g_reporter.OnOrderRejected("EntryBuy", g_trade.ResultRetcode(), g_trade.ResultRetcodeDescription());
+      }
    }
 }
 

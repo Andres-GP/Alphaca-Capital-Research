@@ -316,9 +316,19 @@ void CheckEntry()
 
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    string comment = StringFormat("TIS|RSI=%.0f|2GRN", g_rsiBuffer[1]);
+   string signalId = "";
+   if(g_reporter != NULL)
+      signalId = g_reporter.ReportSignalIntent("entry", _Symbol, "long", ask, lots);
 
    if(g_trade.Buy(lots, _Symbol, ask, 0, 0, comment))
    {
+      if(g_reporter != NULL)
+      {
+         uint rc = g_trade.ResultRetcode();
+         g_reporter.ReportExecutionUpdate(signalId,
+            rc == TRADE_RETCODE_DONE_PARTIAL ? "partial" : rc == TRADE_RETCODE_PLACED ? "submitted" : "filled",
+            g_trade.ResultVolume(), g_trade.ResultPrice());
+      }
       Print("=== ENTRY LONG | RSI=", DoubleToString(g_rsiBuffer[1], 1),
             " | Lots=", DoubleToString(lots, 2), " @ ", DoubleToString(ask, _Digits));
 
@@ -330,7 +340,10 @@ void CheckEntry()
    {
       Print("BUY FAILED: ", g_trade.ResultRetcodeDescription());
       if(g_reporter != NULL)
+      {
+         g_reporter.ReportExecutionUpdate(signalId, "rejected", 0, 0, g_trade.ResultRetcodeDescription());
          g_reporter.OnOrderRejected("EntryBuy", g_trade.ResultRetcode(), g_trade.ResultRetcodeDescription());
+      }
    }
 }
 
