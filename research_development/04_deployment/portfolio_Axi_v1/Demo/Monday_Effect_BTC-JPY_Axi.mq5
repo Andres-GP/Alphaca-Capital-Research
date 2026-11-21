@@ -247,6 +247,8 @@ int OnInit()
 
    PushAlert("EA STARTED | " + _Symbol);
 
+   if(InpShowDashboard) UpdateDashboard();
+
    return(INIT_SUCCEEDED);
 }
 

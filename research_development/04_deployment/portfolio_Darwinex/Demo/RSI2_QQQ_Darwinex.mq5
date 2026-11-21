@@ -147,6 +147,8 @@ int OnInit()
    if(g_reporter != NULL && InpSendPushAlerts)
       g_reporter.SendAlert("EA STARTED | " + _Symbol);
 
+   if(InpShowDashboard) UpdateDashboard();
+
    return(INIT_SUCCEEDED);
 }
 
