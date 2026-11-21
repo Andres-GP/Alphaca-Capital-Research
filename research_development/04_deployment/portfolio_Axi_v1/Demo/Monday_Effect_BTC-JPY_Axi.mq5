@@ -26,8 +26,8 @@
 
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
-#include "../../Metatrader_base/PerformanceReporter.mqh"
-#include "../../Metatrader_base/PerformanceDashboard.mqh"
+#include "PerformanceReporter.mqh"
+#include "PerformanceDashboard.mqh"
 
 //+------------------------------------------------------------------+
 //| Enums                                                             |
