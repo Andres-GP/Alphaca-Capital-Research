@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="192" viewBox="0 0 1120 192">
+<rect width="1120" height="100%" fill="#101613" rx="18"/>
+<text x="36" y="44" fill="#C8F5A8" font-family="Arial,sans-serif" font-size="14" letter-spacing="2">ALPHACA CAPITAL · INITIAL RESEARCH</text>
+<text x="36" y="82" fill="#F4F7F3" font-family="Arial,sans-serif" font-size="24" font-weight="700">Calendar Seasonality</text>
+<path d="M 292 85 V 152 H 322" stroke="#3E6557" stroke-width="2" fill="none"/>
+<rect x="36" y="130" width="256" height="44" rx="8" fill="#1F3D36"/>
+<text x="52" y="158" fill="#F4F7F3" font-family="Arial,sans-serif" font-size="15">weekday returns</text>
+<path d="M 292 152 H 322" stroke="#3E6557" stroke-width="2"/>
+<rect x="322" y="130" width="200" height="44" rx="8" fill="#202925" stroke="#3E6557"/>
+<text x="338" y="158" fill="#F4F7F3" font-family="Arial,sans-serif" font-size="14">us equity index</text>
+<path d="M 522 152 H 552" stroke="#3E6557" stroke-width="2"/>
+<rect x="552" y="130" width="300" height="44" rx="8" fill="#202925" stroke="#3E6557"/>
+<text x="568" y="158" fill="#F4F7F3" font-family="Arial,sans-serif" font-size="14">us equity index</text>
+<path d="M 852 152 H 882" stroke="#3E6557" stroke-width="2"/>
+<rect x="882" y="130" width="202" height="44" rx="8" fill="#C8F5A8"/>
+<text x="898" y="158" fill="#1F3D36" font-family="Arial,sans-serif" font-size="14" font-weight="700">Pendiente</text>
+</svg>

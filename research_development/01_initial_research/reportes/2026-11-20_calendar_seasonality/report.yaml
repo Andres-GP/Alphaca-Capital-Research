@@ -1,0 +1,30 @@
+{
+  "family": "calendar_seasonality",
+  "run_date_utc": "2026-11-20",
+  "status": "qualitative_complete",
+  "engines": {
+    "literatura": "codex/gpt-6-luna/high (ChatGPT OAuth)",
+    "datos": "codex/gpt-6-luna/high (ChatGPT OAuth)",
+    "red_team": "codex/gpt-6-luna/high (ChatGPT OAuth)"
+  },
+  "model_primary": "gpt-6-luna",
+  "reasoning_effort": "high",
+  "hypotheses": [
+    "weekday_returns/us_equity_index/hypothesis.md"
+  ],
+  "data": {
+    "market_data_read": false,
+    "coverage_pct": "unknown",
+    "gaps": "not measured",
+    "feed_comparison": "pending"
+  },
+  "backtests_run": false,
+  "gates": {
+    "data_quality": "pending",
+    "statistics_oos": "pending",
+    "robustness": "pending",
+    "costs": "pending",
+    "edge_verdict": "not confirmed"
+  },
+  "source_policy": "Evidence sources must predate 2018; unverifiable citations remain explicitly marked."
+}
