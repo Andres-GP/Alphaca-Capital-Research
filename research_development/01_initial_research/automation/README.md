@@ -2,7 +2,7 @@
 
 ## Frecuencia y ejecución
 
-`.github/workflows/initial-research.yml` corre lunes, miércoles y viernes a las 11:00 UTC (`0 11 * * 1,3,5`), además de permitir `workflow_dispatch`. En Colombia equivale a las 6:00 a. m. Los cinco jobs de familia se ejecutan en paralelo; el grupo de concurrencia del workflow impide que dos corridas simultáneas compitan por el estado de autenticación. Cada job mantiene sus propias credenciales temporales.
+`.github/workflows/initial-research.yml` se ejecuta manualmente con `workflow_dispatch`. El único horario automático se define en `Andres-GP/AlphacaHub`: lunes, miércoles y viernes a las 11:00 UTC (6:00 a. m. en Colombia), desde donde se dispara este workflow por API. La sincronización del feed de AlphacaHub se ejecuta a las 20:00 UTC (3:00 p. m. en Colombia). El workflow de Research mantiene la ejecución manual para recuperación y pruebas, pero no tiene cron propio. Los cinco jobs de familia se ejecutan en paralelo; el grupo de concurrencia del workflow impide que dos corridas simultáneas compitan por el estado de autenticación. Cada job mantiene sus propias credenciales temporales.
 
 Cada familia produce cuatro revisiones de rol (literatura/mecanismo, datos/evidencia disponible, red team y viabilidad para backtest exploratorio) con Codex CLI, una después de otra para evitar que varias sesiones renueven simultáneamente el mismo token OAuth. El último rol sintetiza las tres revisiones previas y la auditoría de datos; devuelve un estado explícito del Gate A. El modelo principal es `gpt-6-luna` con razonamiento `high`. Esto quedó validado en el smoke test manual, [run 44799888305](https://github.com/Andres-GP/Alphaca-Capital-Research/actions/runs/44799888305), que devolvió `AUTH_OK` y terminó correctamente.
 
